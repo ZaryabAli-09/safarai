@@ -22,6 +22,8 @@ export const authOptions: NextAuthOptions = {
 
           const user = await User.findOne({ email: credentials.email });
 
+          console.log(user);
+
           if (!user) {
             throw new Error("No user found");
           }
@@ -30,10 +32,7 @@ export const authOptions: NextAuthOptions = {
             throw new Error("Please verify you account first");
           }
 
-          const isPasswordValid = await bcrypt.compare(
-            credentials.password,
-            user.password
-          );
+          const isPasswordValid = credentials.password == user.password;
 
           if (!isPasswordValid) {
             throw new Error("Invalid credentials");
@@ -47,17 +46,23 @@ export const authOptions: NextAuthOptions = {
   ],
 
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      // stay on same page unless explicit redirect
+      return baseUrl;
+    },
     async jwt({ token, user }) {
       if (user) {
-        token.id = user._id.toString() as string; // Ensure id is a string
-        token.isVerified = user.isVerified as boolean; // Add isVerified to the token
+        token._id = user._id; // Ensure id is a string
+        token.isVerified = user.isVerified; // Add isVerified to the token
+        token.role = user.role;
       }
       return token;
     },
     async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id as string;
-        session.user.isVerified = token.isVerified as boolean; // Add isVerified to the session
+      if (token && session.user) {
+        session.user._id = token._id;
+        session.user.isVerified = token.isVerified; // Add isVerified to the session
+        session.user.role = token.role;
       }
       return session;
     },
@@ -70,6 +75,4 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   secret: process.env.NEXTAUTH_SECRET,
-
-  // hello in this tutorial i will be bulidng and ai travel app
 };

@@ -1,5 +1,5 @@
 import { dbConnect } from "@/lib/db";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { User } from "@/models/User";
 import { sendEmail } from "@/lib/nodemailer";
 import { generateOtp, response } from "@/lib/helperFunctions";

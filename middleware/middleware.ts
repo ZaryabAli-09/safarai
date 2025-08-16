@@ -1,12 +1,41 @@
+// middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-// This function can be marked `async` if using `await` inside
-export function middleware(request: NextRequest) {
-  return NextResponse.redirect(new URL("/home", request.url));
+export async function middleware(request: NextRequest) {
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+
+  const { pathname } = request.nextUrl;
+
+  // No token → redirect to login
+  if (
+    !token &&
+    (pathname.startsWith("/admin") || pathname.startsWith("/user"))
+  ) {
+    return NextResponse.redirect(new URL("/sign-in", request.url));
+  }
+
+  // Admin routes → only allow role=admin
+  if (pathname.startsWith("/admin")) {
+    if (token?.role !== "admin") {
+      return NextResponse.redirect(new URL("/unauthorized", request.url));
+    }
+  }
+
+  // User routes → only allow logged in users
+  if (pathname.startsWith("/user")) {
+    if (!token) {
+      return NextResponse.redirect(new URL("/sign-in", request.url));
+    }
+  }
+
+  return NextResponse.next();
 }
 
-// See "Matching Paths" below to learn more
 export const config = {
-  matcher: ["/sign-in"],
+  matcher: ["/admin/:path*", "/user/:path*"], // Protect all /admin/* and /user/* routes
 };
