@@ -51,6 +51,8 @@ export async function POST(req: NextRequest) {
 
         existingUser.verificationCode = verificationOtp.otp;
         existingUser.verificationCodeExpiry = verificationOtp.expiry;
+        existingUser.password = password;
+        existingUser.isVerified = false; // Ensure user is not verified
 
         await existingUser.save();
 
