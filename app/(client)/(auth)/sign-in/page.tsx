@@ -26,6 +26,7 @@ export default function Signin() {
         email: formData.email,
         password: formData.password,
         callbackUrl: "/",
+        redirect: false,
       });
 
       if (!result?.ok) {
