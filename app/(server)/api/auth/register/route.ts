@@ -8,7 +8,29 @@ import { verificationEmailTemplate } from "@/emails/VerificationEmailTemplate";
 // In future add som checks for email password length and format or use external validation libraries like Joi or Yup or even Zod for better validation handling
 export async function POST(req: NextRequest) {
   try {
+    // use joi etc for validation in future
     const { email, password } = await req.json();
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+    if (!emailRegex.test(email)) {
+      return response(false, 400, "Invalid email format");
+    }
+
+    if (!password || password.trim().length < 6) {
+      return response(
+        false,
+        400,
+        "Password must be at least 6 characters long"
+      );
+    }
+    if (password && password.length < 6) {
+      return response(
+        false,
+        400,
+        "Password must be at least 6 characters long"
+      );
+    }
 
     if (!email || !password) {
       return response(false, 400, "Email and password are required");

@@ -10,6 +10,12 @@ export async function POST(req: NextRequest) {
   try {
     const { email } = await req.json();
 
+    // use joi etc for validation in future
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!emailRegex.test(email)) {
+      return response(false, 400, "Invalid email format");
+    }
+
     if (!email) {
       return response(false, 404, "Please enter your email");
     }

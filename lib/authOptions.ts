@@ -22,10 +22,8 @@ export const authOptions: NextAuthOptions = {
 
           const user = await User.findOne({ email: credentials.email });
 
-          console.log(user);
-
           if (!user) {
-            throw new Error("No user found");
+            throw new Error("No user found with this email");
           }
 
           if (!user.isVerified) {

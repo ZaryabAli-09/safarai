@@ -10,6 +10,16 @@ export async function GET(req: NextRequest) {
     const resetToken = searchParams.get("resetToken");
     const newPassword = searchParams.get("newPassword");
 
+    // use joi etc for validation in future
+
+    if (!newPassword || newPassword.trim().length < 6) {
+      return response(
+        false,
+        400,
+        "Password must be at least 6 characters long"
+      );
+    }
+
     if (!resetToken) return response(false, 400, "Unauthorized request");
     if (!newPassword) {
       return response(false, 400, "New password field is required");
