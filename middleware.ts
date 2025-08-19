@@ -11,6 +11,10 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  console.log("Path:", pathname);
+  console.log("Token exists:", !!token);
+  console.log("User role:", token?.role);
+
   // No token → redirect to login
   if (
     !token &&
@@ -22,7 +26,7 @@ export async function middleware(request: NextRequest) {
   // Admin routes → only allow role=admin
   if (pathname.startsWith("/admin")) {
     if (token?.role !== "admin") {
-      return NextResponse.redirect(new URL("/unauthorized", request.url));
+      return NextResponse.redirect(new URL("/sign-in", request.url));
     }
   }
 
@@ -37,5 +41,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/user/:path*"], // Protect all /admin/* and /user/* routes
+  matcher: ["/admin", "/user/:path*"], // Protect all /admin/* and /user/* routes
 };

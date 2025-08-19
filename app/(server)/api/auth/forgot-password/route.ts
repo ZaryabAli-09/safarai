@@ -5,15 +5,17 @@ import { NextRequest } from "next/server";
 import crypto from "crypto";
 import { sendEmail } from "@/lib/nodemailer";
 import { ForgotPasswordEmailTemplate } from "@/emails/ForgotPasswordEmailTemplate";
+import { z } from "zod";
+
+const emailSchema = z.string().email("Invalid email format");
 
 export async function POST(req: NextRequest) {
   try {
     const { email } = await req.json();
 
-    // use joi etc for validation in future
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-    if (!emailRegex.test(email)) {
-      return response(false, 400, "Invalid email format");
+    const validation = emailSchema.safeParse(email);
+    if (!validation.success) {
+      return response(false, 400, validation.error.issues[0].message);
     }
 
     if (!email) {
@@ -38,7 +40,7 @@ export async function POST(req: NextRequest) {
 
     await user.save();
 
-    const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/reset-password/${resetToken}`;
+    const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/reset-password?resetToken=${resetToken}`;
 
     await sendEmail({
       to: email,

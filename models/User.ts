@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 
 export interface IUser {
+  username: string;
   email: string;
   password: string;
   _id?: mongoose.Types.ObjectId;
@@ -17,6 +18,12 @@ export interface IUser {
 
 const userSchema = new mongoose.Schema<IUser>(
   {
+    username: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+    },
     email: {
       type: String,
       required: true,

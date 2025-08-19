@@ -3,7 +3,12 @@ import { NextRequest } from "next/server";
 import crypto from "crypto";
 import { dbConnect } from "@/lib/db";
 import { User } from "@/models/User";
-import bcrypt from "bcryptjs";
+import z from "zod";
+
+const newPasswordSchema = z
+  .string()
+  .trim()
+  .min(6, "Password must be at least 6 characters");
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -12,18 +17,12 @@ export async function GET(req: NextRequest) {
 
     // use joi etc for validation in future
 
-    if (!newPassword || newPassword.trim().length < 6) {
-      return response(
-        false,
-        400,
-        "Password must be at least 6 characters long"
-      );
+    const validation = newPasswordSchema.safeParse(newPassword);
+    if (!validation.success) {
+      return response(false, 400, validation.error.issues[0].message);
     }
 
     if (!resetToken) return response(false, 400, "Unauthorized request");
-    if (!newPassword) {
-      return response(false, 400, "New password field is required");
-    }
 
     const hashedToken = crypto
       .createHash("sha256")
@@ -41,7 +40,7 @@ export async function GET(req: NextRequest) {
       return response(false, 400, "Invalid or expired token");
     }
 
-    user.password = await bcrypt.hash(newPassword, 10);
+    user.password = newPassword; // plain password, mongoose pre-save hook will hash
 
     user.resetPasswordToken = null;
     user.resetPasswordExpiry = null;

@@ -1,11 +1,17 @@
-import { NextAuthOptions } from "next-auth";
+import { DefaultSession, NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { dbConnect } from "./db";
 import { User } from "@/models/User";
 import bcrypt from "bcryptjs";
+import GoogleProvider from "next-auth/providers/google";
+import crypto from "crypto";
 
 export const authOptions: NextAuthOptions = {
   providers: [
+    GoogleProvider({
+      clientId: process.env.OAUTH_CLIENT_ID!,
+      clientSecret: process.env.OAUTH_CLIENT_SECRET!,
+    }),
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -38,7 +44,11 @@ export const authOptions: NextAuthOptions = {
           if (!isPasswordValid) {
             throw new Error("Invalid credentials");
           }
-          return user;
+          return {
+            _id: user._id.toString(),
+            email: user.email,
+            role: user.role,
+          };
         } catch (error: any) {
           throw new Error(error);
         }
@@ -47,6 +57,27 @@ export const authOptions: NextAuthOptions = {
   ],
 
   callbacks: {
+    async signIn({ user, account }) {
+      if (account?.provider === "google") {
+        await dbConnect();
+        let dbUser = await User.findOne({ email: user.email });
+
+        if (!dbUser) {
+          const randomPassword = crypto.randomBytes(16).toString("hex");
+          dbUser = await new User({
+            email: user.email,
+            username: user.name,
+            password: randomPassword,
+            isVerified: true,
+            role: "user",
+          }).save();
+        }
+
+        user._id = dbUser._id.toString();
+        user.role = dbUser.role;
+      }
+      return true;
+    },
     async redirect({ url, baseUrl }) {
       // stay on same page unless explicit redirect
       return baseUrl;
@@ -54,23 +85,24 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token._id = user._id; // Ensure id is a string
-        token.isVerified = user.isVerified; // Add isVerified to the token
         token.role = user.role;
       }
+
       return token;
     },
     async session({ session, token }) {
-      if (token && session.user) {
+      if (session.user) {
         session.user._id = token._id;
-        session.user.isVerified = token.isVerified; // Add isVerified to the session
         session.user.role = token.role;
       }
+
       return session;
     },
   },
 
   pages: {
     signIn: "/sign-in",
+    error: "/sign-in",
   },
   session: {
     strategy: "jwt",

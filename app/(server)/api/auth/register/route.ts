@@ -4,36 +4,26 @@ import { User } from "@/models/User";
 import { sendEmail } from "@/lib/nodemailer";
 import { generateOtp, response } from "@/lib/helperFunctions";
 import { verificationEmailTemplate } from "@/emails/VerificationEmailTemplate";
+import { z } from "zod";
 
-// In future add som checks for email password length and format or use external validation libraries like Joi or Yup or even Zod for better validation handling
+const registerSchema = z.object({
+  username: z.string().trim().min(3, "Username must be at least 3 characters"),
+  email: z.string().trim().email("Invalid email format"),
+  password: z.string().trim().min(6, "Password must be at least 6 characters"),
+});
+
 export async function POST(req: NextRequest) {
   try {
-    // use joi etc for validation in future
-    const { email, password } = await req.json();
+    const { username, email, password } = await req.json();
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
-    if (!emailRegex.test(email)) {
-      return response(false, 400, "Invalid email format");
+    if (!username || !email || !password) {
+      return response(false, 400, "Username Email and password are required");
     }
 
-    if (!password || password.trim().length < 6) {
-      return response(
-        false,
-        400,
-        "Password must be at least 6 characters long"
-      );
-    }
-    if (password && password.length < 6) {
-      return response(
-        false,
-        400,
-        "Password must be at least 6 characters long"
-      );
-    }
+    const validation = registerSchema.safeParse({ username, email, password });
 
-    if (!email || !password) {
-      return response(false, 400, "Email and password are required");
+    if (!validation.success) {
+      return response(false, 400, validation.error.issues[0].message);
     }
 
     await dbConnect();
@@ -43,7 +33,7 @@ export async function POST(req: NextRequest) {
     if (existingUser) {
       // if user exists and is verified
       if (existingUser.isVerified) {
-        return response(false, 400, "User already exists, please login");
+        return response(false, 400, "User already registered, please login");
 
         // if user exists but is not verified
       } else {
@@ -79,6 +69,7 @@ export async function POST(req: NextRequest) {
     const verificationOtp = await generateOtp();
 
     const user = new User({
+      username,
       email,
       password,
       isVerified: false,
@@ -102,11 +93,7 @@ export async function POST(req: NextRequest) {
       user._id
     );
   } catch (error) {
-    return response(
-      false,
-      500,
-      (error as Error).message || "Failed to register user",
-      error
-    );
+    console.error("Error in reset password route:", error);
+    return response(false, 500, "Internal server error");
   }
 }

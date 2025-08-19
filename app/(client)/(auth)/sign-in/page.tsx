@@ -5,31 +5,31 @@ import React, { useState } from "react";
 import toast from "react-hot-toast";
 import { z } from "zod";
 import Image from "next/image";
+import SignInBanner from "@/public/assets/signin-banner.png";
+import { useRouter } from "next/navigation";
+import Logo from "@/public/assets/logo.png";
 
-import SignInBanner from "@/public/assets/signin-banner.png"; // Assuming you have a logo image
+// zod schemas for sign in form
 const formSchema = z.object({
   email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters long"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 export default function Signin() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
-  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!formData.email || !formData.password) {
-      toast.error("Email and Password are required");
-      return;
-    }
-    const result = formSchema.safeParse(formData);
+    const validation = formSchema.safeParse(formData);
 
-    if (!result.success) {
-      toast.error(result.error.issues[0].message);
+    if (!validation.success) {
+      toast.error(validation.error.issues[0].message);
       return;
     }
     try {
@@ -45,12 +45,13 @@ export default function Signin() {
         toast.error(result?.error || "Something went wrong");
         setLoading(false);
         return;
+      } else {
+        toast.success("Successfully logged in");
+        setLoading(false);
+        router.push("/");
       }
-
-      toast.success("Successfully logged in");
-      setLoading(false);
     } catch (error: any) {
-      toast.error(error);
+      toast.error(error.message);
       setLoading(false);
     }
   }
@@ -68,12 +69,11 @@ export default function Signin() {
 
       {/* right  */}
       <div className="w-full h-full flex flex-col justify-center items-center   lg:w-[50%]    ">
-        <div className="flex items-center gap-1.5 mb-8">
-          <div className="rounded-full h-15 w-15 bg-black"></div>
-          <h1 className="text-3xl md:text-4xl font-extrabold  ">SAFAR AI</h1>
+        <div className="flex items-center">
+          <Image className="w-70  h-30 mr-8" src={Logo} alt="Logo" />{" "}
         </div>
-        <h3 className="text-3xl text-gray-700 mb-3">Sign in to your account</h3>
-        <p className=" text-blue-800 ">
+        <h3 className="text-3xl text-dark mb-3">Sign in to your account</h3>
+        <p className=" text-submit ">
           Welcome back! Please enter your details.
         </p>
 
@@ -83,7 +83,7 @@ export default function Signin() {
               setFormData({ ...formData, email: e.target.value })
             }
             value={formData.email}
-            className="w-[90%] sm:w-[70%] lg:w-[90%]  p-4  border border-gray-300 rounded-md  focus:outline-blue-500"
+            className="w-[80%] sm:w-[70%] lg:w-[80%] p-4  border border-gray-300 rounded-md  focus:outline-submit"
             type="email"
             placeholder="Please enter your email"
           />
@@ -91,26 +91,40 @@ export default function Signin() {
             onChange={(e) =>
               setFormData({ ...formData, password: e.target.value })
             }
-            className="w-[90%] sm:w-[70%] lg:w-[90%] p-4  border border-gray-300 rounded-md  focus:outline-blue-500"
+            className="w-[80%] sm:w-[70%] lg:w-[80%] p-4  border border-gray-300 rounded-md  focus:outline-submit"
             type="password"
             placeholder="Please enter your Password"
           />
-          <p className="w-[90%] sm:w-[70%] lg:w-[90%] text-right underline text-sm">
-            <Link href="/forgot-password" className="text-blue-500">
+          <p className="w-[80%] sm:w-[70%] lg:w-[80%] text-right text-sm hover:underline">
+            <Link href="/forgot-password" className="text-submit">
               forgot password?{" "}
             </Link>
           </p>
           <button
             onClick={handleSubmit}
-            disabled={loading}
-            className="w-[90%] sm:w-[70%] lg:w-[90%]  p-4  border border-gray-300 rounded-md bg-blue-500 text-white text-lg font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            disabled={loading || !formData.email || !formData.password}
+            className="w-[80%] sm:w-[70%] lg:w-[80%] p-4  border border-gray-300 rounded-md bg-submit text-white text-lg font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {loading ? "Loading..." : "Sign In"}
+          </button>
+          {/* Google Sign-in Button */}
+          <button
+            type="button"
+            onClick={() => signIn("google")}
+            className="flex items-center justify-center gap-3 w-[80%] sm:w-[70%] lg:w-[80%] p-3 border border-gray-300 rounded-md bg-white text-gray-700 font-medium text-base shadow-sm cursor-pointer   hover:bg-gray-200 "
+          >
+            <Image
+              src="/assets/google.png"
+              alt="Google"
+              width={20}
+              height={20}
+            />
+            Continue with Google
           </button>
         </form>
         <p className="mt-4 ">
           Don't have an account?{" "}
-          <Link href="/register" className="text-blue-500 ">
+          <Link href="/register" className="text-submit  hover:underline">
             Sign Up
           </Link>
         </p>

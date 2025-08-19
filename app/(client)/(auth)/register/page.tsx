@@ -1,5 +1,4 @@
 "use client";
-import { signIn } from "next-auth/react";
 import Link from "next/link";
 import React, { useState } from "react";
 import toast from "react-hot-toast";
@@ -7,14 +6,21 @@ import { z } from "zod";
 import Image from "next/image";
 
 import SignInBanner from "@/public/assets/signin-banner.png"; // Assuming you have a logo image
-import { set } from "mongoose";
+import Logo from "@/public/assets/logo.png";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+
 const formSchema = z.object({
+  username: z.string().trim().min(3, "Username must be at least 3 characters"),
   email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters long"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
+
+const otpSchema = z.string().trim().min(6, "Otp must be 6 numbers");
 
 export default function Register() {
   const [formData, setFormData] = useState({
+    username: "",
     email: "",
     password: "",
   });
@@ -24,10 +30,16 @@ export default function Register() {
   const [otp, setOtp] = useState("");
   const [userId, setUserId] = useState(null);
 
-  console.log("User ID:", userId);
+  const router = useRouter();
+
   async function handleVerifyOtp(e: React.FormEvent) {
     e.preventDefault();
-    console.log(userId, otp);
+
+    const validation = otpSchema.safeParse(otp);
+    if (!validation.success) {
+      return toast.error(validation.error.issues[0].message);
+    }
+
     try {
       setLoading(true);
       const result = await fetch("/api/auth/verify-email", {
@@ -49,6 +61,7 @@ export default function Register() {
       toast.success(data.message || "OTP verified successfully");
       setConfirmRegistration(false);
       setLoading(false);
+      router.push("/sign-in");
     } catch (error: any) {
       toast.error(error);
       setLoading(false);
@@ -58,15 +71,10 @@ export default function Register() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!formData.email || !formData.password) {
-      toast.error("Email and Password are required");
-      return;
-    }
+    const validation = formSchema.safeParse(formData);
 
-    const result = formSchema.safeParse(formData);
-
-    if (!result.success) {
-      toast.error(result.error.issues[0].message);
+    if (!validation.success) {
+      toast.error(validation.error.issues[0].message);
       return;
     }
     try {
@@ -109,20 +117,34 @@ export default function Register() {
 
       {/* right  */}
       <div className="w-full h-full flex flex-col justify-center items-center   lg:w-[50%]    ">
-        <div className="flex items-center gap-1.5 mb-8">
-          <div className="rounded-full h-15 w-15 bg-black"></div>
-          <h1 className="text-3xl md:text-4xl font-extrabold  ">SAFAR AI</h1>
+        <div className="flex items-center">
+          <Image
+            className="w-70  h-30 mr-8
+          "
+            src={Logo}
+            alt="Logo"
+          />{" "}
         </div>
-        <h3 className="text-3xl text-gray-700 mb-3">Create Account</h3>
-        <p className=" text-blue-800 ">Welcome! Please enter your details.</p>
+        <h3 className="text-3xl text-dark  mb-3">Create Account</h3>
+        <p className=" text-submit ">Welcome! Please enter your details.</p>
 
         <form className=" flex flex-col w-full items-center gap-4 mt-4">
+          <input
+            onChange={(e) =>
+              setFormData({ ...formData, username: e.target.value })
+            }
+            value={formData.username}
+            className="w-[80%] sm:w-[70%] lg:w-[80%]  p-4  border border-gray-300 rounded-md  focus:outline-submit disabled:opacity-50 disabled:cursor-not-allowed"
+            type="text"
+            placeholder="Please enter your name"
+            disabled={loading || confirmRegistration}
+          />
           <input
             onChange={(e) =>
               setFormData({ ...formData, email: e.target.value })
             }
             value={formData.email}
-            className="w-[90%] sm:w-[70%] lg:w-[90%]  p-4  border border-gray-300 rounded-md  focus:outline-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-[80%] sm:w-[70%] lg:w-[80%]  p-4  border border-gray-300 rounded-md  focus:outline-submit disabled:opacity-50 disabled:cursor-not-allowed"
             type="email"
             placeholder="Please enter your email"
             disabled={loading || confirmRegistration}
@@ -131,7 +153,7 @@ export default function Register() {
             onChange={(e) =>
               setFormData({ ...formData, password: e.target.value })
             }
-            className="w-[90%] sm:w-[70%] lg:w-[90%] p-4  border border-gray-300 rounded-md  focus:outline-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-[80%] sm:w-[70%] lg:w-[80%] p-4  border border-gray-300 rounded-md  focus:outline-submit disabled:opacity-50 disabled:cursor-not-allowed"
             type="password"
             placeholder="Please enter your Password"
             disabled={loading || confirmRegistration}
@@ -140,8 +162,13 @@ export default function Register() {
           {!confirmRegistration ? (
             <button
               onClick={handleSubmit}
-              disabled={loading}
-              className="w-[90%] sm:w-[70%] lg:w-[90%]  p-4  border border-gray-300 rounded-md bg-blue-500 text-white text-lg font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              disabled={
+                loading ||
+                !formData.email ||
+                !formData.password ||
+                !formData.username
+              }
+              className="w-[80%] sm:w-[70%] lg:w-[80%]  p-4  border border-gray-300 rounded-md bg-submit text-white text-lg font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? "Loading..." : "Create Account"}
             </button>
@@ -151,22 +178,35 @@ export default function Register() {
                 onChange={
                   (e) => setOtp(e.target.value) // Assuming you have a state for OTP
                 }
-                className="w-[90%] sm:w-[70%] lg:w-[90%] p-4 bg-gray-100 animate-pulse border border-gray-300 rounded-md  focus:outline-blue-500"
-                placeholder="Enter you OTP "
+                className="w-[80%] sm:w-[70%] lg:w-[80%] p-4 bg-gray-50 placeholder:text-black text-black border border-gray-300 rounded-md  focus:outline-dark"
+                placeholder="Enter you OTP here "
               />
               <button
                 onClick={handleVerifyOtp}
-                disabled={loading}
-                className="w-[90%] sm:w-[70%] lg:w-[90%]  p-4  border border-gray-300 rounded-md bg-blue-500 text-white text-lg font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                disabled={loading || !otp}
+                className="w-[80%] sm:w-[70%] lg:w-[80%]  p-4  border border-gray-300 rounded-md bg-submit text-white text-lg font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {loading ? "Loading..." : "Verify OTP"}
               </button>
             </>
           )}
+          <button
+            type="button"
+            onClick={() => signIn("google")}
+            className="flex items-center justify-center gap-3 w-[80%] sm:w-[70%] lg:w-[80%] p-3 border border-gray-300 rounded-md bg-white text-gray-700 font-medium text-base shadow-sm cursor-pointer   hover:bg-gray-200 "
+          >
+            <Image
+              src="/assets/google.png"
+              alt="Google"
+              width={20}
+              height={20}
+            />
+            Continue with Google
+          </button>
         </form>
         <p className="mt-4 ">
           Already have an account?{" "}
-          <Link href="/sign-in" className="text-blue-500 ">
+          <Link href="/sign-in" className="text-submit hover:underline ">
             Sign In
           </Link>
         </p>
