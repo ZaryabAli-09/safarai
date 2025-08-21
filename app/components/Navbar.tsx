@@ -1,7 +1,6 @@
-// "use client";
-
 import Logo from "@/public/assets/logo.png";
 import Image from "next/image";
+import Link from "next/link";
 
 export function Navbar() {
   return (
@@ -14,7 +13,7 @@ export function Navbar() {
           type="button"
           className="p-3 text-sm sm:p-4 sm:text-md md:text-xl font-bold text-white rounded-lg  bg-blue-600 cursor-pointer hover:bg-blue-500 ease-in "
         >
-          Plan Your Trip Now
+          <Link href={""}> Plan Your Trip Now</Link>
         </button>
       </div>
     </div>
