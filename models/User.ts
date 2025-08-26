@@ -12,6 +12,7 @@ export interface IUser {
   verificationCodeExpiry?: Date;
   resetPasswordToken?: string;
   resetPasswordExpiry?: Date;
+  gender?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -59,6 +60,13 @@ const userSchema = new mongoose.Schema<IUser>(
     },
     resetPasswordExpiry: {
       type: Date,
+      default: null,
+    },
+
+    // new fields
+    gender: {
+      type: String,
+      enum: ["male", "female"],
       default: null,
     },
   },

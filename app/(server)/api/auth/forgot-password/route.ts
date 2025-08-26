@@ -4,7 +4,7 @@ import { User } from "@/models/User";
 import { NextRequest } from "next/server";
 import crypto from "crypto";
 import { sendEmail } from "@/lib/nodemailer";
-import { ForgotPasswordEmailTemplate } from "@/emails/ForgotPasswordEmailTemplate";
+import { ForgotPasswordEmailTemplate } from "@/lib/emails/ForgotPasswordEmailTemplate";
 import { z } from "zod";
 
 const emailSchema = z.string().email("Invalid email format");

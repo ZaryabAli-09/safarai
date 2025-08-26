@@ -48,6 +48,7 @@ export const authOptions: NextAuthOptions = {
             _id: user._id.toString(),
             email: user.email,
             role: user.role,
+            name: user.username,
           };
         } catch (error: any) {
           throw new Error(error);
@@ -79,8 +80,7 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
     async redirect({ url, baseUrl }) {
-      // stay on same page unless explicit redirect
-      return baseUrl;
+      return `${baseUrl}/app/trips`;
     },
     async jwt({ token, user }) {
       if (user) {

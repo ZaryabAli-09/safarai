@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { User } from "@/models/User";
 import { sendEmail } from "@/lib/nodemailer";
 import { generateOtp, response } from "@/lib/helperFunctions";
-import { verificationEmailTemplate } from "@/emails/VerificationEmailTemplate";
+import { verificationEmailTemplate } from "@/lib/emails/VerificationEmailTemplate";
 import { z } from "zod";
 
 const registerSchema = z.object({

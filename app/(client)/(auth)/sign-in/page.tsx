@@ -37,7 +37,7 @@ export default function Signin() {
       const result = await signIn("credentials", {
         email: formData.email,
         password: formData.password,
-        callbackUrl: "/",
+        callbackUrl: "/app/trips",
         redirect: false,
       });
 
@@ -48,7 +48,7 @@ export default function Signin() {
       } else {
         toast.success("Successfully logged in");
         setLoading(false);
-        router.push("/");
+        router.push("/app/trips");
       }
     } catch (error: any) {
       toast.error(error.message);
@@ -110,8 +110,12 @@ export default function Signin() {
           {/* Google Sign-in Button */}
           <button
             type="button"
-            onClick={() => signIn("google")}
-            className="flex items-center justify-center gap-3 w-[80%] sm:w-[70%] lg:w-[80%] p-3 border border-gray-300 rounded-md bg-white text-gray-700 font-medium text-base shadow-sm cursor-pointer   hover:bg-gray-200 "
+            onClick={() =>
+              signIn("google", {
+                callbackUrl: `${window.location.origin}/app/trips`,
+              })
+            }
+            className="flex items-center justify-center gap-3 w-[80%] sm:w-[70%] lg:w-[80%] p-3 border border-gray-300 rounded-md bg-white text-gray-700 font-medium text-base shadow-sm cursor-pointer hover:bg-gray-200"
           >
             <Image
               src="/assets/google.png"
