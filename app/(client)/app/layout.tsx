@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/authOptions";
-import { AppNav } from "@/app/components/AppNav";
+import { AppNav } from "@/app/custom components/AppNav";
 
 export default async function AppLayout({
   children,
