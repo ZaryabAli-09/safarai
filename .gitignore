@@ -17,6 +17,8 @@
 /.next/
 /out/
 
+safar ai oauth.json
+
 # production
 /build
 
