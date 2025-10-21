@@ -28,7 +28,7 @@ const formSchema = z.object({
 });
 const otpSchema = z.string().trim().min(6, "Otp must be 6 numbers");
 
-export function LoginForm({
+export function RegisterForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
@@ -174,46 +174,44 @@ export function LoginForm({
           />
         </Field>
         {!confirmRegistration ? (
-          <button
-            onClick={handleSubmit}
-            disabled={
-              loading ||
-              !formData.email ||
-              !formData.password ||
-              !formData.username
-            }
-            className="w-[80%] sm:w-[70%] lg:w-[80%]  p-4  border border-gray-300 rounded-md bg-submit text-white text-lg font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-          >
-            {loading ? "Loading..." : "Create Account"}
-          </button>
+          <Field>
+            <Button
+              type="submit"
+              onClick={handleSubmit}
+              disabled={
+                loading ||
+                !formData.email ||
+                !formData.password ||
+                !formData.username
+              }
+              className="disabled:opacity-50 disabled:cursor-not-allowed "
+            >
+              {loading ? "Loading..." : "Sign Up"}
+            </Button>
+          </Field>
         ) : (
           <>
-            <input
-              onChange={
-                (e) => setOtp(e.target.value) // Assuming you have a state for OTP
-              }
-              className="w-[80%] sm:w-[70%] lg:w-[80%] p-4 bg-gray-50 placeholder:text-black text-black border border-gray-300 rounded-md  focus:outline-dark"
-              placeholder="Enter you OTP here "
-            />
-            <button
-              onClick={handleVerifyOtp}
-              disabled={loading || !otp}
-              className="w-[80%] sm:w-[70%] lg:w-[80%]  p-4  border border-gray-300 rounded-md bg-submit text-white text-lg font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-              {loading ? "Loading..." : "Verify OTP"}
-            </button>
+            <Field>
+              <FieldLabel htmlFor="text">Otp</FieldLabel>
+              <Input
+                onChange={
+                  (e) => setOtp(e.target.value) // Assuming you have a state for OTP
+                }
+              />
+            </Field>
+            <Field>
+              <Button
+                type="submit"
+                onClick={handleVerifyOtp}
+                disabled={loading || !otp}
+                className="disabled:opacity-50 disabled:cursor-not-allowed "
+              >
+                {loading ? "Loading..." : "Verify OTP"}
+              </Button>
+            </Field>
           </>
         )}
-        <Field>
-          <Button
-            type="submit"
-            onClick={handleSubmit}
-            disabled={loading || !formData.email || !formData.password}
-            className="disabled:opacity-50 disabled:cursor-not-allowed "
-          >
-            {loading ? "Loading..." : "Sign In"}
-          </Button>
-        </Field>
+
         <FieldSeparator>Or continue with</FieldSeparator>
         <Field>
           <Button
