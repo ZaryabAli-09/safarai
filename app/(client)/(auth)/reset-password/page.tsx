@@ -1,86 +1,29 @@
-"use client";
 import Image from "next/image";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useRouter } from "next/navigation";
-import React, { useState } from "react";
-import toast from "react-hot-toast";
-import { z } from "zod";
+import SignInBanner from "@/public/assets/signin-banner.png";
+
 import Logo from "@/public/assets/logo.png";
-
-const passwordScehma = z.string().min(6, "Password must be 6 characters");
-
+import { ResetPasswordForm } from "@/components/reset-password-form";
 export default function ResetPassword() {
-  const router = useRouter();
-  const [newPassword, setNewPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const searchParams = useSearchParams();
-  const resetToken = searchParams.get("resetToken");
-
-  async function handleSubmit() {
-    const result = passwordScehma.safeParse(newPassword);
-
-    if (!result.success) {
-      toast.error(result.error.issues[0].message);
-      return;
-    }
-    try {
-      setLoading(true);
-
-      const res = await fetch(
-        `/api/auth/reset-password?resetToken=${resetToken}&newPassword=${newPassword}`
-      );
-
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.message || "Something went wrong");
-        setLoading(false);
-        return;
-      }
-
-      toast.success(data.message || "Password update successfully");
-      setNewPassword("");
-      setLoading(false);
-      router.push("/sign-in");
-    } catch (error: any) {
-      console.error("Error submitting form:", error);
-      toast.error(error.message);
-      setLoading(false);
-    }
-  }
-
   return (
-    <div className="w-full flex flex-col items-center justify-center  gap-2 mt-20">
-      <div className="flex items-center ">
-        <Image className="w-70  h-30 mr-8" src={Logo} alt="Logo" />{" "}
-      </div>
-      <h3 className="text-3xl text-dark ">Create Password</h3>
-      <p className=" text-submit mb-6">Create new password</p>
+    <div className="grid min-h-svh lg:grid-cols-2">
+      <div className="flex flex-col gap-4 p-6 md:p-10">
+        <div className="flex justify-center gap-2 md:justify-start">
+          <Image className="w-40  h-20 " src={Logo} alt="Logo" />
+        </div>
 
-      <input
-        onChange={(e) => setNewPassword(e.target.value)}
-        value={newPassword}
-        className="w-[90%] sm:w-[70%] lg:w-[45%]  p-4  border border-gray-300 rounded-md  focus:outline-submit disabled:opacity-50 disabled:cursor-not-allowed"
-        type="password"
-        placeholder="Please enter your new Password"
-      />
-      <button
-        onClick={handleSubmit}
-        disabled={newPassword.trim().length < 1 || loading}
-        className="w-[90%] sm:w-[70%] lg:w-[45%]  p-4  border border-gray-300 rounded-md bg-submit text-white text-lg font-semibold hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-      >
-        {loading ? "Loading..." : "Create Password"}
-      </button>
-      <p className="text-dark mt-4">
-        Remembered your password?{" "}
-        <Link
-          className="text-submit cursor-pointer hover:underline"
-          href={"/sign-in"}
-        >
-          Login
-        </Link>
-      </p>
+        <div className="flex flex-1 items-center justify-center ">
+          <div className="w-full max-w-xs rounded-md shadow-inner border border-gray-200  py-10 px-5 ">
+            <ResetPasswordForm />
+          </div>
+        </div>
+      </div>
+      <div className="bg-muted relative hidden lg:block">
+        <Image
+          src={SignInBanner}
+          alt="Image"
+          className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+        />
+      </div>
     </div>
   );
 }

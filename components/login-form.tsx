@@ -115,7 +115,7 @@ export function LoginForm({
             type="submit"
             onClick={handleSubmit}
             disabled={loading || !formData.email || !formData.password}
-            className="disabled:opacity-50 disabled:cursor-not-allowed "
+            className="cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed "
           >
             {loading ? "Loading..." : "Sign In"}
           </Button>

@@ -12,7 +12,7 @@ export default function LoginPage() {
         </div>
 
         <div className="flex flex-1 items-center justify-center ">
-          <div className="w-full max-w-xs ">
+          <div className="w-full max-w-xs rounded-md shadow-inner border border-gray-200  py-10 px-5">
             <LoginForm />
           </div>
         </div>

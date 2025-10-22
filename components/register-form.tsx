@@ -156,12 +156,6 @@ export function RegisterForm({
         <Field>
           <div className="flex items-center">
             <FieldLabel htmlFor="password">Password</FieldLabel>
-            <Link
-              href="/forgot-password"
-              className="ml-auto text-sm underline-offset-4 hover:underline"
-            >
-              Forgot your password?
-            </Link>
           </div>
           <Input
             onChange={(e) =>
@@ -184,7 +178,7 @@ export function RegisterForm({
                 !formData.password ||
                 !formData.username
               }
-              className="disabled:opacity-50 disabled:cursor-not-allowed "
+              className="cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed "
             >
               {loading ? "Loading..." : "Sign Up"}
             </Button>
