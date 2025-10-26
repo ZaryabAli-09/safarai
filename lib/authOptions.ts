@@ -82,6 +82,8 @@ export const authOptions: NextAuthOptions = {
     async redirect({ url, baseUrl }) {
       return `${baseUrl}/app/trips`;
     },
+
+    // NextAuth stores that user info in a JWT token (JSON Web Token).
     async jwt({ token, user }) {
       if (user) {
         token._id = user._id; // Ensure id is a string
@@ -90,6 +92,8 @@ export const authOptions: NextAuthOptions = {
 
       return token;
     },
+
+    // That token’s info is used to build the session object your frontend can access via useSession() or getServerSession().
     async session({ session, token }) {
       if (session.user) {
         session.user._id = token._id;

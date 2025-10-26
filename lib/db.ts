@@ -9,6 +9,7 @@ if (!MONGODB_URI) {
   );
 }
 
+// global.mongoose is used for cached connection because global variables persist across hot reloads in development.
 let cached = global.mongoose;
 
 if (!cached) {
@@ -16,6 +17,7 @@ if (!cached) {
 }
 
 export async function dbConnect() {
+  // conn: The actual connected instance.
   if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
@@ -28,8 +30,9 @@ export async function dbConnect() {
     cached.conn = await cached.promise;
   } catch (error) {
     cached.promise = null; // Reset the promise on error
-    throw new Error((error as Error).message);
+    throw new Error(`MongoDB connection failed: ${(error as Error).message}`);
   }
 
+  console.log(cached.conn);
   return cached.conn;
 }

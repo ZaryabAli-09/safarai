@@ -82,6 +82,7 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
+// if model named USER is already exist then it will use that model otherwise it will create a new model
 const User = mongoose.models?.User || mongoose.model<IUser>("User", userSchema);
 
 export { User };
