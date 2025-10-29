@@ -1,5 +1,5 @@
 import Image from "next/image";
-import SignInBanner from "@/public/assets/signin-banner.png";
+import ResetPasswordBanner from "@/public/assets/reset-password-banner.jpg";
 
 import Logo from "@/public/assets/logo.png";
 import { ForgotPasswordForm } from "@/components/forgot-password-form";
@@ -19,7 +19,7 @@ export default function ForgotPassword() {
       </div>
       <div className="bg-muted relative hidden lg:block">
         <Image
-          src={SignInBanner}
+          src={ResetPasswordBanner}
           alt="Image"
           className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
         />
