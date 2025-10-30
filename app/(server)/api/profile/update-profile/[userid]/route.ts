@@ -10,6 +10,7 @@ export async function PATCH(
   try {
     const { userid } = await params.params;
     const body = await req.json();
+    console.log(body);
     if (!userid) {
       return response(false, 400, "User id not found");
     }

@@ -2,17 +2,18 @@ import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 
 export interface IUser {
+  _id?: mongoose.Types.ObjectId;
   username: string;
   email: string;
   password: string;
-  _id?: mongoose.Types.ObjectId;
-  isVerified?: boolean;
+  gender?: string;
+  dob?: string;
   role?: "user" | "admin"; // Optional role field with default value
+  isVerified?: boolean;
   verificationCode?: string;
   verificationCodeExpiry?: Date;
   resetPasswordToken?: string;
   resetPasswordExpiry?: Date;
-  gender?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -67,6 +68,10 @@ const userSchema = new mongoose.Schema<IUser>(
     gender: {
       type: String,
       enum: ["male", "female"],
+      default: null,
+    },
+    dob: {
+      type: String,
       default: null,
     },
   },

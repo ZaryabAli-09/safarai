@@ -14,8 +14,11 @@ export async function GET(
     }
 
     await dbConnect();
-    const user = await User.findById(userid).select("username email gender");
+    const user = await User.findById(userid).select(
+      "username email gender dob"
+    );
 
+    console.log(user);
     if (!user) {
       return response(false, 400, "User not found unauthorized request");
     }

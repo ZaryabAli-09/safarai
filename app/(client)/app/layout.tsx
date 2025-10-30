@@ -2,6 +2,10 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/authOptions";
 import { AppNav } from "@/app/custom components/AppNav";
+import { Navbar } from "@/app/custom components/Navbar";
+import Link from "next/link";
+import Image from "next/image";
+import Logo from "@/public/assets/logo.png";
 
 export default async function AppLayout({
   children,
@@ -15,9 +19,10 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="">
+    <div className="relative">
       <AppNav />
-      <div className=" p-10 bg-gray-50">{children}</div>
+
+      <div>{children}</div>
     </div>
   );
 }

@@ -34,11 +34,8 @@ const formSchema = z.object({
   username: z.string().trim().min(3, "Name must be atleast 3 characters"),
   email: z.string().email("Invalid email address"),
   gender: z.string(),
+  dob: z.string(),
 });
-const passwordSchema = z
-  .string()
-  .trim()
-  .min(6, "Password must be atleast 6 characters");
 
 export default function Profile() {
   const { data: session } = useSession();
@@ -48,7 +45,6 @@ export default function Profile() {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
-    password: "******",
     gender: "",
     dob: "",
   });
@@ -74,6 +70,7 @@ export default function Profile() {
         username: result?.data?.username,
         email: result?.data?.email,
         gender: result?.data?.gender,
+        dob: result?.data?.dob,
       }));
     } catch (error) {
       toast.error((error as Error).message);
@@ -97,6 +94,12 @@ export default function Profile() {
 
   async function onSaveChangesButton() {
     try {
+      if (formData.dob === undefined) {
+        setFormData((prev) => ({
+          ...prev,
+          dob: "",
+        }));
+      }
       setLoading(true);
       const validation = formSchema.safeParse(formData);
 
@@ -153,7 +156,7 @@ export default function Profile() {
           </div>
         </div>
 
-        <div className="space-y-4 mt-6">
+        <div className="space-y-4 ">
           <Field>
             <FieldLabel>Name</FieldLabel>
             <Input
@@ -185,7 +188,6 @@ export default function Profile() {
               type="text"
               name="password"
               disabled
-              value={formData.password}
               placeholder="******"
               required
             />
