@@ -84,7 +84,7 @@ export function AppNav() {
         {/* Right: Create + Logout */}
         <div className="flex items-center gap-4 ">
           <Link
-            href="/app/trips/create"
+            href="/app/new-trip"
             className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-full hover:bg-gradient-to-r hover:from-blue-500 hover:via-purple-500 hover:to-orange-500 hover:text-black transition-all duration-300 text-md"
           >
             <GoPlus className="text-xl" />
@@ -130,7 +130,7 @@ export function AppNav() {
           )}
         >
           <Link
-            href="/app/trips/create"
+            href="/app/new-trip"
             className={cn(
               "flex flex-col items-center justify-center gap-2 text-sm font-medium text-white"
             )}

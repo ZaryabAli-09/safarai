@@ -72,7 +72,7 @@ const userSchema = new mongoose.Schema<IUser>(
     },
     dob: {
       type: String,
-      default: null,
+      default: "",
     },
   },
   {

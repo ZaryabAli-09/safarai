@@ -14,7 +14,6 @@ export async function PATCH(
     if (!userid) {
       return response(false, 400, "User id not found");
     }
-
     await dbConnect();
     const updatedUser = await User.findByIdAndUpdate(
       userid,

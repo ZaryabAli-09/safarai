@@ -33,8 +33,8 @@ import { ChevronDownIcon } from "lucide-react";
 const formSchema = z.object({
   username: z.string().trim().min(3, "Name must be atleast 3 characters"),
   email: z.string().email("Invalid email address"),
-  gender: z.string(),
-  dob: z.string(),
+  gender: z.string().optional().nullable(),
+  dob: z.string().optional().nullable(),
 });
 
 export default function Profile() {
@@ -94,12 +94,6 @@ export default function Profile() {
 
   async function onSaveChangesButton() {
     try {
-      if (formData.dob === undefined) {
-        setFormData((prev) => ({
-          ...prev,
-          dob: "",
-        }));
-      }
       setLoading(true);
       const validation = formSchema.safeParse(formData);
 
