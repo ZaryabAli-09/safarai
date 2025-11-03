@@ -40,9 +40,14 @@ export default function NewTrip() {
 
   const toggleArrayValue = (field: string, value: string) => {
     setFormData((prev) => {
+      // get previous array of field like in interest array values
       const arr = prev[field] as string[];
+
+      //   if value already include and person click that value will be popout/remove just like select unselect
       if (arr.includes(value)) {
         return { ...prev, [field]: arr.filter((v) => v !== value) };
+
+        // if value is not present we spread whole previous fields as same and the update the specific field array we spread the old array and add new value
       } else {
         return { ...prev, [field]: [...arr, value] };
       }
@@ -127,6 +132,16 @@ export default function NewTrip() {
             </Button>
           ))}
         </div>
+      ),
+    },
+    {
+      title: "Whats your budget",
+      content: (
+        <Input
+          value={formData.budget}
+          onChange={(e) => handleChange("budget", e.target.value)}
+          placeholder="e.g. 1000 Rs"
+        />
       ),
     },
     {
