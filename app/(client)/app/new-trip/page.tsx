@@ -25,8 +25,12 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 export default function NewTrip() {
+  const { data: session } = useSession();
+  const userid = session?.user?._id;
+
   const [page, setPage] = useState(0);
 
   const [formData, setFormData] = useState({
@@ -43,7 +47,6 @@ export default function NewTrip() {
     specialOccasion: "",
     interests: [] as string[],
     diningPreferences: [] as string[],
-    dietaryRestrictions: [] as string[],
   });
 
   // Color theme constants
@@ -69,14 +72,14 @@ export default function NewTrip() {
   };
 
   // Persist progress in localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem("tripFormData");
-    if (saved) setFormData(JSON.parse(saved));
-  }, []);
+  // useEffect(() => {
+  //   const saved = localStorage.getItem("tripFormData");
+  //   if (saved) setFormData(JSON.parse(saved));
+  // }, []);
 
-  useEffect(() => {
-    localStorage.setItem("tripFormData", JSON.stringify(formData));
-  }, [formData]);
+  // useEffect(() => {
+  //   localStorage.setItem("tripFormData", JSON.stringify(formData));
+  // }, [formData]);
 
   const handleChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -130,14 +133,27 @@ export default function NewTrip() {
   };
 
   const handleSubmit = async () => {
-    console.log("Final Trip Data:", formData);
-    toast.success("Generating AI Trip Plan...");
+    try {
+      const res = await fetch(`/api/trip/generate/${userid}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await res.json();
+
+      console.log(result.message);
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
   };
 
   // Option lists
   const destinationsList = [
     "Hunza",
-    "Swat",
+    "Swat Valley",
     "Kumrat",
     "Skardu",
     "Naran",
