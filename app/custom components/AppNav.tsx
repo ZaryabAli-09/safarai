@@ -44,9 +44,8 @@ export function AppNav() {
   return (
     <>
       {/* Profile breadcrumb (Visible on all screens) */}
-      <div className="md:hidden bg-gradient-to-r from-gray-50 to-gray-100 text-gray-800 px-4 py-2 rounded-xl shadow-sm border border-gray-200 flex items-center gap-2 text-sm font-medium tracking-wide mb-1 md:mb-4 pl-8">
-        <span className="text-black font-semibold">Profile</span>
-        <span className="text-black font-semibold">{">"}</span>
+      <div className="md:hidden z-50 bg-gray-50 text-grayed font-semibold px-4 py-2 rounded-xl shadow-sm border border-gray-200 flex items-center gap-2 text-sm  tracking-wide mb-1 md:mb-4 pl-8">
+        <span>{activePathname.toUpperCase()}</span>
       </div>
 
       {/* ===== Desktop Navigation (Visible from md and up) ===== */}
