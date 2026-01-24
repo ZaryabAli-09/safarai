@@ -30,6 +30,7 @@ import { IoMdAirplane } from "react-icons/io";
 import { HiOutlineCash } from "react-icons/hi";
 import { GiDuration } from "react-icons/gi";
 import { SkeletonCard } from "@/app/custom components/CardSkeleton/CardSkeleton";
+import { Input } from "@/components/ui/input";
 
 // ✅ Helper to format date as "4 Nov 2025"
 function formatDate(dateStr: string) {
@@ -46,6 +47,7 @@ export default function Trips() {
   const userid = session?.user?._id;
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   async function getTrips() {
     setLoading(true);
@@ -71,8 +73,24 @@ export default function Trips() {
     }
   }, [session?.user]);
 
+  const filteredTrips = trips.filter(
+    (trip: any) =>
+      trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      trip.destinations.some((d: string) =>
+        d.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+  );
+
   return (
     <div className="flex flex-col items-center justify-center w-full py-10">
+      <div className="w-full max-w-md mb-6">
+        <Input
+          type="text"
+          placeholder="Search trips by name or destination..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
       {/* ✅ Loading state skeletons */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
@@ -82,10 +100,10 @@ export default function Trips() {
               <SkeletonCard key={i} />
             ))}
         </div>
-      ) : trips && trips.length > 0 ? (
+      ) : filteredTrips && filteredTrips.length > 0 ? (
         // ✅ Responsive grid layout (1 card on small, 2 on md, 3 on large)
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center w-full max-w-6xl ">
-          {trips.map((trip: any) => (
+          {filteredTrips.map((trip: any) => (
             <Card key={trip?._id} className="w-full max-w-sm ">
               {/* --- Header Section --- */}
               <CardHeader className="relative ">
