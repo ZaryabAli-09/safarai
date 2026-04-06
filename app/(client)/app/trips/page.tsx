@@ -56,7 +56,9 @@ export default function Trips() {
   async function getTrips(page = 1) {
     setLoading(true);
     try {
-      const res = await fetch(`/api/trip/get-trips/${userid}?page=${page}&limit=6`);
+      const res = await fetch(
+        `/api/trip/get-trips/${userid}?page=${page}&limit=6`,
+      );
       const result = await res.json();
       if (!res.ok) {
         toast.error(result.message);
@@ -82,8 +84,8 @@ export default function Trips() {
     (trip: any) =>
       trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       trip.destinations.some((d: string) =>
-        d.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+        d.toLowerCase().includes(searchTerm.toLowerCase()),
+      ),
   );
 
   return (
@@ -94,7 +96,7 @@ export default function Trips() {
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-2">My Trips</h1>
             <p className="text-gray-600">
-              {paginationData?.total || 0} trips created • {" "}
+              {paginationData?.total || 0} trips created •{" "}
               {filteredTrips.length} trips displayed
             </p>
           </div>
@@ -129,7 +131,10 @@ export default function Trips() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredTrips.map((trip: any) => (
-                <Card key={trip?._id} className="w-full overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                <Card
+                  key={trip?._id}
+                  className="w-full overflow-hidden hover:shadow-lg transition-shadow duration-300"
+                >
                   {/* Image Section */}
                   <CardHeader className="p-0 relative h-48">
                     <Image
@@ -140,7 +145,7 @@ export default function Trips() {
                       alt={trip.name}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                    
+
                     {/* Menu Button */}
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
@@ -152,13 +157,16 @@ export default function Trips() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete Trip?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            This action cannot be undone. Your trip itinerary will be permanently deleted.
+                            This action cannot be undone. Your trip itinerary
+                            will be permanently deleted.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction
-                            onClick={() => toast.success("Trip deleted successfully!")}
+                            onClick={() =>
+                              toast.success("Trip deleted successfully!")
+                            }
                             className="bg-red-600 hover:bg-red-700"
                           >
                             Delete
@@ -170,9 +178,12 @@ export default function Trips() {
                     {/* Title and Date Overlay */}
                     <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                       <p className="text-sm opacity-90 mb-1">
-                        {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
+                        {formatDate(trip.startDate)} -{" "}
+                        {formatDate(trip.endDate)}
                       </p>
-                      <h3 className="text-xl font-bold line-clamp-2">{trip.name}</h3>
+                      <h3 className="text-xl font-bold line-clamp-2">
+                        {trip.name}
+                      </h3>
                     </div>
                   </CardHeader>
 
@@ -182,11 +193,15 @@ export default function Trips() {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="flex items-center gap-2 text-sm">
                         <GiDuration className="text-indigo-600 h-5 w-5" />
-                        <span className="font-medium">{trip?.duration} days</span>
+                        <span className="font-medium">
+                          {trip?.duration} days
+                        </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <HiOutlineCash className="text-green-600 h-5 w-5" />
-                        <span className="font-medium">₨{trip?.budget?.toLocaleString()}</span>
+                        <span className="font-medium">
+                          ₨{trip?.budget?.toLocaleString()}
+                        </span>
                       </div>
                     </div>
 
@@ -238,9 +253,12 @@ export default function Trips() {
                 >
                   ← Previous
                 </Button>
-                
+
                 <div className="flex items-center gap-2">
-                  {Array.from({ length: paginationData.totalPages }, (_, i) => i + 1).map((page) => (
+                  {Array.from(
+                    { length: paginationData.totalPages },
+                    (_, i) => i + 1,
+                  ).map((page) => (
                     <Button
                       key={page}
                       variant={currentPage === page ? "default" : "outline"}
@@ -254,7 +272,11 @@ export default function Trips() {
 
                 <Button
                   variant="outline"
-                  onClick={() => setCurrentPage(Math.min(paginationData.totalPages, currentPage + 1))}
+                  onClick={() =>
+                    setCurrentPage(
+                      Math.min(paginationData.totalPages, currentPage + 1),
+                    )
+                  }
                   disabled={currentPage === paginationData.totalPages}
                 >
                   Next →
@@ -268,9 +290,12 @@ export default function Trips() {
             <div className="mb-6 p-6 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full">
               <Plane className="h-16 w-16 text-indigo-600" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">No trips planned yet</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              No trips planned yet
+            </h2>
             <p className="text-gray-600 mb-6 max-w-md">
-              Start your adventure by planning your first trip. Our AI will help you create an amazing itinerary!
+              Start your adventure by planning your first trip. Our AI will help
+              you create an amazing itinerary!
             </p>
             <Link href="/app/new-trip">
               <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white flex items-center gap-2 h-12 px-8 text-base">

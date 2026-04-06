@@ -3,7 +3,13 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/authOptions";
 import { Users, MapPin, TrendingUp, Calendar } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default async function AdminDashboard() {
   const session = await getServerSession(authOptions);
@@ -54,8 +60,12 @@ export default async function AdminDashboard() {
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-          <p className="text-gray-600">Welcome back, {session.user.name || "Admin"}!</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            Admin Dashboard
+          </h1>
+          <p className="text-gray-600">
+            Welcome back, {session.user.name || "Admin"}!
+          </p>
         </div>
 
         {/* Stats Grid */}
@@ -63,7 +73,10 @@ export default async function AdminDashboard() {
           {stats.map((stat) => {
             const Icon = stat.icon;
             return (
-              <Card key={stat.title} className="hover:shadow-lg transition-shadow">
+              <Card
+                key={stat.title}
+                className="hover:shadow-lg transition-shadow"
+              >
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
@@ -78,7 +91,9 @@ export default async function AdminDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-gray-900">{stat.value}</div>
+                  <div className="text-3xl font-bold text-gray-900">
+                    {stat.value}
+                  </div>
                 </CardContent>
               </Card>
             );
@@ -101,7 +116,9 @@ export default async function AdminDashboard() {
                     className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                   >
                     <div>
-                      <p className="font-semibold text-gray-900">Hunza Valley Adventure</p>
+                      <p className="font-semibold text-gray-900">
+                        Hunza Valley Adventure
+                      </p>
                       <p className="text-sm text-gray-600">By User {i + 1}</p>
                     </div>
                     <div className="text-right">
@@ -130,8 +147,12 @@ export default async function AdminDashboard() {
                 ].map((item) => (
                   <div key={item.label}>
                     <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-700">{item.label}</span>
-                      <span className="text-sm font-bold text-indigo-600">{item.value}</span>
+                      <span className="text-sm font-medium text-gray-700">
+                        {item.label}
+                      </span>
+                      <span className="text-sm font-bold text-indigo-600">
+                        {item.value}
+                      </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
@@ -163,7 +184,9 @@ export default async function AdminDashboard() {
                         {String.fromCharCode(65 + i)}
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900">User Name {i + 1}</p>
+                        <p className="font-semibold text-gray-900">
+                          User Name {i + 1}
+                        </p>
                         <p className="text-xs text-gray-600">{i + 3} trips</p>
                       </div>
                     </div>

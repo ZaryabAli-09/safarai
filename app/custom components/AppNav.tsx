@@ -52,12 +52,17 @@ export function AppNav() {
       <nav className="hidden md:flex sticky top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
         <div className="w-full px-8 py-4 flex items-center justify-between">
           {/* Left: Logo */}
-          <Link href="/app/trips" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <Link
+            href="/app/trips"
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+          >
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
                 <span className="text-white font-bold text-lg">S</span>
               </div>
-              <span className="font-bold text-lg text-gray-900 hidden sm:inline">SafarAi</span>
+              <span className="font-bold text-lg text-gray-900 hidden sm:inline">
+                SafarAi
+              </span>
             </div>
           </Link>
 
@@ -73,7 +78,9 @@ export function AppNav() {
                   href={item.href}
                   className={cn(
                     "flex items-center gap-2 text-sm font-medium transition-all duration-200 relative group",
-                    isActive ? "text-indigo-600" : "text-gray-600 hover:text-gray-900"
+                    isActive
+                      ? "text-indigo-600"
+                      : "text-gray-600 hover:text-gray-900",
                   )}
                 >
                   <Icon className="h-5 w-5" />
@@ -119,11 +126,17 @@ export function AppNav() {
           <div className="flex items-center justify-between px-4 py-3">
             {/* Left Icons */}
             <div className="flex items-center gap-3">
-              <Link href="/app/trips" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <Link
+                href="/app/trips"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
                 <IoPaperPlaneOutline className="h-6 w-6 text-indigo-600" />
               </Link>
 
-              <Link href="/app/profile" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <Link
+                href="/app/profile"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
                 <FiUsers className="h-6 w-6 text-gray-600" />
               </Link>
 

@@ -39,12 +39,7 @@ const TRIP_TYPES = [
 ];
 
 const TRANSPORTATION_OPTIONS = ["car", "buses", "flights", "mix"];
-const ACCOMMODATION_OPTIONS = [
-  "luxury",
-  "mid-range",
-  "budget",
-  "backpacker",
-];
+const ACCOMMODATION_OPTIONS = ["luxury", "mid-range", "budget", "backpacker"];
 const TRIP_PACE = ["relaxed", "moderate", "fast"];
 const INTERESTS = [
   "hiking",
@@ -90,7 +85,9 @@ export default function NewTrip() {
     if (formData.startDate && formData.endDate) {
       const start = new Date(formData.startDate);
       const end = new Date(formData.endDate);
-      const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const days =
+        Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) +
+        1;
       setFormData((prev) => ({ ...prev, duration: Math.max(1, days) }));
     }
   }, [formData.startDate, formData.endDate]);
@@ -202,8 +199,12 @@ export default function NewTrip() {
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Plan Your Trip</h1>
-          <p className="text-gray-600">Create an amazing itinerary with AI assistance</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            Plan Your Trip
+          </h1>
+          <p className="text-gray-600">
+            Create an amazing itinerary with AI assistance
+          </p>
         </div>
 
         {/* Progress Indicator */}
@@ -215,14 +216,17 @@ export default function NewTrip() {
               const isCompleted = s.number < step;
 
               return (
-                <div key={s.number} className="flex flex-col items-center flex-1">
+                <div
+                  key={s.number}
+                  className="flex flex-col items-center flex-1"
+                >
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-all ${
                       isActive
                         ? "bg-indigo-600 text-white shadow-lg scale-125"
                         : isCompleted
-                        ? "bg-green-500 text-white"
-                        : "bg-gray-200 text-gray-600"
+                          ? "bg-green-500 text-white"
+                          : "bg-gray-200 text-gray-600"
                     }`}
                   >
                     {isCompleted ? (
@@ -279,9 +283,7 @@ export default function NewTrip() {
                       placeholder="Enter destination"
                       value={destinationInput}
                       onChange={(e) => setDestinationInput(e.target.value)}
-                      onKeyPress={(e) =>
-                        e.key === "Enter" && addDestination()
-                      }
+                      onKeyPress={(e) => e.key === "Enter" && addDestination()}
                       className="h-12 text-base flex-1"
                     />
                     <Button
@@ -376,9 +378,7 @@ export default function NewTrip() {
                   />
                   <Slider
                     value={[formData.budget]}
-                    onValueChange={(val) =>
-                      handleInputChange("budget", val[0])
-                    }
+                    onValueChange={(val) => handleInputChange("budget", val[0])}
                     min={1000}
                     max={500000}
                     step={5000}
@@ -404,13 +404,20 @@ export default function NewTrip() {
                   <Label className="text-lg font-semibold mb-3 block">
                     Trip Type
                   </Label>
-                  <Select value={formData.tripType} onValueChange={(val) => handleInputChange("tripType", val)}>
+                  <Select
+                    value={formData.tripType}
+                    onValueChange={(val) => handleInputChange("tripType", val)}
+                  >
                     <SelectTrigger className="h-12 text-base">
                       <SelectValue placeholder="Select trip type" />
                     </SelectTrigger>
                     <SelectContent>
                       {TRIP_TYPES.map((type) => (
-                        <SelectItem key={type} value={type} className="capitalize">
+                        <SelectItem
+                          key={type}
+                          value={type}
+                          className="capitalize"
+                        >
                           {type.charAt(0).toUpperCase() + type.slice(1)}
                         </SelectItem>
                       ))}
@@ -422,13 +429,22 @@ export default function NewTrip() {
                   <Label className="text-lg font-semibold mb-3 block">
                     Transportation
                   </Label>
-                  <Select value={formData.transportation} onValueChange={(val) => handleInputChange("transportation", val)}>
+                  <Select
+                    value={formData.transportation}
+                    onValueChange={(val) =>
+                      handleInputChange("transportation", val)
+                    }
+                  >
                     <SelectTrigger className="h-12 text-base">
                       <SelectValue placeholder="Select transportation" />
                     </SelectTrigger>
                     <SelectContent>
                       {TRANSPORTATION_OPTIONS.map((opt) => (
-                        <SelectItem key={opt} value={opt} className="capitalize">
+                        <SelectItem
+                          key={opt}
+                          value={opt}
+                          className="capitalize"
+                        >
                           {opt.toUpperCase()}
                         </SelectItem>
                       ))}
@@ -440,13 +456,22 @@ export default function NewTrip() {
                   <Label className="text-lg font-semibold mb-3 block">
                     Accommodation
                   </Label>
-                  <Select value={formData.accommodation} onValueChange={(val) => handleInputChange("accommodation", val)}>
+                  <Select
+                    value={formData.accommodation}
+                    onValueChange={(val) =>
+                      handleInputChange("accommodation", val)
+                    }
+                  >
                     <SelectTrigger className="h-12 text-base">
                       <SelectValue placeholder="Select accommodation" />
                     </SelectTrigger>
                     <SelectContent>
                       {ACCOMMODATION_OPTIONS.map((opt) => (
-                        <SelectItem key={opt} value={opt} className="capitalize">
+                        <SelectItem
+                          key={opt}
+                          value={opt}
+                          className="capitalize"
+                        >
                           {opt.charAt(0).toUpperCase() + opt.slice(1)}
                         </SelectItem>
                       ))}
@@ -458,13 +483,20 @@ export default function NewTrip() {
                   <Label className="text-lg font-semibold mb-3 block">
                     Trip Pace
                   </Label>
-                  <Select value={formData.tripPace} onValueChange={(val) => handleInputChange("tripPace", val)}>
+                  <Select
+                    value={formData.tripPace}
+                    onValueChange={(val) => handleInputChange("tripPace", val)}
+                  >
                     <SelectTrigger className="h-12 text-base">
                       <SelectValue placeholder="Select pace" />
                     </SelectTrigger>
                     <SelectContent>
                       {TRIP_PACE.map((opt) => (
-                        <SelectItem key={opt} value={opt} className="capitalize">
+                        <SelectItem
+                          key={opt}
+                          value={opt}
+                          className="capitalize"
+                        >
                           {opt.charAt(0).toUpperCase() + opt.slice(1)}
                         </SelectItem>
                       ))}
@@ -507,7 +539,9 @@ export default function NewTrip() {
               >
                 <div className="bg-indigo-50 rounded-lg p-6 space-y-4">
                   <div className="flex justify-between items-start">
-                    <span className="font-medium text-gray-700">Trip Name:</span>
+                    <span className="font-medium text-gray-700">
+                      Trip Name:
+                    </span>
                     <span className="font-bold text-lg text-indigo-600">
                       {formData.name}
                     </span>
@@ -557,8 +591,8 @@ export default function NewTrip() {
                 </div>
 
                 <p className="text-gray-600 text-center">
-                  Ready to generate your personalized itinerary? Click "Generate Trip"
-                  and our AI will create an amazing plan for you!
+                  Ready to generate your personalized itinerary? Click "Generate
+                  Trip" and our AI will create an amazing plan for you!
                 </p>
               </motion.div>
             )}
