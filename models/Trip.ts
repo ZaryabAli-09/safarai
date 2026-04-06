@@ -71,7 +71,7 @@ const TripSchema = new mongoose.Schema<ITrip>(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Add performance indexes

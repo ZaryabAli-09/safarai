@@ -7,11 +7,14 @@
  * Sanitize string input by removing potentially harmful characters
  * and limiting length
  */
-export function sanitizeString(input: string, maxLength: number = 5000): string {
+export function sanitizeString(
+  input: string,
+  maxLength: number = 5000,
+): string {
   if (!input || typeof input !== "string") {
     return "";
   }
-  
+
   return input
     .trim()
     .slice(0, maxLength)
@@ -24,7 +27,7 @@ export function sanitizeString(input: string, maxLength: number = 5000): string 
 export function sanitizeStringArray(
   input: any[],
   maxLength: number = 500,
-  maxItems: number = 50
+  maxItems: number = 50,
 ): string[] {
   if (!Array.isArray(input)) {
     return [];
@@ -89,7 +92,7 @@ export function validateEmail(email: any): string | null {
 
   const sanitized = sanitizeString(email, 255);
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  
+
   if (!emailRegex.test(sanitized)) {
     return null;
   }
@@ -114,7 +117,11 @@ export function sanitizeAiPrompt(tripDetails: any): any {
     tripPace: sanitizeString(tripDetails.tripPace, 100),
     specialOccasion: sanitizeString(tripDetails.specialOccasion, 200),
     interests: sanitizeStringArray(tripDetails.interests, 50, 20),
-    diningPreferences: sanitizeStringArray(tripDetails.diningPreferences, 50, 20),
+    diningPreferences: sanitizeStringArray(
+      tripDetails.diningPreferences,
+      50,
+      20,
+    ),
   };
 }
 

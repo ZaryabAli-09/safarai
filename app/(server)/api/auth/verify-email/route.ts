@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       return response(
         false,
         400,
-        "No verification code found, please register again"
+        "No verification code found, please register again",
       );
     }
     if (
@@ -37,22 +37,22 @@ export async function POST(req: NextRequest) {
       return response(
         false,
         400,
-        "Otp is expired please request a new one by filling the registration form again"
+        "Otp is expired please request a new one by filling the registration form again",
       );
     }
 
     // Use timing-safe comparison to prevent timing attacks
-    const crypto = require('crypto');
+    const crypto = require("crypto");
     let isValid = false;
     try {
       isValid = crypto.timingSafeEqual(
         Buffer.from(String(user.verificationCode)),
-        Buffer.from(String(otp))
+        Buffer.from(String(otp)),
       );
     } catch {
       isValid = false;
     }
-    
+
     if (!isValid) {
       return response(false, 400, "Incorrect Otp");
     }

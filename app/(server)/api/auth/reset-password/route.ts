@@ -51,7 +51,6 @@ export async function POST(req: NextRequest) {
 
     return response(true, 200, "Password reset successfully");
   } catch (error) {
-
     return response(false, 500, "Internal server error");
   }
 }

@@ -31,7 +31,8 @@ export const AUTH = {
   OTP_LENGTH: 6,
   PASSWORD_RESET_EXPIRY_MINUTES: 15,
   PASSWORD_MIN_LENGTH: 8,
-  PASSWORD_REGEX: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+  PASSWORD_REGEX:
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
   SESSION_EXPIRY_DAYS: 30,
 } as const;
 
@@ -154,13 +155,23 @@ export const API_ENDPOINTS = {
 } as const;
 
 // Gender Options
-export const GENDER_OPTIONS = ["male", "female", "other", "prefer_not_to_say"] as const;
+export const GENDER_OPTIONS = [
+  "male",
+  "female",
+  "other",
+  "prefer_not_to_say",
+] as const;
 
 // Trip Pace Options
 export const TRIP_PACE_OPTIONS = ["relaxed", "moderate", "fast"] as const;
 
 // Transportation Options
-export const TRANSPORTATION_OPTIONS = ["car", "buses", "flights", "mix"] as const;
+export const TRANSPORTATION_OPTIONS = [
+  "car",
+  "buses",
+  "flights",
+  "mix",
+] as const;
 
 // Accommodation Options
 export const ACCOMMODATION_OPTIONS = [

@@ -39,7 +39,7 @@ export const ERROR_CODES = {
 export function apiSuccess<T = any>(
   message: string,
   data?: T,
-  status: number = HTTP_STATUS.OK
+  status: number = HTTP_STATUS.OK,
 ): NextResponse<ApiResponse<T>> {
   return NextResponse.json(
     {
@@ -47,7 +47,7 @@ export function apiSuccess<T = any>(
       message,
       data,
     },
-    { status }
+    { status },
   );
 }
 
@@ -58,7 +58,7 @@ export function apiError(
   message: string,
   status: number = HTTP_STATUS.BAD_REQUEST,
   code: string = ERROR_CODES.INVALID_INPUT,
-  error?: string
+  error?: string,
 ): NextResponse<ApiResponse> {
   return NextResponse.json(
     {
@@ -67,7 +67,7 @@ export function apiError(
       code,
       error: error || message,
     },
-    { status }
+    { status },
   );
 }
 
@@ -78,7 +78,7 @@ export function response(
   success: boolean,
   status: number,
   message: string,
-  data?: any
+  data?: any,
 ) {
   return NextResponse.json(
     {
@@ -86,6 +86,6 @@ export function response(
       message,
       data,
     },
-    { status }
+    { status },
   );
 }

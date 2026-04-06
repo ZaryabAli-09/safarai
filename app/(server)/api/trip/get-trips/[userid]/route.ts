@@ -6,26 +6,29 @@ import { NextRequest } from "next/server";
 
 export async function GET(
   req: NextRequest,
-  params: { params: { userid: string } }
+  params: { params: { userid: string } },
 ) {
   try {
     const { userid } = await params.params;
     const { searchParams } = new URL(req.url);
-    
+
     if (!userid) {
       return apiError("User id not found", 400);
     }
 
     // Get pagination parameters with defaults and limits
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
-    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "10")));
+    const limit = Math.min(
+      50,
+      Math.max(1, parseInt(searchParams.get("limit") || "10")),
+    );
     const skip = (page - 1) * limit;
 
     await dbConnect();
 
     // Get total count for pagination
     const total = await Trip.countDocuments({ userId: userid });
-    
+
     // Fetch paginated trips
     const trips = await Trip.find({ userId: userid })
       .sort({ createdAt: -1 })
