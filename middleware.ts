@@ -11,10 +11,6 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  console.log("Path:", pathname);
-  console.log("Token exists:", !!token);
-  console.log("User role:", token?.role);
-
   // No token → redirect to login
   if (
     !token &&

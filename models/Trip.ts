@@ -39,9 +39,10 @@ const TripSchema = new mongoose.Schema<ITrip>(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      index: true,
     },
     name: { type: String, required: true, trim: true },
-    destinations: [],
+    destinations: { type: [String], default: [] },
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
     duration: { type: Number, required: true },
@@ -72,6 +73,10 @@ const TripSchema = new mongoose.Schema<ITrip>(
     timestamps: true,
   }
 );
+
+// Add performance indexes
+TripSchema.index({ userId: 1, createdAt: -1 });
+TripSchema.index({ createdAt: -1 });
 
 const Trip = mongoose.models?.Trip || mongoose.model<ITrip>("Trip", TripSchema);
 

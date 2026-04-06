@@ -8,12 +8,14 @@ import z from "zod";
 const newPasswordSchema = z
   .string()
   .trim()
-  .min(6, "Password must be at least 6 characters");
-export async function GET(req: NextRequest) {
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[A-Z]/, "Password must contain an uppercase letter")
+  .regex(/[0-9]/, "Password must contain a number")
+  .regex(/[@$!%*?&]/, "Password must contain a special character");
+
+export async function POST(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const resetToken = searchParams.get("resetToken");
-    const newPassword = searchParams.get("newPassword");
+    const { resetToken, newPassword } = await req.json();
 
     // use joi etc for validation in future
 
@@ -49,7 +51,7 @@ export async function GET(req: NextRequest) {
 
     return response(true, 200, "Password reset successfully");
   } catch (error) {
-    console.error("Error in reset password route:", error);
+
     return response(false, 500, "Internal server error");
   }
 }

@@ -41,7 +41,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (String(user.verificationCode) !== String(otp)) {
+    // Use timing-safe comparison to prevent timing attacks
+    const crypto = require('crypto');
+    let isValid = false;
+    try {
+      isValid = crypto.timingSafeEqual(
+        Buffer.from(String(user.verificationCode)),
+        Buffer.from(String(otp))
+      );
+    } catch {
+      isValid = false;
+    }
+    
+    if (!isValid) {
       return response(false, 400, "Incorrect Otp");
     }
 

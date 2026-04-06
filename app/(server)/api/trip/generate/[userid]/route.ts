@@ -1,8 +1,10 @@
 import { response } from "@/lib/helperFunctions";
-import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Trip } from "@/models/Trip";
-import { dbConnect } from "@/lib/db";
+import { apiError } from \"@/lib/apiResponse\";
+import { NextRequest, NextResponse } from \"next/server\";
+import { GoogleGenerativeAI } from \"@google/generative-ai\";
+import { Trip } from \"@/models/Trip\";
+import { dbConnect } from \"@/lib/db\";
+import { sanitizeAiPrompt } from \"@/lib/sanitization\";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVEAI_API_KEY!);
 const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -15,20 +17,30 @@ export async function POST(
     const { userid } = await params.params;
     const tripDetails = await req.json();
 
-    // basic validation should be replaced with zod etc
+    // Validate and sanitize input to prevent injection attacks
     if (!userid) {
-      return response(false, 400, "User id not found");
+      return apiError(\"User id not found\", 400);
     }
-    if (tripDetails?.destinations?.length === 0) {
-      return response(false, 400, "Please enter at least one destination");
+    
+    const sanitized = sanitizeAiPrompt(tripDetails);
+    
+    if (!sanitized.destinations || sanitized.destinations.length === 0) {
+      return apiError(\"Please enter at least one destination\", 400);
     }
-    if (!tripDetails?.duration || tripDetails?.duration > 7) {
-      return response(false, 400, "Please enter correct duration");
+    if (!sanitized.duration || sanitized.duration < 1 || sanitized.duration > 30) {
+      return apiError(\"Duration must be between 1 and 30 days\", 400);
+    }
+    if (!sanitized.budget || sanitized.budget <= 0) {
+      return apiError(\"Budget must be a positive number\", 400);
     }
 
     const prompt = `
     Following are Trip Details: 
-    ${JSON.stringify(tripDetails)}
+    Destinations: ${JSON.stringify(sanitized.destinations)}
+    Duration: ${sanitized.duration} days
+    Budget: PKR ${sanitized.budget}
+    Trip Type: ${sanitized.tripType}
+    Interests: ${JSON.stringify(sanitized.interests)}
 
     For Every day suggest 3 activities:
     - Morning Activity
@@ -76,7 +88,7 @@ export async function POST(
         "Failed to generate itinerary. Something went wrong"
       );
 
-    console.log(result.response.text());
+    // Log removed for production safety
 
     // storing whole raw response in variable
     const rawText = result.response.text();
@@ -160,19 +172,19 @@ export async function POST(
 
     const trip = new Trip({
       userId: userid,
-      name: tripDetails.name,
-      destinations: tripDetails.destinations,
-      startDate: tripDetails.startDate,
-      endDate: tripDetails.endDate,
-      duration: tripDetails.duration,
-      budget: tripDetails.budget,
-      tripType: tripDetails.tripType,
-      transportation: tripDetails.transportation,
-      accommodation: tripDetails.accommodation,
-      tripPace: tripDetails.tripPace,
-      specialOccasion: tripDetails.specialOccasion,
-      interests: tripDetails.interests,
-      diningPreferences: tripDetails.diningPreferences,
+      name: sanitized.name,
+      destinations: sanitized.destinations,
+      startDate: sanitized.startDate,
+      endDate: sanitized.endDate,
+      duration: sanitized.duration,
+      budget: sanitized.budget,
+      tripType: sanitized.tripType,
+      transportation: sanitized.transportation,
+      accommodation: sanitized.accommodation,
+      tripPace: sanitized.tripPace,
+      specialOccasion: sanitized.specialOccasion,
+      interests: sanitized.interests,
+      diningPreferences: sanitized.diningPreferences,
       aiSuggestions,
       aiSuggestedNotes: notes,
     });
@@ -181,9 +193,8 @@ export async function POST(
 
     await trip.save();
 
-    response(true, 201, "Itinirary generated successfully", trip);
+    return response(true, 201, "Itinerary generated successfully", trip);
   } catch (error) {
-    console.error((error as Error).message);
-    return response(false, 500, "Something went wrong");
+    return apiError(\"Failed to generate itinerary\", 500);
   }
 }
