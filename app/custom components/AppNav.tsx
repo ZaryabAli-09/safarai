@@ -2,23 +2,27 @@
 
 import { signOut } from "next-auth/react";
 import Link from "next/link";
-import { RiLogoutCircleLine } from "react-icons/ri";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { IoPaperPlaneOutline } from "react-icons/io5";
 import toast from "react-hot-toast";
-import { GoPlus } from "react-icons/go";
 import { useState } from "react";
-import { FiUsers } from "react-icons/fi";
-import Logo from "@/public/assets/logo.png";
-import Favicon from "@/public/assets/favicon.png";
-
 import Image from "next/image";
+import {
+  IoPaperPlaneOutline,
+  IoSettingsOutline,
+  IoLogOutOutline,
+  IoAddCircleOutline,
+} from "react-icons/io5";
+import { FiUsers, FiMenu, FiX } from "react-icons/fi";
+import { motion, AnimatePresence } from "framer-motion";
+import Logo from "@/public/assets/logo.png";
 
 export function AppNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const activePathname = pathname.split("/")[2];
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
     { label: "My Trips", href: "/app/trips", icon: IoPaperPlaneOutline },
@@ -32,8 +36,9 @@ export function AppNav() {
     const toastId = toast.loading("Signing out...");
 
     try {
-      await signOut();
+      await signOut({ redirect: false });
       toast.success("Signed out successfully!", { id: toastId });
+      router.push("/");
     } catch (error) {
       toast.error("Failed to sign out", { id: toastId });
     } finally {
@@ -43,101 +48,114 @@ export function AppNav() {
 
   return (
     <>
-      {/* Profile breadcrumb (Visible on all screens) */}
-      <div className="md:hidden z-50 bg-gray-50 text-grayed font-semibold px-4 py-2 rounded-xl shadow-sm border border-gray-200 flex items-center gap-2 text-sm  tracking-wide mb-1 md:mb-4 pl-8">
-        <span>{activePathname.toUpperCase()}</span>
+      {/* ===== Desktop Navigation ===== */}
+      <nav className="hidden md:flex sticky top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
+        <div className="w-full px-8 py-4 flex items-center justify-between">
+          {/* Left: Logo */}
+          <Link href="/app/trips" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
+                <span className="text-white font-bold text-lg">S</span>
+              </div>
+              <span className="font-bold text-lg text-gray-900 hidden sm:inline">SafarAi</span>
+            </div>
+          </Link>
+
+          {/* Middle: Navigation Links */}
+          <div className="flex items-center gap-8">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activePathname === item.href.split("/")[2];
+
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-2 text-sm font-medium transition-all duration-200 relative group",
+                    isActive ? "text-indigo-600" : "text-gray-600 hover:text-gray-900"
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span>{item.label}</span>
+
+                  {/* Animated underline */}
+                  {isActive && (
+                    <motion.div
+                      layoutId="navbar-underline"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-600 to-purple-600"
+                    />
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Right: Actions */}
+          <div className="flex items-center gap-4">
+            <Link
+              href="/app/new-trip"
+              className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-2.5 rounded-full font-medium transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105"
+            >
+              <IoAddCircleOutline className="h-5 w-5" />
+              <span>New Trip</span>
+            </Link>
+
+            <button
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors duration-200 font-medium text-sm disabled:opacity-50"
+            >
+              <IoLogOutOutline className="h-5 w-5" />
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* ===== Mobile Navigation ===== */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
+        <nav className="bg-white border-t border-gray-200 shadow-2xl">
+          <div className="flex items-center justify-between px-4 py-3">
+            {/* Left Icons */}
+            <div className="flex items-center gap-3">
+              <Link href="/app/trips" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <IoPaperPlaneOutline className="h-6 w-6 text-indigo-600" />
+              </Link>
+
+              <Link href="/app/profile" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <FiUsers className="h-6 w-6 text-gray-600" />
+              </Link>
+
+              <button
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+              >
+                <IoLogOutOutline className="h-6 w-6 text-red-600" />
+              </button>
+            </div>
+
+            {/* Logo/Brand */}
+            <Link href="/app/trips" className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
+                <span className="text-white font-bold">S</span>
+              </div>
+            </Link>
+
+            {/* Right: New Trip Button */}
+            <Link
+              href="/app/new-trip"
+              className="flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-2.5 rounded-full font-bold shadow-lg hover:shadow-xl transition-all hover:scale-110"
+            >
+              <IoAddCircleOutline className="h-6 w-6" />
+            </Link>
+          </div>
+        </nav>
       </div>
 
-      {/* ===== Desktop Navigation (Visible from md and up) ===== */}
-      <nav className="hidden md:flex sticky top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm px-28 py-3 items-center justify-between mb-2">
-        {/* Left: Logo */}
-        <div className="flex items-center gap-3">
-          <Image src={Logo} alt="Logo" className="w-30" />
-        </div>
-
-        {/* Middle: Navigation Links */}
-        <div className="flex items-center gap-6 text-gray-600">
-          {navItems.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-2 text-sm font-medium hover:text-black transition-colors duration-200",
-                activePathname === item.href.split("/")[2] &&
-                  "text-black font-semibold"
-              )}
-            >
-              <item.icon className="text-lg" />
-              <span>{item.label}</span>
-            </Link>
-          ))}
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 text-sm text-gray-600 hover:text-red-500 transition-colors duration-300 cursor-pointer"
-          >
-            <RiLogoutCircleLine className="text-lg" />
-            <span>Logout</span>
-          </button>
-        </div>
-
-        {/* Right: Create + Logout */}
-        <div className="flex items-center gap-4 ">
-          <Link
-            href="/app/new-trip"
-            className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-full hover:bg-gradient-to-r hover:from-blue-500 hover:via-purple-500 hover:to-orange-500 hover:text-black transition-all duration-300 text-md"
-          >
-            <GoPlus className="text-xl" />
-            <span>Plan New Trip</span>
-          </Link>
-        </div>
-      </nav>
-
-      {/* ===== Mobile Navigation (Visible below md only) ===== */}
-      <nav className="fixed bottom-0 w-full z-50 p-2 px-5 flex justify-between items-center md:hidden">
-        <div className="bg-black flex items-center justify-between w-[60%] rounded-full text-gray-400 p-2">
-          <div
-            onClick={handleLogout}
-            className={cn(
-              "rounded-full p-2 hover:bg-red-500 hover:text-black hover:cursor-pointer transition-colors duration-400 ease-in-out"
-            )}
-          >
-            <RiLogoutCircleLine className="text-2xl" />
-          </div>
-
-          {navItems.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={cn(
-                "flex flex-col items-center justify-center text-sm font-medium p-2 rounded-full hover:bg-white hover:text-black hover:cursor-pointer transition-colors duration-400 ease-in-out",
-                activePathname === item.href.split("/")[2] &&
-                  "bg-white text-black p-2"
-              )}
-            >
-              <item.icon className="text-2xl" />
-            </Link>
-          ))}
-
-          <div className={cn("bg-gray-100 rounded-full")}>
-            <Image src={Favicon} className="w-10 overflow-hidden" alt="Logo" />
-          </div>
-        </div>
-
-        <div
-          className={cn(
-            "bg-black flex items-center justify-between w-auto p-4 rounded-full transition-all duration-500 ease-in-out hover:bg-gradient-to-r hover:from-blue-500 hover:via-purple-500 hover:to-orange-500 hover:shadow-lg hover:shadow-purple-400/40 hover:text-black hover:cursor-pointer"
-          )}
-        >
-          <Link
-            href="/app/new-trip"
-            className={cn(
-              "flex flex-col items-center justify-center gap-2 text-sm font-medium text-white"
-            )}
-          >
-            <GoPlus className="text-2xl" />
-          </Link>
-        </div>
-      </nav>
+      {/* Spacer for mobile */}
+      <div className="md:hidden h-20" />
     </>
   );
 }
