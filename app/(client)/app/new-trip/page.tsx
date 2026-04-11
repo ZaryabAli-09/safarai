@@ -24,6 +24,12 @@ import {
   Zap,
   Check,
   Calendar,
+  Plane,
+  Home,
+  Gauge,
+  Sparkles,
+  X,
+  Plus,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -195,122 +201,183 @@ export default function NewTrip() {
   ];
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50 py-8 px-4">
-      <div className="max-w-3xl mx-auto">
+    <div className="w-full min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-8 px-4">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute top-40 right-10 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-1/2 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
+
+      <div className="max-w-4xl mx-auto relative z-10">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Plan Your Trip
-          </h1>
-          <p className="text-gray-600">
-            Create an amazing itinerary with AI assistance
-          </p>
+        <div className="text-center mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Sparkles className="h-8 w-8 text-purple-400" />
+              <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-200 via-pink-200 to-purple-200 bg-clip-text text-transparent">
+                Plan Your Trip
+              </h1>
+              <Sparkles className="h-8 w-8 text-purple-400" />
+            </div>
+            <p className="text-purple-300 text-lg">
+              Create an amazing itinerary with AI assistance
+            </p>
+          </motion.div>
         </div>
 
-        {/* Progress Indicator */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-4">
+        {/* Progress Indicator - Enhanced */}
+        <motion.div
+          className="mb-12"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          <div className="flex items-center justify-between relative">
+            {/* Progress line background */}
+            <div className="absolute top-6 left-0 right-0 h-1 bg-purple-900/30 z-0" />
+            
+            {/* Animated progress line */}
+            <motion.div
+              className="absolute top-6 left-0 h-1 bg-gradient-to-r from-purple-500 to-pink-500 z-0"
+              initial={{ width: "0%" }}
+              animate={{ width: `${((step - 1) / (steps.length - 1)) * 100}%` }}
+              transition={{ duration: 0.5 }}
+            />
+
             {steps.map((s, idx) => {
               const Icon = s.icon;
               const isActive = s.number === step;
               const isCompleted = s.number < step;
 
               return (
-                <div
+                <motion.div
                   key={s.number}
-                  className="flex flex-col items-center flex-1"
+                  className="flex flex-col items-center flex-1 relative z-10"
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: idx * 0.1 }}
                 >
-                  <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-all ${
+                  <motion.div
+                    className={`w-14 h-14 rounded-full flex items-center justify-center mb-3 transition-all shadow-lg ${
                       isActive
-                        ? "bg-indigo-600 text-white shadow-lg scale-125"
+                        ? "bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-purple-500/50"
                         : isCompleted
-                          ? "bg-green-500 text-white"
-                          : "bg-gray-200 text-gray-600"
+                          ? "bg-gradient-to-br from-green-500 to-emerald-500 text-white"
+                          : "bg-purple-900/40 text-purple-300 border-2 border-purple-700/50"
                     }`}
+                    whileScale={{ scale: isActive ? [1, 1.1, 1] : 1 }}
                   >
                     {isCompleted ? (
-                      <Check className="h-6 w-6" />
+                      <Check className="h-7 w-7" />
                     ) : (
-                      <Icon className="h-6 w-6" />
+                      <Icon className="h-7 w-7" />
                     )}
-                  </div>
-                  <p className="text-sm font-medium text-gray-700">{s.title}</p>
-
-                  {idx < steps.length - 1 && (
-                    <div
-                      className={`absolute left-[calc(12.5%+24px)] top-6 w-[calc(25% - 48px)] h-1 ${
-                        isCompleted ? "bg-green-500" : "bg-gray-200"
-                      }`}
-                    />
-                  )}
-                </div>
+                  </motion.div>
+                  <p className={`text-sm font-semibold transition-colors ${
+                    isActive
+                      ? "text-purple-200"
+                      : isCompleted
+                        ? "text-emerald-300"
+                        : "text-purple-400"
+                  }`}>
+                    {s.title}
+                  </p>
+                </motion.div>
               );
             })}
           </div>
-        </div>
+        </motion.div>
 
-        {/* Form Card */}
-        <div className="bg-white rounded-2xl shadow-lg p-8">
+        {/* Form Card - Enhanced */}
+        <motion.div
+          className="bg-slate-800/80 backdrop-blur-xl rounded-3xl shadow-2xl p-10 border border-purple-500/20"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
           <AnimatePresence mode="wait">
             {/* Step 1: Basics */}
             {step === 1 && (
               <motion.div
                 key="step1"
-                initial={{ opacity: 0, x: 20 }}
+                initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6"
+                exit={{ opacity: 0, x: -30 }}
+                className="space-y-8"
               >
-                <div>
-                  <Label className="text-lg font-semibold mb-2 block">
-                    Trip Name
+                <div className="bg-gradient-to-br from-purple-900/40 to-pink-900/20 rounded-2xl p-6 border border-purple-500/20">
+                  <Label className="text-lg font-bold text-purple-200 mb-3 block">
+                    🏷️ Trip Name
                   </Label>
                   <Input
                     placeholder="e.g., Northern Pakistan Adventure"
                     value={formData.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
-                    className="h-12 text-base"
+                    className="h-14 text-base bg-slate-700/50 border-purple-500/30 text-white placeholder-purple-300/50 focus:border-purple-500 focus:ring-purple-500/20 rounded-xl"
                   />
+                  <p className="text-sm text-purple-300 mt-2">Give your trip a memorable name</p>
                 </div>
 
-                <div>
-                  <Label className="text-lg font-semibold mb-2 block">
+                <div className="bg-gradient-to-br from-purple-900/40 to-pink-900/20 rounded-2xl p-6 border border-purple-500/20">
+                  <Label className="text-lg font-bold text-purple-200 mb-4 block flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-purple-400" />
                     Destinations ({formData.destinations.length}/10)
                   </Label>
                   <div className="flex gap-2 mb-4">
                     <Input
-                      placeholder="Enter destination"
+                      placeholder="Enter destination (e.g., Hunza, Swat)"
                       value={destinationInput}
                       onChange={(e) => setDestinationInput(e.target.value)}
                       onKeyPress={(e) => e.key === "Enter" && addDestination()}
-                      className="h-12 text-base flex-1"
+                      className="h-12 text-base bg-slate-700/50 border-purple-500/30 text-white placeholder-purple-300/50 focus:border-purple-500 focus:ring-purple-500/20 rounded-xl flex-1"
                     />
-                    <Button
+                    <motion.button
                       onClick={addDestination}
-                      className="bg-indigo-600 hover:bg-indigo-700"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="px-6 h-12 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-xl flex items-center gap-2 transition-all"
                     >
+                      <Plus className="h-4 w-4" />
                       Add
-                    </Button>
+                    </motion.button>
                   </div>
 
-                  <div className="space-y-2">
-                    {formData.destinations.map((dest, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between bg-indigo-50 p-3 rounded-lg"
-                      >
-                        <span className="font-medium text-gray-700">
-                          {idx + 1}. {dest}
-                        </span>
-                        <button
-                          onClick={() => removeDestination(idx)}
-                          className="text-red-500 hover:text-red-700 font-bold"
+                  <div className="space-y-3">
+                    {formData.destinations.length === 0 ? (
+                      <p className="text-purple-300 text-sm text-center py-4">No destinations added yet</p>
+                    ) : (
+                      formData.destinations.map((dest, idx) => (
+                        <motion.div
+                          key={idx}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 20 }}
+                          className="flex items-center justify-between bg-gradient-to-r from-purple-700/40 to-pink-700/20 p-4 rounded-xl border border-purple-500/30 hover:border-purple-500/50 transition-all"
                         >
-                          ×
-                        </button>
-                      </div>
-                    ))}
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center text-sm font-bold">
+                              {idx + 1}
+                            </div>
+                            <span className="font-medium text-purple-100">
+                              {dest}
+                            </span>
+                          </div>
+                          <motion.button
+                            onClick={() => removeDestination(idx)}
+                            whileHover={{ scale: 1.2 }}
+                            whileTap={{ scale: 0.9 }}
+                            className="text-red-400 hover:text-red-300 transition-colors"
+                          >
+                            <X className="h-5 w-5" />
+                          </motion.button>
+                        </motion.div>
+                      ))
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -320,14 +387,15 @@ export default function NewTrip() {
             {step === 2 && (
               <motion.div
                 key="step2"
-                initial={{ opacity: 0, x: 20 }}
+                initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6"
+                exit={{ opacity: 0, x: -30 }}
+                className="space-y-8"
               >
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-lg font-semibold mb-2 block">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gradient-to-br from-blue-900/40 to-cyan-900/20 rounded-2xl p-6 border border-blue-500/20">
+                    <Label className="text-lg font-bold text-blue-200 mb-3 block flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
                       Start Date
                     </Label>
                     <Input
@@ -336,11 +404,12 @@ export default function NewTrip() {
                       onChange={(e) =>
                         handleInputChange("startDate", e.target.value)
                       }
-                      className="h-12 text-base"
+                      className="h-12 text-base bg-slate-700/50 border-blue-500/30 text-white focus:border-blue-500 focus:ring-blue-500/20 rounded-xl"
                     />
                   </div>
-                  <div>
-                    <Label className="text-lg font-semibold mb-2 block">
+                  <div className="bg-gradient-to-br from-red-900/40 to-orange-900/20 rounded-2xl p-6 border border-red-500/20">
+                    <Label className="text-lg font-bold text-red-200 mb-3 block flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
                       End Date
                     </Label>
                     <Input
@@ -349,22 +418,29 @@ export default function NewTrip() {
                       onChange={(e) =>
                         handleInputChange("endDate", e.target.value)
                       }
-                      className="h-12 text-base"
+                      className="h-12 text-base bg-slate-700/50 border-red-500/30 text-white focus:border-red-500 focus:ring-red-500/20 rounded-xl"
                     />
                   </div>
                 </div>
 
                 {formData.duration > 0 && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <p className="text-sm text-gray-600">Trip Duration</p>
-                    <p className="text-3xl font-bold text-green-600">
-                      {formData.duration} days
-                    </p>
-                  </div>
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-gradient-to-br from-emerald-900/40 to-green-900/20 border border-emerald-500/40 rounded-2xl p-6"
+                  >
+                    <p className="text-sm text-emerald-300 mb-2">Trip Duration</p>
+                    <div className="flex items-center gap-3">
+                      <div className="text-5xl font-bold bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent">
+                        {formData.duration}
+                      </div>
+                      <p className="text-emerald-300 text-xl font-semibold">days</p>
+                    </div>
+                  </motion.div>
                 )}
 
-                <div>
-                  <Label className="text-lg font-semibold mb-2 block flex items-center gap-2">
+                <div className="bg-gradient-to-br from-yellow-900/40 to-amber-900/20 rounded-2xl p-6 border border-yellow-500/20">
+                  <Label className="text-lg font-bold text-yellow-200 mb-4 block flex items-center gap-2">
                     <Wallet className="h-5 w-5" />
                     Budget (PKR)
                   </Label>
@@ -374,7 +450,7 @@ export default function NewTrip() {
                     onChange={(e) =>
                       handleInputChange("budget", parseInt(e.target.value))
                     }
-                    className="h-12 text-base mb-4"
+                    className="h-12 text-base bg-slate-700/50 border-yellow-500/30 text-white focus:border-yellow-500 focus:ring-yellow-500/20 rounded-xl mb-4"
                   />
                   <Slider
                     value={[formData.budget]}
@@ -384,9 +460,9 @@ export default function NewTrip() {
                     step={5000}
                     className="w-full"
                   />
-                  <p className="text-sm text-gray-600 mt-2">
-                    ₨{formData.budget?.toLocaleString()}
-                  </p>
+                  <div className="flex items-center gap-2 mt-4 text-yellow-300">
+                    <span className="text-3xl font-bold">₨{formData.budget?.toLocaleString()}</span>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -395,29 +471,25 @@ export default function NewTrip() {
             {step === 3 && (
               <motion.div
                 key="step3"
-                initial={{ opacity: 0, x: 20 }}
+                initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6"
+                exit={{ opacity: 0, x: -30 }}
+                className="space-y-8"
               >
-                <div>
-                  <Label className="text-lg font-semibold mb-3 block">
-                    Trip Type
+                <div className="bg-gradient-to-br from-purple-900/40 to-pink-900/20 rounded-2xl p-6 border border-purple-500/20">
+                  <Label className="text-lg font-bold text-purple-200 mb-4 block flex items-center gap-2">
+                    ✈️ Trip Type
                   </Label>
                   <Select
                     value={formData.tripType}
                     onValueChange={(val) => handleInputChange("tripType", val)}
                   >
-                    <SelectTrigger className="h-12 text-base">
+                    <SelectTrigger className="h-12 text-base bg-slate-700/50 border-purple-500/30 text-white focus:border-purple-500 focus:ring-purple-500/20 rounded-xl">
                       <SelectValue placeholder="Select trip type" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-slate-800 border-purple-500/30">
                       {TRIP_TYPES.map((type) => (
-                        <SelectItem
-                          key={type}
-                          value={type}
-                          className="capitalize"
-                        >
+                        <SelectItem key={type} value={type} className="capitalize">
                           {type.charAt(0).toUpperCase() + type.slice(1)}
                         </SelectItem>
                       ))}
@@ -425,9 +497,9 @@ export default function NewTrip() {
                   </Select>
                 </div>
 
-                <div>
-                  <Label className="text-lg font-semibold mb-3 block">
-                    Transportation
+                <div className="bg-gradient-to-br from-blue-900/40 to-cyan-900/20 rounded-2xl p-6 border border-blue-500/20">
+                  <Label className="text-lg font-bold text-blue-200 mb-4 block flex items-center gap-2">
+                    <Plane className="h-5 w-5" /> Transportation
                   </Label>
                   <Select
                     value={formData.transportation}
@@ -435,16 +507,12 @@ export default function NewTrip() {
                       handleInputChange("transportation", val)
                     }
                   >
-                    <SelectTrigger className="h-12 text-base">
+                    <SelectTrigger className="h-12 text-base bg-slate-700/50 border-blue-500/30 text-white focus:border-blue-500 focus:ring-blue-500/20 rounded-xl">
                       <SelectValue placeholder="Select transportation" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-slate-800 border-blue-500/30">
                       {TRANSPORTATION_OPTIONS.map((opt) => (
-                        <SelectItem
-                          key={opt}
-                          value={opt}
-                          className="capitalize"
-                        >
+                        <SelectItem key={opt} value={opt} className="capitalize">
                           {opt.toUpperCase()}
                         </SelectItem>
                       ))}
@@ -452,9 +520,9 @@ export default function NewTrip() {
                   </Select>
                 </div>
 
-                <div>
-                  <Label className="text-lg font-semibold mb-3 block">
-                    Accommodation
+                <div className="bg-gradient-to-br from-pink-900/40 to-rose-900/20 rounded-2xl p-6 border border-pink-500/20">
+                  <Label className="text-lg font-bold text-pink-200 mb-4 block flex items-center gap-2">
+                    <Home className="h-5 w-5" /> Accommodation
                   </Label>
                   <Select
                     value={formData.accommodation}
@@ -462,16 +530,12 @@ export default function NewTrip() {
                       handleInputChange("accommodation", val)
                     }
                   >
-                    <SelectTrigger className="h-12 text-base">
+                    <SelectTrigger className="h-12 text-base bg-slate-700/50 border-pink-500/30 text-white focus:border-pink-500 focus:ring-pink-500/20 rounded-xl">
                       <SelectValue placeholder="Select accommodation" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-slate-800 border-pink-500/30">
                       {ACCOMMODATION_OPTIONS.map((opt) => (
-                        <SelectItem
-                          key={opt}
-                          value={opt}
-                          className="capitalize"
-                        >
+                        <SelectItem key={opt} value={opt} className="capitalize">
                           {opt.charAt(0).toUpperCase() + opt.slice(1)}
                         </SelectItem>
                       ))}
@@ -479,25 +543,232 @@ export default function NewTrip() {
                   </Select>
                 </div>
 
-                <div>
-                  <Label className="text-lg font-semibold mb-3 block">
-                    Trip Pace
+                <div className="bg-gradient-to-br from-violet-900/40 to-indigo-900/20 rounded-2xl p-6 border border-violet-500/20">
+                  <Label className="text-lg font-bold text-violet-200 mb-4 block flex items-center gap-2">
+                    <Gauge className="h-5 w-5" /> Trip Pace
                   </Label>
                   <Select
                     value={formData.tripPace}
                     onValueChange={(val) => handleInputChange("tripPace", val)}
                   >
-                    <SelectTrigger className="h-12 text-base">
+                    <SelectTrigger className="h-12 text-base bg-slate-700/50 border-violet-500/30 text-white focus:border-violet-500 focus:ring-violet-500/20 rounded-xl">
                       <SelectValue placeholder="Select pace" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-slate-800 border-violet-500/30">
                       {TRIP_PACE.map((opt) => (
-                        <SelectItem
-                          key={opt}
-                          value={opt}
-                          className="capitalize"
-                        >
+                        <SelectItem key={opt} value={opt} className="capitalize">
                           {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="bg-gradient-to-br from-red-900/40 to-orange-900/20 rounded-2xl p-6 border border-red-500/20">
+                  <Label className="text-lg font-bold text-red-200 mb-4 block flex items-center gap-2">
+                    <Heart className="h-5 w-5" /> Interests
+                  </Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {INTERESTS.map((interest) => (
+                      <motion.button
+                        key={interest}
+                        onClick={() => toggleArrayValue("interests", interest)}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className={`p-3 rounded-xl font-semibold transition-all border-2 ${
+                          formData.interests.includes(interest)
+                            ? "bg-gradient-to-r from-red-600 to-orange-600 text-white border-red-400"
+                            : "bg-slate-700/40 text-red-300 border-red-500/20 hover:border-red-500/40"
+                        }`}
+                      >
+                        {interest.charAt(0).toUpperCase() + interest.slice(1)}
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 4: Review */}
+            {step === 4 && (
+              <motion.div
+                key="step4"
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -30 }}
+                className="space-y-6"
+              >
+                <div className="bg-gradient-to-br from-purple-900/60 to-pink-900/40 border-2 border-purple-500/40 rounded-2xl p-8 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                      className="bg-slate-800/50 rounded-xl p-4 border border-purple-500/20"
+                    >
+                      <p className="text-sm text-purple-300 mb-1">Trip Name</p>
+                      <p className="text-2xl font-bold text-purple-100">
+                        {formData.name || "Not set"}
+                      </p>
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                      className="bg-slate-800/50 rounded-xl p-4 border border-emerald-500/20"
+                    >
+                      <p className="text-sm text-emerald-300 mb-1">Duration</p>
+                      <p className="text-2xl font-bold text-emerald-100">
+                        {formData.duration} days
+                      </p>
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
+                      className="bg-slate-800/50 rounded-xl p-4 border border-yellow-500/20"
+                    >
+                      <p className="text-sm text-yellow-300 mb-1">Budget</p>
+                      <p className="text-2xl font-bold text-yellow-100">
+                        ₨{formData.budget?.toLocaleString()}
+                      </p>
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 }}
+                      className="bg-slate-800/50 rounded-xl p-4 border border-blue-500/20"
+                    >
+                      <p className="text-sm text-blue-300 mb-1">Trip Type</p>
+                      <p className="text-2xl font-bold text-blue-100 capitalize">
+                        {formData.tripType || "Not set"}
+                      </p>
+                    </motion.div>
+                  </div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="bg-slate-800/50 rounded-xl p-4 border border-cyan-500/20"
+                  >
+                    <p className="text-sm text-cyan-300 mb-3">Destinations</p>
+                    <div className="flex flex-wrap gap-2">
+                      {formData.destinations.map((dest) => (
+                        <span
+                          key={dest}
+                          className="bg-gradient-to-r from-cyan-600/40 to-blue-600/40 text-cyan-200 px-4 py-2 rounded-lg text-sm font-semibold border border-cyan-500/30"
+                        >
+                          📍 {dest}
+                        </span>
+                      ))}
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    className="bg-slate-800/50 rounded-xl p-4 border border-pink-500/20"
+                  >
+                    <p className="text-sm text-pink-300 mb-3">Interests</p>
+                    <div className="flex flex-wrap gap-2">
+                      {formData.interests.map((interest) => (
+                        <span
+                          key={interest}
+                          className="bg-gradient-to-r from-pink-600/40 to-rose-600/40 text-pink-200 px-4 py-2 rounded-lg text-sm font-semibold border border-pink-500/30"
+                        >
+                          ❤️ {interest}
+                        </span>
+                      ))}
+                    </div>
+                  </motion.div>
+                </div>
+
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.7 }}
+                  className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/40 rounded-2xl p-6 text-center"
+                >
+                  <Sparkles className="h-6 w-6 text-purple-400 mx-auto mb-3" />
+                  <p className="text-purple-200">
+                    Ready to generate your personalized itinerary? Click "Generate Trip" and our AI will create an amazing plan for you!
+                  </p>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+
+        {/* Navigation Buttons - Enhanced */}
+        <motion.div
+          className="flex gap-4 mt-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <motion.div
+            className="flex-1"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <Button
+              variant="outline"
+              onClick={() => setStep(Math.max(1, step - 1))}
+              disabled={step === 1}
+              className="w-full h-12 text-base border-purple-500/30 text-purple-300 hover:bg-purple-900/30 hover:border-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-semibold flex items-center justify-center gap-2"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+          </motion.div>
+
+          <motion.div
+            className="flex-1"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            {step < 4 ? (
+              <Button
+                onClick={handleNext}
+                className="w-full h-12 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-base font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg hover:shadow-purple-500/50 transition-all"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="w-full h-12 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white text-base font-semibold rounded-xl flex items-center justify-center gap-2 shadow-lg hover:shadow-emerald-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <>
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity }}
+                    >
+                      <Zap className="h-4 w-4" />
+                    </motion.div>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    Generate Trip
+                    <Zap className="h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            )}
+          </motion.div>
+        </motion.div>
+      </div>
+    </div>
+  );
                         </SelectItem>
                       ))}
                     </SelectContent>
