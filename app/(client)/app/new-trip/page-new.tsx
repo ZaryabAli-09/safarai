@@ -142,6 +142,10 @@ export default function NewTrip() {
           toast.error("Select start and end dates");
           return false;
         }
+        if (new Date(formData.endDate) < new Date(formData.startDate)) {
+          toast.error("End date must be the same or after start date");
+          return false;
+        }
         return true;
       case 3:
         if (!formData.tripType || !formData.transportation) {
@@ -193,6 +197,8 @@ export default function NewTrip() {
     { number: 3, title: "Preferences", icon: Heart },
     { number: 4, title: "Review", icon: Check },
   ];
+
+  const perDay = formData.duration ? Math.round(formData.budget / formData.duration) : 0;
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50 py-8 px-4">
@@ -387,6 +393,11 @@ export default function NewTrip() {
                   <p className="text-sm text-gray-600 mt-2">
                     ₨{formData.budget?.toLocaleString()}
                   </p>
+                  {formData.duration > 0 && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      ≈ ₨{perDay.toLocaleString()} per day
+                    </p>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -594,6 +605,17 @@ export default function NewTrip() {
                   Ready to generate your personalized itinerary? Click "Generate
                   Trip" and our AI will create an amazing plan for you!
                 </p>
+
+                {/* Map placeholder */}
+                <div className="mt-4 p-4 border border-dashed rounded-lg bg-white">
+                  <div className="flex items-center gap-3">
+                    <MapPin className="h-6 w-6 text-indigo-600" />
+                    <div>
+                      <p className="font-medium text-gray-700">Map preview</p>
+                      <p className="text-sm text-gray-500">Map preview coming soon — will show destinations and route.</p>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
