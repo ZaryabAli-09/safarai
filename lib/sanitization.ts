@@ -101,7 +101,7 @@ export function validateEmail(email: any): string | null {
 }
 
 /**
- * Sanitize AI prompt to prevent injection attacks
+ * Sanitize AI prompt input
  */
 export function sanitizeAiPrompt(tripDetails: any): any {
   return {
