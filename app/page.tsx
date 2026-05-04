@@ -1,5 +1,4 @@
-import { Navbar } from "./custom components/Navbar";
-import LandingPage from "./custom components/LandingPage";
+import { Navbar, LandingPage } from "@/_components";
 
 export default function App() {
   return (
