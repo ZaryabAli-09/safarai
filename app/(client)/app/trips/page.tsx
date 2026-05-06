@@ -94,7 +94,7 @@ export default function Trips() {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
               My Trips
             </h1>
             <p className="text-gray-600 flex items-center gap-2">
@@ -141,10 +141,8 @@ export default function Trips() {
                   key={trip?._id}
                   className="group h-full cursor-pointer transition-all duration-300 ease-out transform hover:scale-105 hover:-translate-y-1"
                 >
-                  <Card className="w-full overflow-hidden h-full flex flex-col bg-white border-2 border-indigo-100 hover:border-indigo-400 shadow-md hover:shadow-2xl transition-all duration-300 relative"
+                  <Card className="w-full overflow-hidden h-full flex flex-col bg-white shadow-md hover:shadow-xl transition-all duration-300 relative"
                   >
-                    {/* Gradient background effect */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/0 via-transparent to-purple-500/0 group-hover:from-indigo-500/5 group-hover:to-purple-500/5 transition-all duration-300 pointer-events-none" />
 
                     {/* Image Section */}
                     <CardHeader className="p-0 relative h-48 overflow-hidden">
@@ -201,10 +199,10 @@ export default function Trips() {
                     <CardContent className="p-5 space-y-4 flex-grow relative z-10">
                       {/* Quick Stats - Enhanced */}
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="p-3 rounded-lg bg-gradient-to-br from-orange-50 to-orange-100/50 border border-orange-200 hover:border-orange-300 transition-colors duration-300">
+                        <div className="p-3 rounded-lg bg-gray-100 border border-gray-200 hover:bg-gray-200/50 transition-colors duration-300">
                           <div className="flex items-center gap-2">
-                            <div className="p-1.5 bg-orange-500/10 rounded">
-                              <GiDuration className="text-orange-600 h-4 w-4" />
+                            <div className="p-1.5 bg-indigo-500/10 rounded">
+                              <GiDuration className="text-indigo-600 h-4 w-4" />
                             </div>
                             <div className="flex flex-col">
                               <span className="text-xs text-gray-600 font-medium">Duration</span>
@@ -214,10 +212,10 @@ export default function Trips() {
                             </div>
                           </div>
                         </div>
-                        <div className="p-3 rounded-lg bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200 hover:border-emerald-300 transition-colors duration-300">
+                        <div className="p-3 rounded-lg bg-gray-100 border border-gray-200 hover:bg-gray-200/50 transition-colors duration-300">
                           <div className="flex items-center gap-2">
-                            <div className="p-1.5 bg-emerald-500/10 rounded">
-                              <HiOutlineCash className="text-emerald-600 h-4 w-4" />
+                            <div className="p-1.5 bg-indigo-500/10 rounded">
+                              <HiOutlineCash className="text-indigo-600 h-4 w-4" />
                             </div>
                             <div className="flex flex-col">
                               <span className="text-xs text-gray-600 font-medium">Budget</span>
@@ -242,7 +240,7 @@ export default function Trips() {
                       </div>
 
                       {/* Destinations - Enhanced */}
-                      <div className="space-y-2 pt-2 border-t border-indigo-100 group-hover:border-indigo-200 transition-colors duration-300">
+                      <div className="space-y-2 pt-2 border-t border-gray-200 group-hover:border-gray-300 transition-colors duration-300">
                         <p className="text-xs font-bold text-gray-700 flex items-center gap-1.5 uppercase tracking-wide">
                           <MapPin className="h-3.5 w-3.5 text-indigo-600" /> Destinations
                         </p>
@@ -251,7 +249,7 @@ export default function Trips() {
                             <Badge
                               key={d}
                               variant="outline"
-                              className="text-xs font-medium bg-indigo-50 text-indigo-700 border-indigo-200 hover:border-indigo-400 transition-colors duration-300"
+                              className="text-xs font-medium bg-white text-indigo-600 border-indigo-300 hover:border-indigo-400 transition-colors duration-300"
                             >
                               {d}
                             </Badge>
@@ -259,7 +257,7 @@ export default function Trips() {
                           {trip.destinations?.length > 2 && (
                             <Badge
                               variant="outline"
-                              className="text-xs font-medium bg-purple-50 text-purple-700 border-purple-200 hover:border-purple-400 transition-colors duration-300"
+                              className="text-xs font-medium bg-white text-indigo-600 border-indigo-300 hover:border-indigo-400 transition-colors duration-300"
                             >
                               +{trip.destinations.length - 2}
                             </Badge>
@@ -269,7 +267,7 @@ export default function Trips() {
                     </CardContent>
 
                     {/* Footer - Enhanced */}
-                    <CardFooter className="p-4 border-t-2 border-indigo-100 group-hover:border-indigo-200 mt-auto transition-colors duration-300 bg-gradient-to-r from-indigo-50/30 to-transparent">
+                    <CardFooter className="p-4 border-t border-gray-200 mt-auto transition-colors duration-300 bg-gray-50">
                       <Link href={`/app/trips/${trip._id}`} className="w-full">
                         <Button className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold group/btn flex items-center justify-center gap-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5">
                           View Itinerary
@@ -334,11 +332,10 @@ export default function Trips() {
         ) : (
           /* Empty State - Enhanced */
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="mb-6 p-8 bg-gradient-to-br from-indigo-100 via-purple-100 to-indigo-100 rounded-full animate-bounce relative shadow-xl">
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-400/20 to-purple-400/20 rounded-full blur-2xl" />
+            <div className="mb-6 p-8 bg-indigo-100 rounded-full animate-bounce relative shadow-xl">
               <Plane className="h-16 w-16 text-indigo-600 relative z-10" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-3 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <h2 className="text-3xl font-bold text-gray-900 mb-3">
               No trips planned yet
             </h2>
             <p className="text-gray-600 mb-8 max-w-md text-lg leading-relaxed">
