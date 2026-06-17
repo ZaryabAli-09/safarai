@@ -1,14 +1,7 @@
 "use client";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,21 +13,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { BsThreeDots } from "react-icons/bs";
-import { Badge } from "@/components/ui/badge";
-import { IoMdAirplane } from "react-icons/io";
-import { HiOutlineCash } from "react-icons/hi";
-import { GiDuration } from "react-icons/gi";
-import { CardSkeleton } from "@/app/_components/common/CardSkeleton";
-import { Input } from "@/components/ui/input";
-import { Plane, MapPin, Plus, ChevronRight, Trash2 } from "lucide-react";
+import { Plane, MapPin, Plus, ChevronRight, Trash2, Calendar, Wallet, Clock } from "lucide-react";
 import Link from "next/link";
+import { CardSkeleton } from "@/_components/common/CardSkeleton";
 
-// ✅ Helper to format date as "4 Nov 2025"
 function formatDate(dateStr: string) {
   const date = new Date(dateStr);
   return date.toLocaleDateString("en-GB", {
@@ -89,44 +77,28 @@ export default function Trips() {
   );
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">My Trips</h1>
-            <p className="text-gray-600 flex items-center gap-2">
-              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-sm font-semibold">
-                {paginationData?.total || 0}
-              </span>
-              trips created •{" "}
-              <span className="font-medium text-indigo-600">
-                {filteredTrips.length}
-              </span>{" "}
-              displayed
-            </p>
-          </div>
-          <Link href="/app/new-trip">
-            <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white flex items-center gap-2 h-12 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5">
-              <Plus className="h-5 w-5" />
-              Plan New Trip
-            </Button>
-          </Link>
+    <div className="w-full min-h-screen bg-gray-50 py-6 px-4">
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">My Trips</h1>
+          <p className="text-gray-500 text-sm mt-1">
+            {paginationData?.total || 0} trips • {filteredTrips.length} shown
+          </p>
         </div>
 
-        {/* Search Bar */}
-        <div className="max-w-2xl">
-          <div className="relative">
-            <Input
-              type="text"
-              placeholder="🔍 Search trips by name or destination..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="h-12 text-base border-2 border-indigo-200 rounded-lg focus:border-indigo-500 focus:shadow-lg focus:shadow-indigo-200 transition-all duration-300"
-            />
-          </div>
+        {/* Search - Desktop only (mobile has floating button) */}
+        <div className="hidden md:block mb-6">
+          <Input
+            type="text"
+            placeholder="Search trips..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="h-10 max-w-md bg-white"
+          />
         </div>
-        {/* Trips Grid Section */}
+
+        {/* Trips Grid */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array(6)

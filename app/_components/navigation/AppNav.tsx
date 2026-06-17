@@ -6,28 +6,25 @@ import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import { useState } from "react";
-import Image from "next/image";
 import {
-  IoPaperPlaneOutline,
-  IoSettingsOutline,
-  IoLogOutOutline,
-  IoAddCircleOutline,
-} from "react-icons/io5";
-import { FiUsers, FiMenu, FiX } from "react-icons/fi";
-import { motion, AnimatePresence } from "framer-motion";
-import Logo from "@/public/assets/logo.png";
+  Plane,
+  User,
+  LogOut,
+  Plus,
+  MapPin,
+} from "lucide-react";
 
 export function AppNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const activePathname = pathname.split("/")[2];
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { label: "My Trips", href: "/app/trips", icon: IoPaperPlaneOutline },
-    { label: "Profile", href: "/app/profile", icon: FiUsers },
+    { label: "Trips", href: "/app/trips", icon: Plane },
+    { label: "Profile", href: "/app/profile", icon: User },
   ];
+
+  const isActive = (href: string) => pathname.startsWith(href);
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -48,127 +45,104 @@ export function AppNav() {
 
   return (
     <>
-      {/* ===== Desktop Navigation ===== */}
-      <nav className="hidden md:flex sticky top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
-        <div className="w-full px-8 py-4 flex items-center justify-between">
-          {/* Left: Logo */}
-          <Link
-            href="/app/trips"
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
-                <span className="text-white font-bold text-lg">S</span>
-              </div>
-              <span className="font-bold text-lg text-gray-900 hidden sm:inline">
-                SafarAi
-              </span>
+      {/* Desktop Navigation - Clean blue/white */}
+      <nav className="hidden md:flex fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100">
+        <div className="w-full max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+          {/* Logo */}
+          <Link href="/app/trips" className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Plane className="w-5 h-5 text-white" />
             </div>
+            <span className="font-bold text-lg text-gray-900">SafarAI</span>
           </Link>
 
-          {/* Middle: Navigation Links */}
-          <div className="flex items-center gap-8">
+          {/* Navigation */}
+          <div className="flex items-center gap-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = activePathname === item.href.split("/")[2];
-
+              const active = isActive(item.href);
               return (
                 <Link
                   key={item.label}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-2 text-sm font-medium transition-all duration-200 relative group",
-                    isActive
-                      ? "text-indigo-600"
-                      : "text-gray-600 hover:text-gray-900",
+                    "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                    active
+                      ? "bg-blue-50 text-blue-600"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   )}
                 >
-                  <Icon className="h-5 w-5" />
-                  <span>{item.label}</span>
-
-                  {/* Animated underline */}
-                  {isActive && (
-                    <motion.div
-                      layoutId="navbar-underline"
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-600 to-purple-600"
-                    />
-                  )}
+                  <Icon className="w-4 h-4" />
+                  {item.label}
                 </Link>
               );
             })}
           </div>
 
-          {/* Right: Actions */}
-          <div className="flex items-center gap-4">
+          {/* Actions */}
+          <div className="flex items-center gap-3">
             <Link
               href="/app/new-trip"
-              className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-2.5 rounded-full font-medium transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             >
-              <IoAddCircleOutline className="h-5 w-5" />
-              <span>New Trip</span>
+              <Plus className="w-4 h-4" />
+              New Trip
             </Link>
-
             <button
               onClick={handleLogout}
               disabled={isLoggingOut}
-              className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors duration-200 font-medium text-sm disabled:opacity-50"
+              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
             >
-              <IoLogOutOutline className="h-5 w-5" />
-              <span>Logout</span>
+              <LogOut className="w-5 h-5" />
             </button>
           </div>
         </div>
       </nav>
 
-      {/* ===== Mobile Navigation ===== */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
-        <nav className="bg-white border-t border-gray-200 shadow-2xl">
-          <div className="flex items-center justify-between px-4 py-3">
-            {/* Left Icons */}
-            <div className="flex items-center gap-3">
+      {/* Mobile Navigation - Bottom bar with floating button */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100">
+        <div className="flex items-center justify-around px-2 py-2">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.href);
+            return (
               <Link
-                href="/app/trips"
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                key={item.label}
+                href={item.href}
+                className={cn(
+                  "flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors",
+                  active ? "text-blue-600" : "text-gray-400"
+                )}
               >
-                <IoPaperPlaneOutline className="h-6 w-6 text-indigo-600" />
+                <Icon className="w-5 h-5" />
+                <span className="text-xs font-medium">{item.label}</span>
               </Link>
-
-              <Link
-                href="/app/profile"
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <FiUsers className="h-6 w-6 text-gray-600" />
-              </Link>
-
-              <button
-                onClick={handleLogout}
-                disabled={isLoggingOut}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-              >
-                <IoLogOutOutline className="h-6 w-6 text-red-600" />
-              </button>
-            </div>
-
-            {/* Logo/Brand */}
-            <Link href="/app/trips" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
-                <span className="text-white font-bold">S</span>
-              </div>
-            </Link>
-
-            {/* Right: New Trip Button */}
-            <Link
-              href="/app/new-trip"
-              className="flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-2.5 rounded-full font-bold shadow-lg hover:shadow-xl transition-all hover:scale-110"
-            >
-              <IoAddCircleOutline className="h-6 w-6" />
-            </Link>
-          </div>
-        </nav>
+            );
+          })}
+          
+          {/* Logout */}
+          <button
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="flex flex-col items-center gap-1 px-4 py-2 text-gray-400 disabled:opacity-50"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="text-xs font-medium">Logout</span>
+          </button>
+        </div>
       </div>
 
-      {/* Spacer for mobile */}
-      <div className="md:hidden h-20" />
+      {/* Floating New Trip Button - Mobile */}
+      <Link
+        href="/app/new-trip"
+        className="md:hidden fixed bottom-20 right-4 z-50 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+      >
+        <Plus className="w-6 h-6" />
+      </Link>
+
+      {/* Spacers */}
+      <div className="hidden md:block h-16" />
+      <div className="md:hidden h-16" />
     </>
   );
 }
