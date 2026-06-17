@@ -125,27 +125,24 @@ export default function Trips() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredTrips.map((trip: any) => (
-                <div
-                  key={trip?._id}
-                  className="group h-full cursor-pointer transition-all duration-300 ease-out transform hover:scale-105 hover:-translate-y-1"
-                >
-                  <Card className="w-full overflow-hidden h-full flex flex-col bg-white shadow-md hover:shadow-xl transition-all duration-300 relative">
+                <div key={trip?._id} className="group h-full cursor-pointer">
+                  <Card className="w-full overflow-hidden h-full flex flex-col bg-white shadow-sm hover:shadow-md transition-shadow">
                     {/* Image Section */}
-                    <CardHeader className="p-0 relative h-48 overflow-hidden">
+                    <CardHeader className="p-0 relative h-44 overflow-hidden">
                       <Image
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
+                        className="w-full h-full object-cover"
                         width={500}
                         height={300}
                         src="/assets/kumrat.jpg"
                         alt={trip.name}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-100 group-hover:from-black/80 group-hover:via-black/40 transition-all duration-300" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
-                      {/* Menu Button - Enhanced */}
+                      {/* Delete Button */}
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <button className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur-md rounded-full p-2.5 transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg hover:shadow-xl">
-                            <Trash2 className="text-white text-lg" />
+                          <button className="absolute top-3 right-3 bg-white/90 hover:bg-white rounded-full p-2 transition-colors">
+                            <Trash2 className="text-gray-700 h-4 w-4" />
                           </button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
@@ -170,13 +167,13 @@ export default function Trips() {
                         </AlertDialogContent>
                       </AlertDialog>
 
-                      {/* Title and Date Overlay - Enhanced */}
-                      <div className="absolute bottom-0 left-0 right-0 p-4 text-white transform group-hover:translate-y-0 transition-transform duration-300">
-                        <p className="text-xs font-semibold opacity-80 mb-1 uppercase tracking-wider">
+                      {/* Title and Date Overlay */}
+                      <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                        <p className="text-xs font-medium opacity-90 mb-1">
                           {formatDate(trip.startDate)} —{" "}
                           {formatDate(trip.endDate)}
                         </p>
-                        <h3 className="text-xl font-bold line-clamp-2 group-hover:line-clamp-none transition-all">
+                        <h3 className="text-lg font-semibold line-clamp-1">
                           {trip.name}
                         </h3>
                       </div>
@@ -264,19 +261,19 @@ export default function Trips() {
               ))}
             </div>
 
-            {/* Pagination Controls - Enhanced */}
+            {/* Pagination */}
             {paginationData && paginationData.totalPages > 1 && (
-              <div className="flex items-center justify-center gap-4 mt-12">
+              <div className="flex items-center justify-center gap-2 mt-8">
                 <Button
                   variant="outline"
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
-                  className="border-2 border-indigo-300 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 rounded-lg px-4 py-2 font-medium"
+                  className="h-9 px-3"
                 >
-                  ← Previous
+                  Previous
                 </Button>
 
-                <div className="flex items-center gap-2 flex-wrap justify-center">
+                <div className="flex items-center gap-1">
                   {Array.from(
                     { length: paginationData.totalPages },
                     (_, i) => i + 1,
@@ -286,12 +283,8 @@ export default function Trips() {
                       variant={currentPage === page ? "default" : "outline"}
                       onClick={() => setCurrentPage(page)}
                       className={`
-                        rounded-lg font-semibold transition-all duration-300 transform hover:scale-105
-                        ${
-                          currentPage === page
-                            ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg hover:shadow-xl"
-                            : "border-2 border-indigo-300 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-500 hover:scale-105"
-                        }
+                        h-9 w-9 p-0
+                        ${currentPage === page ? "bg-blue-600 hover:bg-blue-700" : ""}
                       `}
                     >
                       {page}
@@ -307,9 +300,9 @@ export default function Trips() {
                     )
                   }
                   disabled={currentPage === paginationData.totalPages}
-                  className="border-2 border-indigo-300 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 rounded-lg px-4 py-2 font-medium"
+                  className="h-9 px-3"
                 >
-                  Next →
+                  Next
                 </Button>
               </div>
             )}
