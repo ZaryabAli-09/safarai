@@ -6,13 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import { useState } from "react";
-import {
-  Plane,
-  User,
-  LogOut,
-  Plus,
-  MapPin,
-} from "lucide-react";
+import { Plane, User, LogOut, Plus, MapPin } from "lucide-react";
 
 export function AppNav() {
   const pathname = usePathname();
@@ -69,7 +63,7 @@ export function AppNav() {
                     "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
                     active
                       ? "bg-blue-50 text-blue-600"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
                   )}
                 >
                   <Icon className="w-4 h-4" />
@@ -111,7 +105,7 @@ export function AppNav() {
                 href={item.href}
                 className={cn(
                   "flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors",
-                  active ? "text-blue-600" : "text-gray-400"
+                  active ? "text-blue-600" : "text-gray-400",
                 )}
               >
                 <Icon className="w-5 h-5" />
@@ -119,7 +113,7 @@ export function AppNav() {
               </Link>
             );
           })}
-          
+
           {/* Logout */}
           <button
             onClick={handleLogout}

@@ -1,7 +1,12 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +24,16 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { Plane, MapPin, Plus, ChevronRight, Trash2, Calendar, Wallet, Clock } from "lucide-react";
+import {
+  Plane,
+  MapPin,
+  Plus,
+  ChevronRight,
+  Trash2,
+  Calendar,
+  Wallet,
+  Clock,
+} from "lucide-react";
 import Link from "next/link";
 import { CardSkeleton } from "@/_components/common/CardSkeleton";
 
