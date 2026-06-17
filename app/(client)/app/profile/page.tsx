@@ -138,7 +138,9 @@ export default function Profile() {
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Header Section */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Your Profile</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            Your Profile
+          </h1>
           <p className="text-gray-600">Manage your personal information</p>
         </div>
 
@@ -164,8 +166,12 @@ export default function Profile() {
                   <div className="absolute bottom-0 right-0 h-6 w-6 bg-green-400 border-4 border-white rounded-full" />
                 </div>
                 <div className="text-center text-white">
-                  <h2 className="text-2xl font-bold">{formData.username || "User"}</h2>
-                  <p className="text-indigo-100 text-sm">Update your details below</p>
+                  <h2 className="text-2xl font-bold">
+                    {formData.username || "User"}
+                  </h2>
+                  <p className="text-indigo-100 text-sm">
+                    Update your details below
+                  </p>
                 </div>
               </div>
             </div>
@@ -176,7 +182,9 @@ export default function Profile() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <User className="text-indigo-600 h-5 w-5" />
-                  <FieldLabel className="text-gray-700 font-semibold">Full Name</FieldLabel>
+                  <FieldLabel className="text-gray-700 font-semibold">
+                    Full Name
+                  </FieldLabel>
                 </div>
                 <Input
                   name="username"
@@ -192,7 +200,9 @@ export default function Profile() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Mail className="text-indigo-600 h-5 w-5" />
-                  <FieldLabel className="text-gray-700 font-semibold">Email Address</FieldLabel>
+                  <FieldLabel className="text-gray-700 font-semibold">
+                    Email Address
+                  </FieldLabel>
                 </div>
                 <Input
                   name="email"
@@ -209,15 +219,22 @@ export default function Profile() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Calendar className="text-indigo-600 h-5 w-5" />
-                    <Label className="text-gray-700 font-semibold">Date of Birth</Label>
+                    <Label className="text-gray-700 font-semibold">
+                      Date of Birth
+                    </Label>
                   </div>
-                  <Popover open={openDatePicker} onOpenChange={setOpenDatePicker}>
+                  <Popover
+                    open={openDatePicker}
+                    onOpenChange={setOpenDatePicker}
+                  >
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         className="w-full h-12 justify-between text-base"
                       >
-                        {formData.dob ? new Date(formData.dob).toLocaleDateString() : "Select date"}
+                        {formData.dob
+                          ? new Date(formData.dob).toLocaleDateString()
+                          : "Select date"}
                         <ChevronDownIcon className="h-4 w-4 opacity-70" />
                       </Button>
                     </PopoverTrigger>
@@ -227,7 +244,9 @@ export default function Profile() {
                     >
                       <CalendarComponent
                         mode="single"
-                        selected={formData.dob ? new Date(formData.dob) : undefined}
+                        selected={
+                          formData.dob ? new Date(formData.dob) : undefined
+                        }
                         captionLayout="dropdown"
                         onSelect={(date) => {
                           if (!date) return;
@@ -246,7 +265,9 @@ export default function Profile() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Heart className="text-indigo-600 h-5 w-5" />
-                    <FieldLabel className="text-gray-700 font-semibold">Gender</FieldLabel>
+                    <FieldLabel className="text-gray-700 font-semibold">
+                      Gender
+                    </FieldLabel>
                   </div>
                   <Select
                     value={formData.gender || ""}
@@ -264,7 +285,9 @@ export default function Profile() {
                       <SelectItem value="male">Male</SelectItem>
                       <SelectItem value="female">Female</SelectItem>
                       <SelectItem value="other">Other</SelectItem>
-                      <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
+                      <SelectItem value="prefer_not_to_say">
+                        Prefer not to say
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

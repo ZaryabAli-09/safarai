@@ -324,7 +324,8 @@ export default function Trips() {
               No trips yet
             </h2>
             <p className="text-gray-500 mb-6 max-w-sm">
-              Plan your first trip and let our AI create an amazing itinerary for you.
+              Plan your first trip and let our AI create an amazing itinerary
+              for you.
             </p>
             <Link href="/app/new-trip">
               <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
