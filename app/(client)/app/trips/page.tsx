@@ -29,7 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { IoMdAirplane } from "react-icons/io";
 import { HiOutlineCash } from "react-icons/hi";
 import { GiDuration } from "react-icons/gi";
-import { SkeletonCard } from "@/app/custom components/CardSkeleton/CardSkeleton";
+import { CardSkeleton } from "@/app/_components/common/CardSkeleton";
 import { Input } from "@/components/ui/input";
 import { Plane, MapPin, Plus, ChevronRight, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -94,14 +94,16 @@ export default function Trips() {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              My Trips
-            </h1>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">My Trips</h1>
             <p className="text-gray-600 flex items-center gap-2">
               <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-sm font-semibold">
                 {paginationData?.total || 0}
               </span>
-              trips created • <span className="font-medium text-indigo-600">{filteredTrips.length}</span> displayed
+              trips created •{" "}
+              <span className="font-medium text-indigo-600">
+                {filteredTrips.length}
+              </span>{" "}
+              displayed
             </p>
           </div>
           <Link href="/app/new-trip">
@@ -130,7 +132,7 @@ export default function Trips() {
             {Array(6)
               .fill(null)
               .map((_, i) => (
-                <SkeletonCard key={i} />
+                <CardSkeleton key={i} />
               ))}
           </div>
         ) : filteredTrips && filteredTrips.length > 0 ? (
@@ -141,9 +143,7 @@ export default function Trips() {
                   key={trip?._id}
                   className="group h-full cursor-pointer transition-all duration-300 ease-out transform hover:scale-105 hover:-translate-y-1"
                 >
-                  <Card className="w-full overflow-hidden h-full flex flex-col bg-white shadow-md hover:shadow-xl transition-all duration-300 relative"
-                  >
-
+                  <Card className="w-full overflow-hidden h-full flex flex-col bg-white shadow-md hover:shadow-xl transition-all duration-300 relative">
                     {/* Image Section */}
                     <CardHeader className="p-0 relative h-48 overflow-hidden">
                       <Image
@@ -187,7 +187,8 @@ export default function Trips() {
                       {/* Title and Date Overlay - Enhanced */}
                       <div className="absolute bottom-0 left-0 right-0 p-4 text-white transform group-hover:translate-y-0 transition-transform duration-300">
                         <p className="text-xs font-semibold opacity-80 mb-1 uppercase tracking-wider">
-                          {formatDate(trip.startDate)} — {formatDate(trip.endDate)}
+                          {formatDate(trip.startDate)} —{" "}
+                          {formatDate(trip.endDate)}
                         </p>
                         <h3 className="text-xl font-bold line-clamp-2 group-hover:line-clamp-none transition-all">
                           {trip.name}
@@ -205,7 +206,9 @@ export default function Trips() {
                               <GiDuration className="text-indigo-600 h-4 w-4" />
                             </div>
                             <div className="flex flex-col">
-                              <span className="text-xs text-gray-600 font-medium">Duration</span>
+                              <span className="text-xs text-gray-600 font-medium">
+                                Duration
+                              </span>
                               <span className="font-bold text-gray-900">
                                 {trip?.duration}d
                               </span>
@@ -218,11 +221,18 @@ export default function Trips() {
                               <HiOutlineCash className="text-indigo-600 h-4 w-4" />
                             </div>
                             <div className="flex flex-col">
-                              <span className="text-xs text-gray-600 font-medium">Budget</span>
+                              <span className="text-xs text-gray-600 font-medium">
+                                Budget
+                              </span>
                               <span className="font-bold text-gray-900 text-sm line-clamp-1">
-                                ₨{(trip?.budget / 1000)?.toLocaleString(undefined, {
-                                  maximumFractionDigits: 0,
-                                })}k
+                                ₨
+                                {(trip?.budget / 1000)?.toLocaleString(
+                                  undefined,
+                                  {
+                                    maximumFractionDigits: 0,
+                                  },
+                                )}
+                                k
                               </span>
                             </div>
                           </div>
@@ -242,7 +252,8 @@ export default function Trips() {
                       {/* Destinations - Enhanced */}
                       <div className="space-y-2 pt-2 border-t border-gray-200 group-hover:border-gray-300 transition-colors duration-300">
                         <p className="text-xs font-bold text-gray-700 flex items-center gap-1.5 uppercase tracking-wide">
-                          <MapPin className="h-3.5 w-3.5 text-indigo-600" /> Destinations
+                          <MapPin className="h-3.5 w-3.5 text-indigo-600" />{" "}
+                          Destinations
                         </p>
                         <div className="flex flex-wrap gap-1.5">
                           {trip.destinations?.slice(0, 2).map((d: any) => (
@@ -303,9 +314,10 @@ export default function Trips() {
                       onClick={() => setCurrentPage(page)}
                       className={`
                         rounded-lg font-semibold transition-all duration-300 transform hover:scale-105
-                        ${currentPage === page
-                          ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg hover:shadow-xl"
-                          : "border-2 border-indigo-300 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-500 hover:scale-105"
+                        ${
+                          currentPage === page
+                            ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg hover:shadow-xl"
+                            : "border-2 border-indigo-300 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-500 hover:scale-105"
                         }
                       `}
                     >
