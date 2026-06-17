@@ -35,7 +35,7 @@ import {
   Clock,
 } from "lucide-react";
 import Link from "next/link";
-import { CardSkeleton } from "@/_components/common/CardSkeleton";
+import { CardSkeleton } from "@/app/_components/common/CardSkeleton";
 
 function formatDate(dateStr: string) {
   const date = new Date(dateStr);
@@ -184,61 +184,48 @@ export default function Trips() {
 
                     {/* Content Section */}
                     <CardContent className="p-5 space-y-4 flex-grow relative z-10">
-                      {/* Quick Stats - Enhanced */}
+                      {/* Quick Stats */}
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="p-3 rounded-lg bg-gray-100 border border-gray-200 hover:bg-gray-200/50 transition-colors duration-300">
+                        <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
                           <div className="flex items-center gap-2">
-                            <div className="p-1.5 bg-indigo-500/10 rounded">
-                              <GiDuration className="text-indigo-600 h-4 w-4" />
-                            </div>
+                            <Clock className="text-blue-600 h-4 w-4" />
                             <div className="flex flex-col">
-                              <span className="text-xs text-gray-600 font-medium">
+                              <span className="text-xs text-gray-500">
                                 Duration
                               </span>
-                              <span className="font-bold text-gray-900">
-                                {trip?.duration}d
+                              <span className="font-semibold text-gray-900">
+                                {trip?.duration} days
                               </span>
                             </div>
                           </div>
                         </div>
-                        <div className="p-3 rounded-lg bg-gray-100 border border-gray-200 hover:bg-gray-200/50 transition-colors duration-300">
+                        <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
                           <div className="flex items-center gap-2">
-                            <div className="p-1.5 bg-indigo-500/10 rounded">
-                              <HiOutlineCash className="text-indigo-600 h-4 w-4" />
-                            </div>
+                            <Wallet className="text-blue-600 h-4 w-4" />
                             <div className="flex flex-col">
-                              <span className="text-xs text-gray-600 font-medium">
+                              <span className="text-xs text-gray-500">
                                 Budget
                               </span>
-                              <span className="font-bold text-gray-900 text-sm line-clamp-1">
-                                ₨
-                                {(trip?.budget / 1000)?.toLocaleString(
-                                  undefined,
-                                  {
-                                    maximumFractionDigits: 0,
-                                  },
-                                )}
-                                k
+                              <span className="font-semibold text-gray-900 text-sm">
+                                ₨{(trip?.budget / 1000)?.toFixed(0)}k
                               </span>
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* Trip Type Badge - Enhanced */}
+                      {/* Trip Type Badge */}
                       <div className="flex items-center gap-2 pt-1">
-                        <div className="p-1.5 bg-indigo-100 rounded">
-                          <IoMdAirplane className="text-indigo-600 h-4 w-4" />
-                        </div>
-                        <Badge className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-0 shadow-md hover:shadow-lg transition-all duration-300">
+                        <Plane className="text-blue-600 h-4 w-4" />
+                        <Badge className="bg-blue-100 text-blue-700 border-0">
                           {trip?.tripType}
                         </Badge>
                       </div>
 
-                      {/* Destinations - Enhanced */}
-                      <div className="space-y-2 pt-2 border-t border-gray-200 group-hover:border-gray-300 transition-colors duration-300">
-                        <p className="text-xs font-bold text-gray-700 flex items-center gap-1.5 uppercase tracking-wide">
-                          <MapPin className="h-3.5 w-3.5 text-indigo-600" />{" "}
+                      {/* Destinations */}
+                      <div className="space-y-2 pt-2 border-t border-gray-100">
+                        <p className="text-xs font-medium text-gray-500 flex items-center gap-1.5">
+                          <MapPin className="h-3.5 w-3.5 text-blue-600" />
                           Destinations
                         </p>
                         <div className="flex flex-wrap gap-1.5">
@@ -246,7 +233,7 @@ export default function Trips() {
                             <Badge
                               key={d}
                               variant="outline"
-                              className="text-xs font-medium bg-white text-indigo-600 border-indigo-300 hover:border-indigo-400 transition-colors duration-300"
+                              className="text-xs font-medium bg-white text-gray-600 border-gray-200"
                             >
                               {d}
                             </Badge>
@@ -254,7 +241,7 @@ export default function Trips() {
                           {trip.destinations?.length > 2 && (
                             <Badge
                               variant="outline"
-                              className="text-xs font-medium bg-white text-indigo-600 border-indigo-300 hover:border-indigo-400 transition-colors duration-300"
+                              className="text-xs font-medium bg-white text-gray-600 border-gray-200"
                             >
                               +{trip.destinations.length - 2}
                             </Badge>
@@ -263,12 +250,12 @@ export default function Trips() {
                       </div>
                     </CardContent>
 
-                    {/* Footer - Enhanced */}
-                    <CardFooter className="p-4 border-t border-gray-200 mt-auto transition-colors duration-300 bg-gray-50">
+                    {/* Footer */}
+                    <CardFooter className="p-4 border-t border-gray-100 mt-auto bg-gray-50">
                       <Link href={`/app/trips/${trip._id}`} className="w-full">
-                        <Button className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold group/btn flex items-center justify-center gap-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5">
+                        <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium flex items-center justify-center gap-2">
                           View Itinerary
-                          <ChevronRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform duration-300" />
+                          <ChevronRight className="h-4 w-4" />
                         </Button>
                       </Link>
                     </CardFooter>
@@ -328,22 +315,21 @@ export default function Trips() {
             )}
           </>
         ) : (
-          /* Empty State - Enhanced */
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="mb-6 p-8 bg-indigo-100 rounded-full animate-bounce relative shadow-xl">
-              <Plane className="h-16 w-16 text-indigo-600 relative z-10" />
+          /* Empty State */
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="mb-4 p-6 bg-blue-100 rounded-full">
+              <Plane className="h-12 w-12 text-blue-600" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-3">
-              No trips planned yet
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              No trips yet
             </h2>
-            <p className="text-gray-600 mb-8 max-w-md text-lg leading-relaxed">
-              Start your adventure by planning your first trip. Our AI will help
-              you create an amazing itinerary tailored to your preferences!
+            <p className="text-gray-500 mb-6 max-w-sm">
+              Plan your first trip and let our AI create an amazing itinerary for you.
             </p>
             <Link href="/app/new-trip">
-              <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white flex items-center gap-2 h-12 px-8 text-base rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 active:scale-95">
-                <Plus className="h-5 w-5" />
-                Plan Your First Trip
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Plan a Trip
               </Button>
             </Link>
           </div>
