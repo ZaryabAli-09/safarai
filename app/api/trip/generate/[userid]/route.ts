@@ -1,6 +1,5 @@
 import { response } from "@/lib/helperFunctions";
-import { apiError } from "@/lib/apiResponse";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Trip } from "@/models/Trip";
 import { dbConnect } from "@/lib/db";
@@ -19,23 +18,23 @@ export async function POST(
 
     // Validate and sanitize input to prevent injection attacks
     if (!userid) {
-      return apiError("User id not found", 400);
+      return response(false, 400, "User id not found");
     }
 
     const sanitized = sanitizeAiPrompt(tripDetails);
 
     if (!sanitized.destinations || sanitized.destinations.length === 0) {
-      return apiError("Please enter at least one destination", 400);
+      return response(false, 400, "Please enter at least one destination");
     }
     if (
       !sanitized.duration ||
       sanitized.duration < 1 ||
       sanitized.duration > 30
     ) {
-      return apiError("Duration must be between 1 and 30 days", 400);
+      return response(false, 400, "Duration must be between 1 and 30 days");
     }
     if (!sanitized.budget || sanitized.budget <= 0) {
-      return apiError("Budget must be a positive number", 400);
+      return response(false, 400, "Budget must be a positive number");
     }
 
     const prompt = `

@@ -1,6 +1,5 @@
 import { dbConnect } from "@/lib/db";
 import { response } from "@/lib/helperFunctions";
-import { apiError } from "@/lib/apiResponse";
 import { Trip } from "@/models/Trip";
 import { NextRequest } from "next/server";
 
@@ -13,7 +12,7 @@ export async function GET(
     const { searchParams } = new URL(req.url);
 
     if (!userid) {
-      return apiError("User id not found", 400);
+      return response(false, 400, "User id not found");
     }
 
     // Get pagination parameters with defaults and limits
