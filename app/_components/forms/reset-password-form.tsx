@@ -42,7 +42,7 @@ export function ResetPasswordForm({
       setLoading(true);
 
       const res = await fetch(
-        `/api/auth/reset-password?resetToken=${resetToken}&newPassword=${newPassword}`
+        `/api/auth/reset-password?resetToken=${resetToken}&newPassword=${newPassword}`,
       );
 
       const data = await res.json();

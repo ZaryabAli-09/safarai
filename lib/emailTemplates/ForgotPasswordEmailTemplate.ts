@@ -1,10 +1,13 @@
+// forgotPasswordEmailTemplate.ts
+interface ForgotPasswordProps {
+  email: string;
+  resetLink: string;
+}
+
 export function ForgotPasswordEmailTemplate({
   email,
   resetLink,
-}: {
-  email: string;
-  resetLink: string;
-}) {
+}: ForgotPasswordProps) {
   return `
     <div style="background-color:#e5e7eb; padding:24px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1); border:1px solid #d1d5db;">
     <h1 style="font-weight:bold; font-size:20px;">Welcome to ${process.env

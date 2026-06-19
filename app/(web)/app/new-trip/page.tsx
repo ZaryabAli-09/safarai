@@ -198,7 +198,9 @@ export default function NewTrip() {
     { number: 4, title: "Review", icon: Check },
   ];
 
-  const perDay = formData.duration ? Math.round(formData.budget / formData.duration) : 0;
+  const perDay = formData.duration
+    ? Math.round(formData.budget / formData.duration)
+    : 0;
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50 py-8 px-4">
@@ -612,7 +614,10 @@ export default function NewTrip() {
                     <MapPin className="h-6 w-6 text-indigo-600" />
                     <div>
                       <p className="font-medium text-gray-700">Map preview</p>
-                      <p className="text-sm text-gray-500">Map preview coming soon — will show destinations and route.</p>
+                      <p className="text-sm text-gray-500">
+                        Map preview coming soon — will show destinations and
+                        route.
+                      </p>
                     </div>
                   </div>
                 </div>

@@ -1,17 +1,17 @@
 import { response } from "@/lib/helperFunctions";
-import { apiError } from \"@/lib/apiResponse\";
-import { NextRequest, NextResponse } from \"next/server\";
-import { GoogleGenerativeAI } from \"@google/generative-ai\";
-import { Trip } from \"@/models/Trip\";
-import { dbConnect } from \"@/lib/db\";
-import { sanitizeAiPrompt } from \"@/lib/sanitization\";
+import { apiError } from "@/lib/apiResponse";
+import { NextRequest, NextResponse } from "next/server";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Trip } from "@/models/Trip";
+import { dbConnect } from "@/lib/db";
+import { sanitizeAiPrompt } from "@/lib/sanitization";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVEAI_API_KEY!);
 const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
 export async function POST(
   req: NextRequest,
-  params: { params: { userid: string } }
+  params: { params: { userid: string } },
 ) {
   try {
     const { userid } = await params.params;
@@ -19,19 +19,23 @@ export async function POST(
 
     // Validate and sanitize input to prevent injection attacks
     if (!userid) {
-      return apiError(\"User id not found\", 400);
+      return apiError("User id not found", 400);
     }
-    
+
     const sanitized = sanitizeAiPrompt(tripDetails);
-    
+
     if (!sanitized.destinations || sanitized.destinations.length === 0) {
-      return apiError(\"Please enter at least one destination\", 400);
+      return apiError("Please enter at least one destination", 400);
     }
-    if (!sanitized.duration || sanitized.duration < 1 || sanitized.duration > 30) {
-      return apiError(\"Duration must be between 1 and 30 days\", 400);
+    if (
+      !sanitized.duration ||
+      sanitized.duration < 1 ||
+      sanitized.duration > 30
+    ) {
+      return apiError("Duration must be between 1 and 30 days", 400);
     }
     if (!sanitized.budget || sanitized.budget <= 0) {
-      return apiError(\"Budget must be a positive number\", 400);
+      return apiError("Budget must be a positive number", 400);
     }
 
     const prompt = `
@@ -85,7 +89,7 @@ export async function POST(
       return response(
         false,
         400,
-        "Failed to generate itinerary. Something went wrong"
+        "Failed to generate itinerary. Something went wrong",
       );
 
     // Log removed for production safety
@@ -96,7 +100,7 @@ export async function POST(
       return response(
         false,
         500,
-        "Failed to generate itinerary. Something went wrong"
+        "Failed to generate itinerary. Something went wrong",
       );
     }
     // remove markdown from text (*)  and trim
@@ -107,7 +111,7 @@ export async function POST(
     let mainText = cleanText;
 
     const notesMatch = cleanText.match(
-      /(?:Notes:|Important Considerations:)([\s\S]*)/i
+      /(?:Notes:|Important Considerations:)([\s\S]*)/i,
     );
     if (notesMatch) {
       notes = notesMatch[1].trim();
@@ -123,7 +127,7 @@ export async function POST(
       return response(
         false,
         400,
-        "Failed to generate itinerary. Something went wrong"
+        "Failed to generate itinerary. Something went wrong",
       );
     }
     let aiSuggestions: any[] = [];
@@ -140,7 +144,7 @@ export async function POST(
         (timeOfDay) => {
           const regex = new RegExp(
             `${timeOfDay}:([\\s\\S]*?)(?=Morning Activity:|Afternoon Activity:|Evening Activity:|$)`,
-            "i"
+            "i",
           );
           const match = dayText.match(regex);
 
@@ -149,7 +153,7 @@ export async function POST(
             const titleMatch = textBlock.match(/Title:\s*(.*)/i);
             const budgetMatch = textBlock.match(/Budget:\s*(.*)/i);
             const descriptionMatch = textBlock.match(
-              /Description:\s*([\s\S]*)/i
+              /Description:\s*([\s\S]*)/i,
             );
 
             activities.push({
@@ -159,7 +163,7 @@ export async function POST(
               description: descriptionMatch?.[1]?.trim() || "",
             });
           }
-        }
+        },
       );
 
       if (activities.length > 0) {
@@ -195,6 +199,6 @@ export async function POST(
 
     return response(true, 201, "Itinerary generated successfully", trip);
   } catch (error) {
-    return apiError(\"Failed to generate itinerary\", 500);
+    return apiError("Failed to generate itinerary", 500);
   }
 }

@@ -1,4 +1,4 @@
-// emailTemplates.ts
+// verificationEmailTemplate.ts
 
 interface verificationProps {
   email: string;

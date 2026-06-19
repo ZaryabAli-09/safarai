@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     return response(
       true,
       200,
-      "Password reset email sent, please check your inbox",
+      "Password reset email sent, please check your inbox"
     );
   } catch (error) {
     console.error("Error in forgot password route:", error);
