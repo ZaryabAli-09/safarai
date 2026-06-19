@@ -372,7 +372,7 @@ export default function NewTrip() {
                 )}
 
                 <div>
-                  <Label className="text-lg font-semibold mb-2 block flex items-center gap-2">
+                  <Label className="text-lg font-semibold mb-2 block items-center gap-2">
                     <Wallet className="h-5 w-5" />
                     Budget (PKR)
                   </Label>
@@ -518,7 +518,7 @@ export default function NewTrip() {
                 </div>
 
                 <div>
-                  <Label className="text-lg font-semibold mb-3 block flex items-center gap-2">
+                  <Label className="text-lg font-semibold mb-3 block items-center gap-2">
                     <Heart className="h-5 w-5" />
                     Interests
                   </Label>
