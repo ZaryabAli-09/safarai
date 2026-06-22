@@ -1,7 +1,7 @@
 import React from "react";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/authOptions";
+import { authOptions } from "@/config/authOptions";
 import { Users, MapPin, TrendingUp, Calendar } from "lucide-react";
 import {
   Card,
