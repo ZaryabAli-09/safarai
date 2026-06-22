@@ -1,7 +1,7 @@
 import { response } from "@/lib/helperFunctions";
 import { NextRequest } from "next/server";
 import crypto from "crypto";
-import { dbConnect } from "@/lib/db";
+import { dbConnect } from "@/config/db";
 import { User } from "@/models/User";
 import z from "zod";
 
