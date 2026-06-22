@@ -1,7 +1,7 @@
-import { dbConnect } from "@/lib/db";
+import { dbConnect } from "@/config/db";
 import { NextRequest } from "next/server";
 import { User } from "@/models/User";
-import { sendEmail } from "@/lib/nodemailer";
+import { sendEmail } from "@/config/email";
 import { generateOtp, response } from "@/lib/helperFunctions";
 import { verificationEmailTemplate } from "@/lib/emailTemplates/VerificationEmailTemplate";
 import { z } from "zod";

@@ -1,9 +1,9 @@
-import { dbConnect } from "@/lib/db";
+import { dbConnect } from "@/config/db";
 import { response } from "@/lib/helperFunctions";
 import { User } from "@/models/User";
 import { NextRequest } from "next/server";
 import crypto from "crypto";
-import { sendEmail } from "@/lib/nodemailer";
+import { sendEmail } from "@/config/email";
 import { ForgotPasswordEmailTemplate } from "@/lib/emailTemplates/ForgotPasswordEmailTemplate";
 import { z } from "zod";
 
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     return response(
       true,
       200,
-      "Password reset email sent, please check your inbox"
+      "Password reset email sent, please check your inbox",
     );
   } catch (error) {
     console.error("Error in forgot password route:", error);
