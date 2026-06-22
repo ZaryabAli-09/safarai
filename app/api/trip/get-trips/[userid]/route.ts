@@ -1,4 +1,4 @@
-import { dbConnect } from "@/lib/db";
+import { dbConnect } from "@/config/db";
 import { response } from "@/lib/helperFunctions";
 import { Trip } from "@/models/Trip";
 import { NextRequest } from "next/server";
@@ -48,6 +48,6 @@ export async function GET(
       },
     });
   } catch (error) {
-    return apiError("Failed to retrieve trips", 500);
+    return response(false, 500, "Internal server error");
   }
 }

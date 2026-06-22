@@ -2,7 +2,7 @@ import { response } from "@/lib/helperFunctions";
 import { NextRequest } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Trip } from "@/models/Trip";
-import { dbConnect } from "@/lib/db";
+import { dbConnect } from "@/config/db";
 import { sanitizeAiPrompt } from "@/lib/sanitization";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVEAI_API_KEY!);
@@ -198,6 +198,6 @@ export async function POST(
 
     return response(true, 201, "Itinerary generated successfully", trip);
   } catch (error) {
-    return apiError("Failed to generate itinerary", 500);
+    return response(false, 500, "Internal server error");
   }
 }
