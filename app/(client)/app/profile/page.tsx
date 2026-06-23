@@ -141,9 +141,9 @@ export default function Profile() {
   /* -------------------- UI -------------------- */
 
   return (
-    <div className="container mx-auto py-10 px-4 max-w-2xl">
+    <div className="container mx-auto py-10 px-4 max-w-2xl border-none bg-transparent shadow-none">
       {initialLoading ? (
-        <Card>
+        <Card className="border-none bg-transparent shadow-none">
           <CardHeader>
             <Skeleton className="h-8 w-48 mb-2" />
             <Skeleton className="h-4 w-64" />
@@ -159,7 +159,7 @@ export default function Profile() {
           </CardFooter>
         </Card>
       ) : (
-        <Card>
+        <Card className="border bg-transparent shadow-none">
           <CardHeader>
             <CardTitle>Profile</CardTitle>
             <CardDescription>
