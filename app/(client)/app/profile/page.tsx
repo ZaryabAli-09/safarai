@@ -221,7 +221,10 @@ export default function Profile() {
                     onOpenChange={setOpenDatePicker}
                   >
                     <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-full justify-between">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-between"
+                      >
                         {formData.dob
                           ? new Date(formData.dob).toLocaleDateString()
                           : "Select date"}
