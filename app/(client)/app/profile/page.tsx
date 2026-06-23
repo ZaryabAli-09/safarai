@@ -4,11 +4,11 @@ import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { z } from "zod";
 import toast from "react-hot-toast";
-import { ChevronDownIcon, User, Mail, Calendar, Heart } from "lucide-react";
+import { Calendar } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -17,13 +17,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 const formSchema = z.object({
   username: z.string().trim().min(3, "Name must be at least 3 characters"),
@@ -134,114 +141,94 @@ export default function Profile() {
   /* -------------------- UI -------------------- */
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50 py-8 px-4">
-      <div className="max-w-2xl mx-auto space-y-6">
-        {/* Header Section */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Your Profile
-          </h1>
-          <p className="text-gray-600">Manage your personal information</p>
-        </div>
-
-        {/* Profile Card */}
-        {initialLoading ? (
-          <div className="space-y-6">
-            <Skeleton className="h-32 w-32 rounded-full mx-auto" />
+    <div className="container mx-auto py-10 px-4 max-w-2xl">
+      {initialLoading ? (
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </CardHeader>
+          <CardContent className="space-y-4">
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
-          </div>
-        ) : (
-          <div className="w-full bg-white rounded-2xl shadow-lg overflow-hidden">
-            {/* Avatar and Header */}
-            <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-8">
-              <div className="flex flex-col items-center gap-4">
-                <div className="relative">
-                  <div className="h-24 w-24 rounded-full bg-white flex items-center justify-center text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-pink-600 shadow-lg">
-                    {formData.username
-                      ? formData.username.slice(0, 2).toUpperCase()
-                      : "U"}
-                  </div>
-                  <div className="absolute bottom-0 right-0 h-6 w-6 bg-green-400 border-4 border-white rounded-full" />
+            <Skeleton className="h-10 w-full" />
+          </CardContent>
+          <CardFooter>
+            <Skeleton className="h-10 w-32" />
+          </CardFooter>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Profile</CardTitle>
+            <CardDescription>
+              Manage your personal information and account settings.
+            </CardDescription>
+          </CardHeader>
+          <form onSubmit={handleSubmit}>
+            <CardContent className="space-y-6">
+              {/* Avatar Section */}
+              <div className="flex items-center gap-4">
+                <div className="h-16 w-16 rounded-full border-2 border-muted flex items-center justify-center text-xl font-semibold bg-muted">
+                  {formData.username
+                    ? formData.username.slice(0, 2).toUpperCase()
+                    : "U"}
                 </div>
-                <div className="text-center text-white">
-                  <h2 className="text-2xl font-bold">
-                    {formData.username || "User"}
-                  </h2>
-                  <p className="text-indigo-100 text-sm">
-                    Update your details below
+                <div>
+                  <p className="font-medium">{formData.username || "User"}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {formData.email}
                   </p>
                 </div>
               </div>
-            </div>
 
-            {/* Form Section */}
-            <form onSubmit={handleSubmit} className="p-8 space-y-6">
               {/* Name Field */}
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <User className="text-indigo-600 h-5 w-5" />
-                  <FieldLabel className="text-gray-700 font-semibold">
-                    Full Name
-                  </FieldLabel>
-                </div>
+                <Label htmlFor="username">Full Name</Label>
                 <Input
+                  id="username"
                   name="username"
                   value={formData.username}
                   onChange={handleInputChange}
                   disabled={loading}
                   placeholder="Enter your full name"
-                  className="h-12 text-base"
                 />
               </div>
 
               {/* Email Field */}
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Mail className="text-indigo-600 h-5 w-5" />
-                  <FieldLabel className="text-gray-700 font-semibold">
-                    Email Address
-                  </FieldLabel>
-                </div>
+                <Label htmlFor="email">Email Address</Label>
                 <Input
+                  id="email"
                   name="email"
                   value={formData.email}
                   disabled
-                  className="h-12 text-base bg-gray-50"
+                  className="bg-muted"
                 />
-                <p className="text-xs text-gray-500">Email cannot be changed</p>
+                <p className="text-xs text-muted-foreground">
+                  Email cannot be changed
+                </p>
               </div>
 
               {/* Gender and DOB Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Date of Birth */}
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="text-indigo-600 h-5 w-5" />
-                    <Label className="text-gray-700 font-semibold">
-                      Date of Birth
-                    </Label>
-                  </div>
+                  <Label>Date of Birth</Label>
                   <Popover
                     open={openDatePicker}
                     onOpenChange={setOpenDatePicker}
                   >
                     <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full h-12 justify-between text-base"
-                      >
+                      <Button variant="outline" className="w-full justify-between">
                         {formData.dob
                           ? new Date(formData.dob).toLocaleDateString()
                           : "Select date"}
-                        <ChevronDownIcon className="h-4 w-4 opacity-70" />
+                        <Calendar className="ml-2 h-4 w-4" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent
-                      className="w-auto overflow-hidden p-0"
-                      align="start"
-                    >
+                    <PopoverContent className="w-auto p-0" align="start">
                       <CalendarComponent
                         mode="single"
                         selected={
@@ -263,12 +250,7 @@ export default function Profile() {
 
                 {/* Gender */}
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Heart className="text-indigo-600 h-5 w-5" />
-                    <FieldLabel className="text-gray-700 font-semibold">
-                      Gender
-                    </FieldLabel>
-                  </div>
+                  <Label>Gender</Label>
                   <Select
                     value={formData.gender || ""}
                     onValueChange={(value) =>
@@ -278,7 +260,7 @@ export default function Profile() {
                       }))
                     }
                   >
-                    <SelectTrigger className="h-12 text-base">
+                    <SelectTrigger>
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
                     <SelectContent>
@@ -292,29 +274,23 @@ export default function Profile() {
                   </Select>
                 </div>
               </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-4 pt-4">
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold text-base"
-                >
-                  {loading ? "Saving Changes..." : "Save Changes"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1 h-12 text-base"
-                  onClick={() => fetchUser()}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </div>
-        )}
-      </div>
+            </CardContent>
+            <CardFooter className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fetchUser()}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Saving..." : "Save Changes"}
+              </Button>
+            </CardFooter>
+          </form>
+        </Card>
+      )}
     </div>
   );
 }
