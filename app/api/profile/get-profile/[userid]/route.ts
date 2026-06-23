@@ -5,7 +5,7 @@ import { NextRequest } from "next/server";
 
 export async function GET(
   req: NextRequest,
-  params: { params: { userid: string } }
+  params: { params: { userid: string } },
 ) {
   try {
     const { userid } = await params.params;
@@ -15,10 +15,9 @@ export async function GET(
 
     await dbConnect();
     const user = await User.findById(userid).select(
-      "username email gender dob"
+      "username email gender dob",
     );
 
-    console.log(user);
     if (!user) {
       return response(false, 400, "User not found unauthorized request");
     }
