@@ -14,6 +14,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import toast from "react-hot-toast";
 import {
   ChevronLeft,
@@ -24,8 +33,8 @@ import {
   Zap,
   Check,
   Calendar,
+  X,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 
 const TRIP_TYPES = [
   "adventure",
