@@ -212,186 +212,144 @@ export default function NewTrip() {
     : 0;
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50 py-8 px-4">
-      <div className="max-w-3xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Plan Your Trip
-          </h1>
-          <p className="text-gray-600">
+    <div className="container mx-auto py-10 px-4 max-w-2xl">
+      <Card className="mb-6">
+        <CardHeader className="text-center">
+          <CardTitle>Plan Your Trip</CardTitle>
+          <CardDescription>
             Create an amazing itinerary with AI assistance
-          </p>
-        </div>
+          </CardDescription>
+        </CardHeader>
+      </Card>
 
-        {/* Progress Indicator */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-4">
-            {steps.map((s, idx) => {
-              const Icon = s.icon;
-              const isActive = s.number === step;
-              const isCompleted = s.number < step;
+      {/* Progress Steps */}
+      <div className="mb-6">
+        <div className="flex items-center">
+          {steps.map((s, idx) => {
+            const Icon = s.icon;
+            const isActive = s.number === step;
+            const isCompleted = s.number < step;
 
-              return (
-                <div
-                  key={s.number}
-                  className="flex flex-col items-center flex-1"
-                >
+            return (
+              <div key={s.number} className="flex items-center flex-1">
+                <div className="flex flex-col items-center flex-1">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-all ${
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium border ${
                       isActive
-                        ? "bg-indigo-600 text-white shadow-lg scale-125"
+                        ? "border-primary bg-primary text-primary-foreground"
                         : isCompleted
-                          ? "bg-green-500 text-white"
-                          : "bg-gray-200 text-gray-600"
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-muted bg-muted text-muted-foreground"
                     }`}
                   >
                     {isCompleted ? (
-                      <Check className="h-6 w-6" />
+                      <Check className="h-4 w-4" />
                     ) : (
-                      <Icon className="h-6 w-6" />
+                      <Icon className="h-4 w-4" />
                     )}
                   </div>
-                  <p className="text-sm font-medium text-gray-700">{s.title}</p>
-
-                  {idx < steps.length - 1 && (
-                    <div
-                      className={`absolute left-[calc(12.5%+24px)] top-6 w-[calc(25% - 48px)] h-1 ${
-                        isCompleted ? "bg-green-500" : "bg-gray-200"
-                      }`}
-                    />
-                  )}
+                  <span className="text-xs mt-1 font-medium">{s.title}</span>
                 </div>
-              );
-            })}
-          </div>
+                {idx < steps.length - 1 && (
+                  <div
+                    className={`flex-1 h-0.5 mx-2 ${
+                      isCompleted ? "bg-primary" : "bg-muted"
+                    }`}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
+      </div>
 
-        {/* Form Card */}
-        <div className="bg-white rounded-2xl shadow-lg p-8">
-          <AnimatePresence mode="wait">
+      <Card>
             {/* Step 1: Basics */}
             {step === 1 && (
-              <motion.div
-                key="step1"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6"
-              >
-                <div>
-                  <Label className="text-lg font-semibold mb-2 block">
-                    Trip Name
-                  </Label>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label>Trip Name</Label>
                   <Input
                     placeholder="e.g., Northern Pakistan Adventure"
                     value={formData.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
-                    className="h-12 text-base"
                   />
                 </div>
 
-                <div>
-                  <Label className="text-lg font-semibold mb-2 block">
-                    Destinations ({formData.destinations.length}/10)
-                  </Label>
-                  <div className="flex gap-2 mb-4">
+                <div className="space-y-2">
+                  <Label>Destinations ({formData.destinations.length}/10)</Label>
+                  <div className="flex gap-2">
                     <Input
                       placeholder="Enter destination"
                       value={destinationInput}
                       onChange={(e) => setDestinationInput(e.target.value)}
-                      onKeyPress={(e) => e.key === "Enter" && addDestination()}
-                      className="h-12 text-base flex-1"
+                      onKeyDown={(e) => e.key === "Enter" && addDestination()}
                     />
-                    <Button
-                      onClick={addDestination}
-                      className="bg-indigo-600 hover:bg-indigo-700"
-                    >
+                    <Button onClick={addDestination}>
                       Add
                     </Button>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2">
                     {formData.destinations.map((dest, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between bg-indigo-50 p-3 rounded-lg"
-                      >
-                        <span className="font-medium text-gray-700">
-                          {idx + 1}. {dest}
-                        </span>
+                      <Badge key={idx} variant="secondary" className="gap-1">
+                        {dest}
                         <button
                           onClick={() => removeDestination(idx)}
-                          className="text-red-500 hover:text-red-700 font-bold"
+                          className="ml-1 hover:text-destructive"
                         >
-                          ×
+                          <X className="h-3 w-3" />
                         </button>
-                      </div>
+                      </Badge>
                     ))}
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* Step 2: Dates */}
             {step === 2 && (
-              <motion.div
-                key="step2"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6"
-              >
+              <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-lg font-semibold mb-2 block">
-                      Start Date
-                    </Label>
+                  <div className="space-y-2">
+                    <Label>Start Date</Label>
                     <Input
                       type="date"
                       value={formData.startDate}
                       onChange={(e) =>
                         handleInputChange("startDate", e.target.value)
                       }
-                      className="h-12 text-base"
                     />
                   </div>
-                  <div>
-                    <Label className="text-lg font-semibold mb-2 block">
-                      End Date
-                    </Label>
+                  <div className="space-y-2">
+                    <Label>End Date</Label>
                     <Input
                       type="date"
                       value={formData.endDate}
                       onChange={(e) =>
                         handleInputChange("endDate", e.target.value)
                       }
-                      className="h-12 text-base"
                     />
                   </div>
                 </div>
 
                 {formData.duration > 0 && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <p className="text-sm text-gray-600">Trip Duration</p>
-                    <p className="text-3xl font-bold text-green-600">
+                  <div className="rounded-lg border bg-muted p-4">
+                    <p className="text-sm text-muted-foreground">Trip Duration</p>
+                    <p className="text-2xl font-semibold">
                       {formData.duration} days
                     </p>
                   </div>
                 )}
 
-                <div>
-                  <Label className="text-lg font-semibold mb-2 block items-center gap-2">
-                    <Wallet className="h-5 w-5" />
-                    Budget (PKR)
-                  </Label>
+                <div className="space-y-2">
+                  <Label>Budget (PKR)</Label>
                   <Input
                     type="number"
                     value={formData.budget}
                     onChange={(e) =>
                       handleInputChange("budget", parseInt(e.target.value))
                     }
-                    className="h-12 text-base mb-4"
                   />
                   <Slider
                     value={[formData.budget]}
@@ -399,38 +357,29 @@ export default function NewTrip() {
                     min={1000}
                     max={500000}
                     step={5000}
-                    className="w-full"
                   />
-                  <p className="text-sm text-gray-600 mt-2">
+                  <p className="text-sm text-muted-foreground">
                     ₨{formData.budget?.toLocaleString()}
                   </p>
                   {formData.duration > 0 && (
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-muted-foreground">
                       ≈ ₨{perDay.toLocaleString()} per day
                     </p>
                   )}
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* Step 3: Preferences */}
             {step === 3 && (
-              <motion.div
-                key="step3"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6"
-              >
-                <div>
-                  <Label className="text-lg font-semibold mb-3 block">
-                    Trip Type
-                  </Label>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label>Trip Type</Label>
                   <Select
                     value={formData.tripType}
                     onValueChange={(val) => handleInputChange("tripType", val)}
                   >
-                    <SelectTrigger className="h-12 text-base">
+                    <SelectTrigger>
                       <SelectValue placeholder="Select trip type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -447,17 +396,15 @@ export default function NewTrip() {
                   </Select>
                 </div>
 
-                <div>
-                  <Label className="text-lg font-semibold mb-3 block">
-                    Transportation
-                  </Label>
+                <div className="space-y-2">
+                  <Label>Transportation</Label>
                   <Select
                     value={formData.transportation}
                     onValueChange={(val) =>
                       handleInputChange("transportation", val)
                     }
                   >
-                    <SelectTrigger className="h-12 text-base">
+                    <SelectTrigger>
                       <SelectValue placeholder="Select transportation" />
                     </SelectTrigger>
                     <SelectContent>
@@ -474,17 +421,15 @@ export default function NewTrip() {
                   </Select>
                 </div>
 
-                <div>
-                  <Label className="text-lg font-semibold mb-3 block">
-                    Accommodation
-                  </Label>
+                <div className="space-y-2">
+                  <Label>Accommodation</Label>
                   <Select
                     value={formData.accommodation}
                     onValueChange={(val) =>
                       handleInputChange("accommodation", val)
                     }
                   >
-                    <SelectTrigger className="h-12 text-base">
+                    <SelectTrigger>
                       <SelectValue placeholder="Select accommodation" />
                     </SelectTrigger>
                     <SelectContent>
@@ -501,15 +446,13 @@ export default function NewTrip() {
                   </Select>
                 </div>
 
-                <div>
-                  <Label className="text-lg font-semibold mb-3 block">
-                    Trip Pace
-                  </Label>
+                <div className="space-y-2">
+                  <Label>Trip Pace</Label>
                   <Select
                     value={formData.tripPace}
                     onValueChange={(val) => handleInputChange("tripPace", val)}
                   >
-                    <SelectTrigger className="h-12 text-base">
+                    <SelectTrigger>
                       <SelectValue placeholder="Select pace" />
                     </SelectTrigger>
                     <SelectContent>
@@ -526,122 +469,88 @@ export default function NewTrip() {
                   </Select>
                 </div>
 
-                <div>
-                  <Label className="text-lg font-semibold mb-3 block items-center gap-2">
-                    <Heart className="h-5 w-5" />
-                    Interests
-                  </Label>
-                  <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Interests</Label>
+                  <div className="flex flex-wrap gap-2">
                     {INTERESTS.map((interest) => (
-                      <button
+                      <Button
                         key={interest}
+                        type="button"
+                        variant={formData.interests.includes(interest) ? "default" : "outline"}
+                        size="sm"
                         onClick={() => toggleArrayValue("interests", interest)}
-                        className={`p-3 rounded-lg font-medium transition-all ${
-                          formData.interests.includes(interest)
-                            ? "bg-indigo-600 text-white"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}
                       >
                         {interest.charAt(0).toUpperCase() + interest.slice(1)}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* Step 4: Review */}
             {step === 4 && (
-              <motion.div
-                key="step4"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6"
-              >
-                <div className="bg-indigo-50 rounded-lg p-6 space-y-4">
-                  <div className="flex justify-between items-start">
-                    <span className="font-medium text-gray-700">
-                      Trip Name:
-                    </span>
-                    <span className="font-bold text-lg text-indigo-600">
-                      {formData.name}
-                    </span>
+              <div className="space-y-6">
+                <div className="rounded-lg border bg-muted p-6 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Trip Name</span>
+                    <span className="font-semibold">{formData.name}</span>
                   </div>
-                  <div className="flex justify-between items-start">
-                    <span className="font-medium text-gray-700">Duration:</span>
-                    <span className="font-bold text-indigo-600">
-                      {formData.duration} days
-                    </span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Duration</span>
+                    <span className="font-semibold">{formData.duration} days</span>
                   </div>
-                  <div className="flex justify-between items-start">
-                    <span className="font-medium text-gray-700">Budget:</span>
-                    <span className="font-bold text-green-600">
-                      ₨{formData.budget?.toLocaleString()}
-                    </span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Budget</span>
+                    <span className="font-semibold">₨{formData.budget?.toLocaleString()}</span>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-700 block mb-2">
-                      Destinations:
-                    </span>
+                    <span className="text-muted-foreground block mb-2">Destinations</span>
                     <div className="flex flex-wrap gap-2">
                       {formData.destinations.map((dest) => (
-                        <span
-                          key={dest}
-                          className="bg-indigo-200 text-indigo-800 px-3 py-1 rounded-full text-sm font-medium"
-                        >
-                          {dest}
-                        </span>
+                        <Badge key={dest} variant="secondary">{dest}</Badge>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-700 block mb-2">
-                      Interests:
-                    </span>
+                    <span className="text-muted-foreground block mb-2">Interests</span>
                     <div className="flex flex-wrap gap-2">
                       {formData.interests.map((interest) => (
-                        <span
-                          key={interest}
-                          className="bg-purple-200 text-purple-800 px-3 py-1 rounded-full text-sm font-medium"
-                        >
-                          {interest}
-                        </span>
+                        <Badge key={interest} variant="outline">{interest}</Badge>
                       ))}
                     </div>
                   </div>
                 </div>
 
-                <p className="text-gray-600 text-center">
+                <p className="text-muted-foreground text-center text-sm">
                   Ready to generate your personalized itinerary? Click "Generate
                   Trip" and our AI will create an amazing plan for you!
                 </p>
 
                 {/* Map placeholder */}
-                <div className="mt-4 p-4 border border-dashed rounded-lg bg-white">
+                <div className="mt-4 p-4 border border-dashed rounded-lg">
                   <div className="flex items-center gap-3">
-                    <MapPin className="h-6 w-6 text-indigo-600" />
+                    <MapPin className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="font-medium text-gray-700">Map preview</p>
-                      <p className="text-sm text-gray-500">
+                      <p className="font-medium">Map preview</p>
+                      <p className="text-sm text-muted-foreground">
                         Map preview coming soon — will show destinations and
                         route.
                       </p>
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
-        </div>
+        </Card>
 
         {/* Navigation Buttons */}
-        <div className="flex gap-4 mt-8">
+        <div className="flex gap-4 mt-6">
           <Button
             variant="outline"
             onClick={() => setStep(Math.max(1, step - 1))}
             disabled={step === 1}
-            className="flex-1 h-12 text-base"
+            className="flex-1"
           >
             <ChevronLeft className="h-4 w-4 mr-2" />
             Previous
@@ -650,7 +559,7 @@ export default function NewTrip() {
           {step < 4 ? (
             <Button
               onClick={handleNext}
-              className="flex-1 h-12 bg-indigo-600 hover:bg-indigo-700 text-white text-base"
+              className="flex-1"
             >
               Next
               <ChevronRight className="h-4 w-4 ml-2" />
@@ -659,7 +568,6 @@ export default function NewTrip() {
             <Button
               onClick={handleSubmit}
               disabled={loading}
-              className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-white text-base"
             >
               {loading ? "Generating..." : "Generate Trip"}
               <Zap className="h-4 w-4 ml-2" />
