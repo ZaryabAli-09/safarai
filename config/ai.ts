@@ -29,7 +29,8 @@ async function callOpenRouter(
       headers: {
         Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+        "HTTP-Referer":
+          process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
         "X-Title": "Safar AI",
       },
       body: JSON.stringify({
@@ -41,7 +42,11 @@ async function callOpenRouter(
     });
 
     if (!res.ok) {
-      console.error(`OpenRouter error (${model}):`, res.status, await res.text());
+      console.error(
+        `OpenRouter error (${model}):`,
+        res.status,
+        await res.text(),
+      );
       return null;
     }
 

@@ -48,7 +48,9 @@ export async function getWeatherForLocation(
 
     return forecasts;
   } catch (error) {
-    console.warn("Weather API unavailable, generating trip without weather data");
+    console.warn(
+      "Weather API unavailable, generating trip without weather data",
+    );
     return null;
   }
 }

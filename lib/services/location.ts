@@ -43,7 +43,9 @@ export async function geocodeLocation(
       state: place.address?.state || "",
     };
   } catch (error) {
-    console.warn(`Geocoding failed for "${placeName}", continuing without coordinates`);
+    console.warn(
+      `Geocoding failed for "${placeName}", continuing without coordinates`,
+    );
     return null;
   }
 }
