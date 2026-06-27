@@ -1,37 +1,136 @@
 import mongoose from "mongoose";
 
 export interface IActivity {
-  timeOfDay: string; // e.g. "Morning Activity"
-  title: string; // e.g. "Visit Lake Saif-ul-Malook"
-  budget: string; // e.g. "PKR 3000"
-  description: string; // Detailed paragraph
+  id: string;
+  timeOfDay: string; // "morning" | "afternoon" | "evening"
+  title: string;
+  description: string;
+  location?: string;
+  coordinates?: { lat: number; lng: number };
+  estimatedCost: string;
+  duration?: string;
+  category?: string;
+  weather?: {
+    temp?: string;
+    condition?: string;
+    icon?: string;
+  };
+  rating?: number;
 }
 
-export interface IAiSuggestion {
-  day: string; // e.g. "Day 1: 2025-11-05 (Kaghan)"
+export interface IDayItinerary {
+  dayNumber: number;
+  date?: string;
+  title: string;
+  location: string;
   activities: IActivity[];
 }
+
+export interface IBudgetBreakdown {
+  accommodation: number;
+  food: number;
+  transport: number;
+  activities: number;
+  miscellaneous: number;
+  total: number;
+  currency: string;
+}
+
+export interface ITripSummary {
+  totalDays: number;
+  destinations: string[];
+  estimatedBudget: string;
+  bestSeason?: string;
+  travelStyle?: string;
+  familyFriendly?: boolean;
+}
+
 export interface ITrip {
   _id?: mongoose.Types.ObjectId;
-  userId: mongoose.Types.ObjectId; // ✅ Link to the user who created the trip
+  userId: mongoose.Types.ObjectId;
   name: string;
   destinations: string[];
   startDate: Date;
   endDate: Date;
   duration: number;
   budget: number;
+  currency: string;
   tripType: string;
   transportation: string;
   accommodation: string;
   tripPace: string;
-  specialOccasion: string;
   interests: string[];
-  diningPreferences: string[];
-  aiSuggestions: IAiSuggestion[];
-  aiSuggestedNotes: string;
+  travelers: number;
+  itinerary: IDayItinerary[];
+  summary: ITripSummary;
+  budgetBreakdown: IBudgetBreakdown;
+  packingList: string[];
+  travelTips: string[];
+  aiNotes: string;
+  status: "generating" | "completed" | "draft";
   createdAt?: Date;
   updatedAt?: Date;
 }
+
+const ActivitySchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true },
+    timeOfDay: { type: String, required: true },
+    title: { type: String, required: true },
+    description: { type: String, default: "" },
+    location: { type: String, default: "" },
+    coordinates: {
+      lat: { type: Number },
+      lng: { type: Number },
+    },
+    estimatedCost: { type: String, default: "" },
+    duration: { type: String, default: "" },
+    category: { type: String, default: "" },
+    weather: {
+      temp: { type: String },
+      condition: { type: String },
+      icon: { type: String },
+    },
+    rating: { type: Number },
+  },
+  { _id: false },
+);
+
+const DayItinerarySchema = new mongoose.Schema(
+  {
+    dayNumber: { type: Number, required: true },
+    date: { type: String },
+    title: { type: String, required: true },
+    location: { type: String, required: true },
+    activities: [ActivitySchema],
+  },
+  { _id: false },
+);
+
+const BudgetBreakdownSchema = new mongoose.Schema(
+  {
+    accommodation: { type: Number, default: 0 },
+    food: { type: Number, default: 0 },
+    transport: { type: Number, default: 0 },
+    activities: { type: Number, default: 0 },
+    miscellaneous: { type: Number, default: 0 },
+    total: { type: Number, default: 0 },
+    currency: { type: String, default: "USD" },
+  },
+  { _id: false },
+);
+
+const TripSummarySchema = new mongoose.Schema(
+  {
+    totalDays: { type: Number },
+    destinations: { type: [String], default: [] },
+    estimatedBudget: { type: String },
+    bestSeason: { type: String },
+    travelStyle: { type: String },
+    familyFriendly: { type: Boolean },
+  },
+  { _id: false },
+);
 
 const TripSchema = new mongoose.Schema<ITrip>(
   {
@@ -47,36 +146,33 @@ const TripSchema = new mongoose.Schema<ITrip>(
     endDate: { type: Date, required: true },
     duration: { type: Number, required: true },
     budget: { type: Number, required: true },
+    currency: { type: String, default: "USD" },
     tripType: { type: String, required: true },
-    transportation: { type: String, required: true },
-    accommodation: { type: String, required: true },
-    tripPace: { type: String, required: true },
-    specialOccasion: { type: String, required: true },
+    transportation: { type: String, default: "mix" },
+    accommodation: { type: String, default: "mid-range" },
+    tripPace: { type: String, default: "moderate" },
     interests: { type: [String], default: [] },
-    diningPreferences: { type: [String], default: [] },
-    aiSuggestions: [
-      {
-        day: String,
-        activities: [
-          {
-            timeOfDay: String,
-            title: String,
-            budget: String,
-            description: String,
-          },
-        ],
-      },
-    ],
-    aiSuggestedNotes: { type: String, default: "" },
+    travelers: { type: Number, default: 1 },
+    itinerary: [DayItinerarySchema],
+    summary: TripSummarySchema,
+    budgetBreakdown: BudgetBreakdownSchema,
+    packingList: { type: [String], default: [] },
+    travelTips: { type: [String], default: [] },
+    aiNotes: { type: String, default: "" },
+    status: {
+      type: String,
+      enum: ["generating", "completed", "draft"],
+      default: "draft",
+    },
   },
   {
     timestamps: true,
   },
 );
 
-// Add performance indexes
 TripSchema.index({ userId: 1, createdAt: -1 });
 TripSchema.index({ createdAt: -1 });
+TripSchema.index({ status: 1 });
 
 const Trip = mongoose.models?.Trip || mongoose.model<ITrip>("Trip", TripSchema);
 
