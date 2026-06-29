@@ -1,53 +1,116 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import toast from "react-hot-toast";
 import {
-  ChevronLeft,
-  ChevronRight,
+  Send,
   MapPin,
-  Wallet,
-  Heart,
-  Zap,
-  Check,
   Calendar,
-  X,
+  Wallet,
+  Users,
+  Heart,
+  Sparkles,
+  Loader2,
+  ArrowRight,
+  Bot,
+  CheckCircle2,
 } from "lucide-react";
 
+// Chat message type
+interface Message {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  isLoading?: boolean;
+}
+
+// Collected trip data
+interface TripData {
+  destinations: string[];
+  startDate: string;
+  endDate: string;
+  duration: number;
+  budget: number;
+  travelers: number;
+  tripType: string;
+  interests: string[];
+  accommodation: string;
+  tripPace: string;
+}
+
+// Options
 const TRIP_TYPES = [
-  "adventure",
-  "cultural",
-  "relaxation",
-  "family",
-  "honeymoon",
-  "solo",
-  "trekking",
-  "wildlife",
+  { value: "adventure", label: "🏔️ Adventure" },
+  { value: "cultural", label: "🏛️ Cultural" },
+  { value: "relaxation", label: "🏖️ Relaxation" },
+  { value: "family", label: "👨‍👩‍👧‍👦 Family" },
+  { value: "honeymoon", label: "💕 Honeymoon" },
+  { value: "solo", label: "🎒 Solo" },
 ];
 
-const TRANSPORTATION_OPTIONS = ["car", "buses", "flights", "mix"];
+const ACCOMMODATION_OPTIONS = [
+  { value: "budget", label: "💰 Budget" },
+  { value: "mid-range", label: "🏨 Mid-range" },
+  { value: "luxury", label: "✨ Luxury" },
+];
+
+const TRIP_PACES = [
+  { value: "relaxed", label: "😌 Relaxed" },
+  { value: "moderate", label: "🚶 Moderate" },
+  { value: "fast", label: "⚡ Fast-paced" },
+];
+
+const INTERESTS = [
+  "hiking", "photography", "food", "history", "culture", 
+  "nature", "adventure", "shopping", "nightlife", "wildlife"
+];
+
+export default function NewTrip() {
+  const router = useRouter();
+  const { data: session } = useSession();
+  const userid = session?.user?._id;
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "1",
+      role: "assistant",
+      content: "👋 Hi! I'm your AI travel planner. I'll help you create the perfect trip!\n\nLet's start - **where would you like to travel?**",
+    },
+  ]);
+  
+  const [input, setInput] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [tripData, setTripData] = useState<TripData>({
+    destinations: [],
+    startDate: "",
+    endDate: "",
+    duration: 0,
+    budget: 500,
+    travelers: 1,
+    tripType: "",
+    interests: [],
+    accommodation: "mid-range",
+    tripPace: "moderate",
+  });
+
+  const questions = [
+    { key: "destination", text: "Where would you like to travel? (city, country)", field: "destinations" },
+    { key: "dates", text: "When do you want to travel? (start date)", field: "startDate" },
+    { key: "endDate", text: "When does your trip end?", field: "endDate" },
+    { key: "budget", text: "What's your estimated budget? (in USD)", field: "budget" },
+    { key: "travelers", text: "How many travelers?", field: "travelers" },
+    { key: "type", text: "What type of trip?", field: "tripType", isSelect: true, options: TRIP_TYPES },
+    { key: "interests", text: "What are your interests?", field: "interests", isMulti: true, options: INTERESTS },
+  ];
 const ACCOMMODATION_OPTIONS = ["luxury", "mid-range", "budget", "backpacker"];
 const TRIP_PACE = ["relaxed", "moderate", "fast"];
 const INTERESTS = [
