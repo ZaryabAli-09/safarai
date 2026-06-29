@@ -16,15 +16,17 @@ function sanitizeTripInput(input: any) {
   const destinations = Array.isArray(input.destinations)
     ? input.destinations.filter((d: any) => typeof d === "string").slice(0, 10)
     : [];
-  
+
   const duration = parseInt(input.duration) || 0;
   const budget = parseFloat(input.budget) || 0;
-  
+
   return {
     name: String(input.name || "My Trip").slice(0, 200),
     destinations,
     startDate: input.startDate ? new Date(input.startDate) : new Date(),
-    endDate: input.endDate ? new Date(input.endDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    endDate: input.endDate
+      ? new Date(input.endDate)
+      : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     duration: Math.max(1, Math.min(30, duration)),
     budget: Math.max(1, Math.min(10000000, budget)),
     currency: "USD",
@@ -32,7 +34,9 @@ function sanitizeTripInput(input: any) {
     transportation: String(input.transportation || "mix").slice(0, 50),
     accommodation: String(input.accommodation || "mid-range").slice(0, 50),
     tripPace: String(input.tripPace || "moderate").slice(0, 50),
-    interests: Array.isArray(input.interests) ? input.interests.filter((i: any) => typeof i === "string").slice(0, 20) : [],
+    interests: Array.isArray(input.interests)
+      ? input.interests.filter((i: any) => typeof i === "string").slice(0, 20)
+      : [],
     travelers: Math.max(1, Math.min(20, parseInt(input.travelers) || 1)),
   };
 }
@@ -94,7 +98,7 @@ async function generateItineraryWithAI(tripData: any): Promise<any> {
     - Keep activities realistic and within the budget
     - Include variety in activities (sightseeing, food, culture, etc.)
     - Packing list should be 10-15 essential items
-    - Travel tips should be 5-8 practical tips`
+    - Travel tips should be 5-8 practical tips`,
   };
 
   const userMessage: OpenRouterMessage = {
@@ -109,11 +113,11 @@ async function generateItineraryWithAI(tripData: any): Promise<any> {
     - Pace: ${tripData.tripPace}
     - Accommodation: ${tripData.accommodation}
     
-    Start date: ${tripData.startDate.toISOString().split("T")[0]}`
+    Start date: ${tripData.startDate.toISOString().split("T")[0]}`,
   };
 
   const aiResponse = await generateAICompletion([systemMessage, userMessage]);
-  
+
   // Parse the JSON response
   let parsed;
   try {
@@ -191,7 +195,9 @@ export async function POST(
           coordinates = { lat: locationData.lat, lng: locationData.lng };
         }
       } catch (locError) {
-        console.warn("Location geocoding failed, continuing without coordinates");
+        console.warn(
+          "Location geocoding failed, continuing without coordinates",
+        );
       }
 
       // Try to get weather data (optional, won't fail if unavailable)
@@ -202,7 +208,7 @@ export async function POST(
             coordinates.lat,
             coordinates.lng,
             tripData.startDate.toISOString().split("T")[0],
-            tripData.endDate.toISOString().split("T")[0]
+            tripData.endDate.toISOString().split("T")[0],
           );
         }
       } catch (weatherError) {
@@ -221,7 +227,7 @@ export async function POST(
         food: Math.round(tripData.budget * 0.25),
         transport: Math.round(tripData.budget * 0.15),
         activities: Math.round(tripData.budget * 0.15),
-        miscellaneous: Math.round(tripData.budget * 0.10),
+        miscellaneous: Math.round(tripData.budget * 0.1),
         total: tripData.budget,
         currency: "USD",
       };
@@ -238,7 +244,7 @@ export async function POST(
       trip.status = "draft";
       trip.aiNotes = "Trip created but AI generation failed. Please try again.";
       await trip.save();
-      
+
       console.error("AI generation error:", aiError);
       return response(true, 201, "Trip created but AI generation failed", trip);
     }

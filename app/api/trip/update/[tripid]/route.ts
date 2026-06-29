@@ -13,7 +13,8 @@ export async function PATCH(
   try {
     const { userid } = await params.params;
     const body = await req.json();
-    const { tripId, dayIndex, activityId, action, replacement, customRequest } = body;
+    const { tripId, dayIndex, activityId, action, replacement, customRequest } =
+      body;
 
     if (!userid) {
       return response(false, 400, "User id not found");
@@ -26,7 +27,7 @@ export async function PATCH(
     await dbConnect();
 
     const trip = await Trip.findOne({ _id: tripId, userId: userid });
-    
+
     if (!trip) {
       return response(false, 404, "Trip not found");
     }
@@ -44,7 +45,7 @@ export async function PATCH(
       }
 
       const activityIndex = day.activities.findIndex(
-        (a: any) => a.id === activityId
+        (a: any) => a.id === activityId,
       );
 
       if (activityIndex === -1) {
@@ -82,7 +83,9 @@ export async function PATCH(
     if (action === "ai-suggest" && customRequest) {
       // Use AI to get a new suggestion
       const day = trip.itinerary[dayIndex];
-      const currentActivity = day?.activities.find((a: any) => a.id === activityId);
+      const currentActivity = day?.activities.find(
+        (a: any) => a.id === activityId,
+      );
 
       const systemMessage: OpenRouterMessage = {
         role: "system",
@@ -98,33 +101,40 @@ export async function PATCH(
           "estimatedCost": "$XX-XX",
           "duration": "2-3 hours",
           "category": "sightseeing|food|adventure|culture|shopping|nature"
-        }`
+        }`,
       };
 
       const userMessage: OpenRouterMessage = {
         role: "user",
-        content: `Replace "${currentActivity?.title || 'this activity'}" with something ${customRequest}.
+        content: `Replace "${currentActivity?.title || "this activity"}" with something ${customRequest}.
         
         Current context:
-        - Day ${dayIndex + 1}: ${day?.title || 'Unknown'}
-        - Location: ${day?.location || 'Not specified'}
+        - Day ${dayIndex + 1}: ${day?.title || "Unknown"}
+        - Location: ${day?.location || "Not specified"}
         - Trip budget: $${trip.budget}
-        - Trip type: ${trip.tripType}`
+        - Trip type: ${trip.tripType}`,
       };
 
-      const aiResponse = await generateAICompletion([systemMessage, userMessage]);
-      
+      const aiResponse = await generateAICompletion([
+        systemMessage,
+        userMessage,
+      ]);
+
       let suggestion;
       try {
         const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-        suggestion = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(aiResponse);
+        suggestion = jsonMatch
+          ? JSON.parse(jsonMatch[0])
+          : JSON.parse(aiResponse);
       } catch {
         return response(false, 500, "Failed to generate suggestion");
       }
 
       if (currentActivity && activityId) {
         // Replace the activity
-        const activityIndex = day.activities.findIndex((a: any) => a.id === activityId);
+        const activityIndex = day.activities.findIndex(
+          (a: any) => a.id === activityId,
+        );
         day.activities[activityIndex] = {
           ...suggestion,
           id: Math.random().toString(36).substring(2, 15),
@@ -146,14 +156,14 @@ export async function PATCH(
     if (action === "move") {
       // Move activity to different day/time
       const { targetDayIndex, targetTimeOfDay } = body;
-      
+
       const sourceDay = trip.itinerary[dayIndex];
       if (!sourceDay) {
         return response(false, 400, "Source day not found");
       }
 
       const activityIndex = sourceDay.activities.findIndex(
-        (a: any) => a.id === activityId
+        (a: any) => a.id === activityId,
       );
 
       if (activityIndex === -1) {
