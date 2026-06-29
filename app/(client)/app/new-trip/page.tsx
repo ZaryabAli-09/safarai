@@ -68,8 +68,16 @@ const TRIP_PACES = [
 ];
 
 const INTERESTS = [
-  "hiking", "photography", "food", "history", "culture", 
-  "nature", "adventure", "shopping", "nightlife", "wildlife"
+  "hiking",
+  "photography",
+  "food",
+  "history",
+  "culture",
+  "nature",
+  "adventure",
+  "shopping",
+  "nightlife",
+  "wildlife",
 ];
 
 export default function NewTrip() {
@@ -82,10 +90,11 @@ export default function NewTrip() {
     {
       id: "1",
       role: "assistant",
-      content: "👋 Hi! I'm your AI travel planner. I'll help you create the perfect trip!\n\nLet's start - **what's the name of your trip?** (e.g., Dubai Adventure)",
+      content:
+        "👋 Hi! I'm your AI travel planner. I'll help you create the perfect trip!\n\nLet's start - **what's the name of your trip?** (e.g., Dubai Adventure)",
     },
   ]);
-  
+
   const [input, setInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [step, setStep] = useState(0);
@@ -105,62 +114,62 @@ export default function NewTrip() {
 
   // Steps in the conversation
   const steps = [
-    { 
-      key: "name", 
+    {
+      key: "name",
       question: "What's the name of your trip?",
       field: "name" as const,
     },
-    { 
-      key: "destination", 
+    {
+      key: "destination",
       question: "Where would you like to travel? (city, country)",
       field: "destinations" as const,
       isArray: true,
     },
-    { 
-      key: "startDate", 
+    {
+      key: "startDate",
       question: "When do you want to start your trip? (YYYY-MM-DD)",
       field: "startDate" as const,
     },
-    { 
-      key: "endDate", 
+    {
+      key: "endDate",
       question: "When does your trip end? (YYYY-MM-DD)",
       field: "endDate" as const,
     },
-    { 
-      key: "budget", 
+    {
+      key: "budget",
       question: "What's your estimated budget in USD?",
       field: "budget" as const,
       isNumber: true,
     },
-    { 
-      key: "travelers", 
+    {
+      key: "travelers",
       question: "How many travelers?",
       field: "travelers" as const,
       isNumber: true,
     },
-    { 
-      key: "type", 
+    {
+      key: "type",
       question: "What type of trip?",
       field: "tripType" as const,
       isSelect: true,
       options: TRIP_TYPES,
     },
-    { 
-      key: "accommodation", 
+    {
+      key: "accommodation",
       question: "What accommodation preference?",
       field: "accommodation" as const,
       isSelect: true,
       options: ACCOMMODATION_OPTIONS,
     },
-    { 
-      key: "pace", 
+    {
+      key: "pace",
       question: "What's your preferred pace?",
       field: "tripPace" as const,
       isSelect: true,
       options: TRIP_PACES,
     },
-    { 
-      key: "interests", 
+    {
+      key: "interests",
       question: "What are your interests? (select multiple)",
       field: "interests" as const,
       isMulti: true,
@@ -178,21 +187,34 @@ export default function NewTrip() {
     if (tripData.startDate && tripData.endDate) {
       const start = new Date(tripData.startDate);
       const end = new Date(tripData.endDate);
-      const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      setTripData(prev => ({ ...prev, duration: Math.max(1, days) }));
+      const days =
+        Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) +
+        1;
+      setTripData((prev) => ({ ...prev, duration: Math.max(1, days) }));
     }
   }, [tripData.startDate, tripData.endDate]);
 
-  const addMessage = (role: "user" | "assistant", content: string, isLoading = false) => {
-    setMessages(prev => [...prev, { id: Date.now().toString(), role, content, isLoading }]);
+  const addMessage = (
+    role: "user" | "assistant",
+    content: string,
+    isLoading = false,
+  ) => {
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now().toString(), role, content, isLoading },
+    ]);
   };
 
   const updateLastAssistantMessage = (content: string) => {
-    setMessages(prev => {
+    setMessages((prev) => {
       const newMessages = [...prev];
       const lastIndex = newMessages.length - 1;
       if (lastIndex >= 0 && newMessages[lastIndex].role === "assistant") {
-        newMessages[lastIndex] = { ...newMessages[lastIndex], content, isLoading: false };
+        newMessages[lastIndex] = {
+          ...newMessages[lastIndex],
+          content,
+          isLoading: false,
+        };
       }
       return newMessages;
     });
@@ -210,9 +232,12 @@ export default function NewTrip() {
     // Process the input based on current step
     if (currentStep.isArray) {
       // Handle array fields (like destinations)
-      setTripData(prev => ({
+      setTripData((prev) => ({
         ...prev,
-        [currentStep.field]: [...prev[currentStep.field as keyof TripData] as string[], userInput],
+        [currentStep.field]: [
+          ...(prev[currentStep.field as keyof TripData] as string[]),
+          userInput,
+        ],
       }));
     } else if (currentStep.isNumber) {
       // Handle number fields
@@ -221,22 +246,26 @@ export default function NewTrip() {
         addMessage("assistant", "Please enter a valid number.");
         return;
       }
-      setTripData(prev => ({ ...prev, [currentStep.field]: num }));
+      setTripData((prev) => ({ ...prev, [currentStep.field]: num }));
     } else if (currentStep.isSelect) {
       // Handle select fields - user should choose from options
-      const option = currentStep.options?.find(o => 
-        o.label.toLowerCase() === userInput.toLowerCase() || 
-        o.value.toLowerCase() === userInput.toLowerCase()
+      const option = currentStep.options?.find(
+        (o) =>
+          o.label.toLowerCase() === userInput.toLowerCase() ||
+          o.value.toLowerCase() === userInput.toLowerCase(),
       );
       if (option) {
-        setTripData(prev => ({ ...prev, [currentStep.field]: option.value }));
+        setTripData((prev) => ({ ...prev, [currentStep.field]: option.value }));
       } else {
-        addMessage("assistant", `Please choose from: ${currentStep.options?.map(o => o.label).join(", ")}`);
+        addMessage(
+          "assistant",
+          `Please choose from: ${currentStep.options?.map((o) => o.label).join(", ")}`,
+        );
         return;
       }
     } else {
       // Handle regular text fields
-      setTripData(prev => ({ ...prev, [currentStep.field]: userInput }));
+      setTripData((prev) => ({ ...prev, [currentStep.field]: userInput }));
     }
 
     // Move to next step
@@ -246,33 +275,40 @@ export default function NewTrip() {
       setStep(step + 1);
     } else {
       // All steps complete - generate trip
-      addMessage("assistant", "🎉 Perfect! I have all the information I need. Let me generate your trip...", true);
+      addMessage(
+        "assistant",
+        "🎉 Perfect! I have all the information I need. Let me generate your trip...",
+        true,
+      );
       await generateTrip();
     }
   };
 
   const handleSelectOption = (value: string, optionValue?: string) => {
     const currentStep = steps[step];
-    
+
     if (currentStep.isMulti && currentStep.options) {
       // Handle multi-select (interests)
       const current = tripData[currentStep.field as keyof TripData] as string[];
       const newValue = current.includes(optionValue || value)
-        ? current.filter(i => i !== (optionValue || value))
+        ? current.filter((i) => i !== (optionValue || value))
         : [...current, optionValue || value];
-      setTripData(prev => ({ ...prev, [currentStep.field]: newValue }));
+      setTripData((prev) => ({ ...prev, [currentStep.field]: newValue }));
     } else {
       // Handle single select
-      setTripData(prev => ({ ...prev, [currentStep.field]: optionValue || value }));
+      setTripData((prev) => ({
+        ...prev,
+        [currentStep.field]: optionValue || value,
+      }));
     }
   };
 
   const handleInterestToggle = (interest: string) => {
     const current = tripData.interests;
     const newInterests = current.includes(interest)
-      ? current.filter(i => i !== interest)
+      ? current.filter((i) => i !== interest)
       : [...current, interest];
-    setTripData(prev => ({ ...prev, interests: newInterests }));
+    setTripData((prev) => ({ ...prev, interests: newInterests }));
   };
 
   const generateTrip = async () => {
@@ -289,13 +325,17 @@ export default function NewTrip() {
       const result = await res.json();
 
       if (!res.ok) {
-        updateLastAssistantMessage(result.message || "Failed to generate trip. Please try again.");
+        updateLastAssistantMessage(
+          result.message || "Failed to generate trip. Please try again.",
+        );
         toast.error(result.message || "Failed to generate trip");
         return;
       }
 
-      updateLastAssistantMessage("🎉 **Your trip has been generated!**\n\nCheck your trips to see the full itinerary with day-by-day activities, budget breakdown, packing list, and travel tips!");
-      
+      updateLastAssistantMessage(
+        "🎉 **Your trip has been generated!**\n\nCheck your trips to see the full itinerary with day-by-day activities, budget breakdown, packing list, and travel tips!",
+      );
+
       setTimeout(() => {
         router.push("/app/trips");
       }, 2000);
@@ -323,9 +363,11 @@ export default function NewTrip() {
         {/* Progress indicator */}
         <div className="px-4 py-2 border-b bg-muted/30">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>Step {step + 1} of {steps.length}</span>
+            <span>
+              Step {step + 1} of {steps.length}
+            </span>
             <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-primary transition-all duration-300"
                 style={{ width: `${((step + 1) / steps.length) * 100}%` }}
               />
@@ -378,7 +420,12 @@ export default function NewTrip() {
                 {currentStep.options?.map((opt) => (
                   <Button
                     key={opt.value}
-                    variant={tripData[currentStep.field as keyof TripData] === opt.value ? "default" : "outline"}
+                    variant={
+                      tripData[currentStep.field as keyof TripData] ===
+                      opt.value
+                        ? "default"
+                        : "outline"
+                    }
                     size="sm"
                     onClick={() => handleSelectOption(opt.label, opt.value)}
                   >
@@ -395,7 +442,11 @@ export default function NewTrip() {
                 {INTERESTS.map((interest) => (
                   <Button
                     key={interest}
-                    variant={tripData.interests.includes(interest) ? "default" : "outline"}
+                    variant={
+                      tripData.interests.includes(interest)
+                        ? "default"
+                        : "outline"
+                    }
                     size="sm"
                     onClick={() => handleInterestToggle(interest)}
                   >
@@ -405,15 +456,22 @@ export default function NewTrip() {
               </div>
               {tripData.interests.length > 0 && (
                 <div className="flex items-center gap-2">
-                  <Button size="sm" onClick={() => {
-                    if (step < steps.length - 1) {
-                      setStep(step + 1);
-                      addMessage("assistant", steps[step + 1].question, true);
-                    } else {
-                      addMessage("assistant", "🎉 Perfect! Let me generate your trip...", true);
-                      generateTrip();
-                    }
-                  }}>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      if (step < steps.length - 1) {
+                        setStep(step + 1);
+                        addMessage("assistant", steps[step + 1].question, true);
+                      } else {
+                        addMessage(
+                          "assistant",
+                          "🎉 Perfect! Let me generate your trip...",
+                          true,
+                        );
+                        generateTrip();
+                      }
+                    }}
+                  >
                     {isLastStep ? "Generate Trip" : "Continue"}
                   </Button>
                 </div>
@@ -430,7 +488,10 @@ export default function NewTrip() {
                 disabled={isGenerating}
                 className="flex-1"
               />
-              <Button onClick={handleSend} disabled={isGenerating || !input.trim()}>
+              <Button
+                onClick={handleSend}
+                disabled={isGenerating || !input.trim()}
+              >
                 {isGenerating ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
@@ -451,14 +512,28 @@ export default function NewTrip() {
               Trip Summary
             </h4>
             <div className="flex flex-wrap gap-2 text-sm">
-              {tripData.name && <Badge variant="secondary">📌 {tripData.name}</Badge>}
-              {tripData.destinations.map(d => (
-                <Badge key={d} variant="outline">📍 {d}</Badge>
+              {tripData.name && (
+                <Badge variant="secondary">📌 {tripData.name}</Badge>
+              )}
+              {tripData.destinations.map((d) => (
+                <Badge key={d} variant="outline">
+                  📍 {d}
+                </Badge>
               ))}
-              {tripData.duration > 0 && <Badge variant="outline">📅 {tripData.duration} days</Badge>}
-              {tripData.budget > 0 && <Badge variant="outline">💰 ${tripData.budget}</Badge>}
-              {tripData.travelers > 0 && <Badge variant="outline">👥 {tripData.travelers} travelers</Badge>}
-              {tripData.tripType && <Badge variant="outline">🏷️ {tripData.tripType}</Badge>}
+              {tripData.duration > 0 && (
+                <Badge variant="outline">📅 {tripData.duration} days</Badge>
+              )}
+              {tripData.budget > 0 && (
+                <Badge variant="outline">💰 ${tripData.budget}</Badge>
+              )}
+              {tripData.travelers > 0 && (
+                <Badge variant="outline">
+                  👥 {tripData.travelers} travelers
+                </Badge>
+              )}
+              {tripData.tripType && (
+                <Badge variant="outline">🏷️ {tripData.tripType}</Badge>
+              )}
             </div>
           </CardContent>
         </Card>
