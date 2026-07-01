@@ -6,12 +6,12 @@ import { generateAICompletion, OpenRouterMessage } from "@/config/ai";
 import { geocodeLocation } from "@/lib/services/location";
 import { getWeatherForLocation } from "@/lib/services/weather";
 
-// Helper to generate unique IDs
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function generateId(): string {
   return Math.random().toString(36).substring(2, 15);
 }
 
-// Sanitize and validate trip input
 function sanitizeTripInput(input: any) {
   const destinations = Array.isArray(input.destinations)
     ? input.destinations.filter((d: any) => typeof d === "string").slice(0, 10)
@@ -29,7 +29,7 @@ function sanitizeTripInput(input: any) {
       : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     duration: Math.max(1, Math.min(30, duration)),
     budget: Math.max(1, Math.min(10000000, budget)),
-    currency: "USD",
+    currency: String(input.currency || "USD").slice(0, 10),
     tripType: String(input.tripType || "adventure").slice(0, 50),
     transportation: String(input.transportation || "mix").slice(0, 50),
     accommodation: String(input.accommodation || "mid-range").slice(0, 50),
@@ -41,100 +41,158 @@ function sanitizeTripInput(input: any) {
   };
 }
 
-// Generate itinerary using OpenRouter AI
+function buildDateForDay(startDate: Date, dayIndex: number): string {
+  const d = new Date(startDate);
+  d.setDate(d.getDate() + dayIndex);
+  return d.toISOString().split("T")[0];
+}
+
+/**
+ * Extract JSON from AI response — handles markdown fences, extra text, etc.
+ */
+function extractJSON(text: string): any {
+  // Remove markdown code fences
+  let cleaned = text
+    .replace(/^```(?:json)?\s*/im, "")
+    .replace(/\s*```\s*$/im, "")
+    .trim();
+
+  // Try direct parse
+  try {
+    return JSON.parse(cleaned);
+  } catch {}
+
+  // Find the outermost JSON object
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  if (start !== -1 && end !== -1 && end > start) {
+    try {
+      return JSON.parse(cleaned.slice(start, end + 1));
+    } catch {}
+  }
+
+  // Try to find JSON array
+  const arrStart = cleaned.indexOf("[");
+  const arrEnd = cleaned.lastIndexOf("]");
+  if (arrStart !== -1 && arrEnd !== -1 && arrEnd > arrStart) {
+    try {
+      return JSON.parse(cleaned.slice(arrStart, arrEnd + 1));
+    } catch {}
+  }
+
+  throw new Error("No valid JSON found in AI response");
+}
+
+// ─── AI Itinerary Generation ──────────────────────────────────────────────────
+
 async function generateItineraryWithAI(tripData: any): Promise<any> {
+  const startStr = tripData.startDate.toISOString().split("T")[0];
+  const interestStr =
+    tripData.interests.length > 0
+      ? tripData.interests.join(", ")
+      : "general sightseeing";
+
+  /**
+   * IMPORTANT: Keep the prompt concise and the JSON schema minimal.
+   * Large/complex prompts cause free models to fail or truncate output.
+   * We ask for exactly 3 activities per day with minimal fields.
+   */
   const systemMessage: OpenRouterMessage = {
     role: "system",
-    content: `You are an expert travel planner AI. Generate a detailed day-by-day itinerary for a trip.
-    
-    IMPORTANT: You MUST respond with valid JSON only. No markdown, no explanations, no additional text.
-    
-    The JSON must follow this exact structure:
-    {
-      "itinerary": [
-        {
-          "dayNumber": 1,
-          "title": "Day title",
-          "location": "Main location for the day",
-          "activities": [
-            {
-              "id": "unique-id",
-              "timeOfDay": "morning|afternoon|evening",
-              "title": "Activity name",
-              "description": "Detailed description",
-              "location": "Specific location/address",
-              "estimatedCost": "$XX-XX",
-              "duration": "2-3 hours",
-              "category": "sightseeing|food|adventure|culture|shopping|nature"
-            }
-          ]
-        }
-      ],
-      "summary": {
-        "totalDays": number,
-        "destinations": ["destination names"],
-        "estimatedBudget": "budget range",
-        "bestSeason": "recommended season",
-        "travelStyle": "adventure/cultural/relaxed/etc",
-        "familyFriendly": true/false
-      },
-      "budgetBreakdown": {
-        "accommodation": number,
-        "food": number,
-        "transport": number,
-        "activities": number,
-        "miscellaneous": number,
-        "total": number,
-        "currency": "USD"
-      },
-      "packingList": ["item1", "item2", ...],
-      "travelTips": ["tip1", "tip2", ...],
-      "aiNotes": "Any additional notes"
-    }
+    content: `You are a travel planner. Output ONLY valid JSON, no markdown, no explanation.
 
-    Rules:
-    - Each day should have 3 activities (morning, afternoon, evening)
-    - Suggest specific real places when possible
-    - Keep activities realistic and within the budget
-    - Include variety in activities (sightseeing, food, culture, etc.)
-    - Packing list should be 10-15 essential items
-    - Travel tips should be 5-8 practical tips`,
+Return this exact structure:
+{
+  "itinerary": [
+    {
+      "dayNumber": 1,
+      "date": "YYYY-MM-DD",
+      "title": "Day title",
+      "location": "City/Area",
+      "activities": [
+        {
+          "id": "act1",
+          "timeOfDay": "morning",
+          "title": "Activity name",
+          "description": "2-3 sentence description",
+          "location": "Specific place",
+          "estimatedCost": "$20-30",
+          "duration": "2 hours",
+          "category": "sightseeing"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "totalDays": 0,
+    "destinations": [],
+    "estimatedBudget": "$X",
+    "bestSeason": "string",
+    "travelStyle": "string",
+    "familyFriendly": true
+  },
+  "budgetBreakdown": {
+    "accommodation": 0,
+    "food": 0,
+    "transport": 0,
+    "activities": 0,
+    "miscellaneous": 0,
+    "total": 0,
+    "currency": "USD"
+  },
+  "packingList": ["item1", "item2"],
+  "travelTips": ["tip1", "tip2"],
+  "aiNotes": "Brief notes"
+}
+
+Rules:
+- Exactly 3 activities per day: morning, afternoon, evening
+- timeOfDay: "morning" | "afternoon" | "evening" only
+- category: "sightseeing" | "food" | "adventure" | "culture" | "shopping" | "nature" | "accommodation" | "transport"
+- packingList: 8-10 items
+- travelTips: 4-6 items
+- All costs in USD`,
   };
 
   const userMessage: OpenRouterMessage = {
     role: "user",
-    content: `Plan my trip:
-    - Destinations: ${tripData.destinations.join(", ")}
-    - Duration: ${tripData.duration} days
-    - Budget: $${tripData.budget}
-    - Trip Type: ${tripData.tripType}
-    - Interests: ${tripData.interests.join(", ")}
-    - Travelers: ${tripData.travelers}
-    - Pace: ${tripData.tripPace}
-    - Accommodation: ${tripData.accommodation}
-    
-    Start date: ${tripData.startDate.toISOString().split("T")[0]}`,
+    content: `Plan a ${tripData.duration}-day ${tripData.tripType} trip:
+- Destinations: ${tripData.destinations.join(", ")}
+- Start: ${startStr}
+- Budget: $${tripData.budget} for ${tripData.travelers} traveler(s)
+- Pace: ${tripData.tripPace}
+- Accommodation: ${tripData.accommodation}
+- Interests: ${interestStr}
+
+Generate the complete JSON itinerary now.`,
   };
 
-  const aiResponse = await generateAICompletion([systemMessage, userMessage]);
+  const aiResponse = await generateAICompletion(
+    [systemMessage, userMessage],
+    8000,
+  );
 
-  // Parse the JSON response
-  let parsed;
-  try {
-    // Try to extract JSON from response (in case AI adds markdown)
-    const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      parsed = JSON.parse(jsonMatch[0]);
-    } else {
-      parsed = JSON.parse(aiResponse);
-    }
-  } catch (parseError) {
-    console.error("Failed to parse AI response:", aiResponse);
-    throw new Error("Failed to generate valid itinerary");
+  console.log(`[Generate] AI response length: ${aiResponse.length} chars`);
+  console.log(`[Generate] First 200 chars: ${aiResponse.slice(0, 200)}`);
+
+  const parsed = extractJSON(aiResponse);
+
+  if (!parsed.itinerary || !Array.isArray(parsed.itinerary)) {
+    console.error(
+      "[Generate] Missing itinerary array in:",
+      JSON.stringify(parsed).slice(0, 300),
+    );
+    throw new Error("AI response missing itinerary array");
+  }
+
+  if (parsed.itinerary.length === 0) {
+    throw new Error("AI returned empty itinerary");
   }
 
   return parsed;
 }
+
+// ─── Route Handler ────────────────────────────────────────────────────────────
 
 export async function POST(
   req: NextRequest,
@@ -148,7 +206,7 @@ export async function POST(
       return response(false, 400, "User id not found");
     }
 
-    // Sanitize input
+    // Sanitize and validate input
     const tripData = sanitizeTripInput(tripDetails);
 
     if (!tripData.destinations || tripData.destinations.length === 0) {
@@ -163,7 +221,7 @@ export async function POST(
 
     await dbConnect();
 
-    // Create trip in "generating" status
+    // Create trip record with "generating" status
     const trip = new Trip({
       userId: userid,
       ...tripData,
@@ -171,36 +229,46 @@ export async function POST(
     });
     await trip.save();
 
+    console.log(
+      `[Generate] Trip created: ${trip._id}, starting AI generation...`,
+    );
+
     try {
-      // Generate itinerary with AI
+      // ── Step 1: Generate itinerary with AI ──────────────────────────────
       const aiResult = await generateItineraryWithAI(tripData);
 
-      // Add unique IDs to activities if not present
+      // Normalize itinerary — ensure IDs and dates are set
       if (aiResult.itinerary) {
-        aiResult.itinerary = aiResult.itinerary.map((day: any) => ({
-          ...day,
-          dayNumber: day.dayNumber,
-          activities: day.activities.map((activity: any) => ({
-            ...activity,
-            id: activity.id || generateId(),
-          })),
-        }));
+        aiResult.itinerary = aiResult.itinerary.map(
+          (day: any, idx: number) => ({
+            ...day,
+            dayNumber: day.dayNumber ?? idx + 1,
+            date: day.date || buildDateForDay(tripData.startDate, idx),
+            activities: (day.activities || []).map((activity: any) => ({
+              ...activity,
+              id: activity.id || generateId(),
+            })),
+          }),
+        );
       }
 
-      // Try to get location coordinates for main destination (optional, won't fail if unavailable)
-      let coordinates = undefined;
+      // ── Step 2: Geocode main destination (optional) ─────────────────────
+      let coordinates: { lat: number; lng: number } | undefined;
       try {
         const locationData = await geocodeLocation(tripData.destinations[0]);
         if (locationData) {
           coordinates = { lat: locationData.lat, lng: locationData.lng };
+          console.log(
+            `[Generate] Geocoded ${tripData.destinations[0]}: ${coordinates.lat}, ${coordinates.lng}`,
+          );
         }
-      } catch (locError) {
+      } catch {
         console.warn(
-          "Location geocoding failed, continuing without coordinates",
+          "[Generate] Geocoding failed, continuing without coordinates",
         );
       }
 
-      // Try to get weather data (optional, won't fail if unavailable)
+      // ── Step 3: Get weather forecast (optional) ─────────────────────────
       let weatherData = null;
       try {
         if (coordinates) {
@@ -210,17 +278,27 @@ export async function POST(
             tripData.startDate.toISOString().split("T")[0],
             tripData.endDate.toISOString().split("T")[0],
           );
+          if (weatherData) {
+            console.log(
+              `[Generate] Got weather for ${weatherData.length} days`,
+            );
+          }
         }
-      } catch (weatherError) {
-        console.warn("Weather lookup failed, continuing without weather data");
+      } catch {
+        console.warn(
+          "[Generate] Weather lookup failed, continuing without weather",
+        );
       }
 
-      // Update trip with generated content
+      // ── Step 4: Save completed trip ─────────────────────────────────────
       trip.itinerary = aiResult.itinerary || [];
       trip.summary = aiResult.summary || {
         totalDays: tripData.duration,
         destinations: tripData.destinations,
         estimatedBudget: `$${tripData.budget}`,
+        bestSeason: "Year-round",
+        travelStyle: tripData.tripType,
+        familyFriendly: true,
       };
       trip.budgetBreakdown = aiResult.budgetBreakdown || {
         accommodation: Math.round(tripData.budget * 0.35),
@@ -238,18 +316,28 @@ export async function POST(
 
       await trip.save();
 
+      console.log(`[Generate] Trip ${trip._id} completed successfully!`);
       return response(true, 201, "Trip generated successfully", trip);
     } catch (aiError) {
-      // If AI generation fails, mark trip as draft
+      // Mark trip as draft if AI fails — don't delete it
       trip.status = "draft";
-      trip.aiNotes = "Trip created but AI generation failed. Please try again.";
+      trip.aiNotes =
+        aiError instanceof Error
+          ? `Generation failed: ${aiError.message}`
+          : "Trip created but AI generation failed. Please try again.";
       await trip.save();
 
-      console.error("AI generation error:", aiError);
-      return response(true, 201, "Trip created but AI generation failed", trip);
+      console.error("[Generate] AI generation error:", aiError);
+      return response(
+        false,
+        500,
+        aiError instanceof Error
+          ? aiError.message
+          : "AI generation failed. Please try again.",
+      );
     }
   } catch (error) {
-    console.error("Trip generation error:", error);
+    console.error("[Generate] Unexpected error:", error);
     return response(false, 500, "Failed to generate trip. Please try again.");
   }
 }

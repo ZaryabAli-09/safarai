@@ -2,12 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -21,8 +15,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useSession } from "next-auth/react";
-import Image from "next/image";
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import {
   Plane,
@@ -33,38 +27,299 @@ import {
   Calendar,
   Wallet,
   Clock,
+  Users,
+  Search,
+  Filter,
+  Loader2,
+  Globe,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
-import { CardSkeleton } from "@/app/_components/common/CardSkeleton";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Trip {
+  _id: string;
+  name: string;
+  destinations: string[];
+  startDate: string;
+  endDate: string;
+  duration: number;
+  budget: number;
+  currency: string;
+  tripType: string;
+  travelers: number;
+  status: "generating" | "completed" | "draft";
+  createdAt: string;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDate(dateStr: string) {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-GB", {
+  return new Date(dateStr).toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
 }
 
-export default function Trips() {
+/** Deterministic gradient per trip based on name */
+const GRADIENTS = [
+  "from-blue-500 to-indigo-600",
+  "from-emerald-500 to-teal-600",
+  "from-orange-500 to-rose-600",
+  "from-violet-500 to-purple-600",
+  "from-cyan-500 to-blue-600",
+  "from-pink-500 to-rose-600",
+  "from-amber-500 to-orange-600",
+  "from-green-500 to-emerald-600",
+];
+
+function getTripGradient(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return GRADIENTS[Math.abs(hash) % GRADIENTS.length];
+}
+
+/** Trip type emoji */
+const TRIP_TYPE_EMOJI: Record<string, string> = {
+  adventure: "🏔️",
+  cultural: "🏛️",
+  relaxation: "🏖️",
+  family: "👨‍👩‍👧‍👦",
+  honeymoon: "💑",
+  solo: "🎒",
+};
+
+// ─── Skeleton card ────────────────────────────────────────────────────────────
+
+function TripCardSkeleton() {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden animate-pulse">
+      <div className="h-40 bg-gray-200" />
+      <div className="p-4 space-y-3">
+        <div className="h-4 bg-gray-200 rounded w-3/4" />
+        <div className="h-3 bg-gray-100 rounded w-1/2" />
+        <div className="grid grid-cols-2 gap-2">
+          <div className="h-12 bg-gray-100 rounded-xl" />
+          <div className="h-12 bg-gray-100 rounded-xl" />
+        </div>
+        <div className="h-9 bg-gray-200 rounded-xl" />
+      </div>
+    </div>
+  );
+}
+
+// ─── Trip card ────────────────────────────────────────────────────────────────
+
+function TripCard({
+  trip,
+  index,
+  onDelete,
+}: {
+  trip: Trip;
+  index: number;
+  onDelete: (id: string) => void;
+}) {
+  const gradient = getTripGradient(trip.name);
+  const emoji = TRIP_TYPE_EMOJI[trip.tripType] || "✈️";
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/trip/delete/${trip._id}`, {
+        method: "DELETE",
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || "Failed to delete trip");
+      toast.success("Trip deleted successfully");
+      onDelete(trip._id);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete trip");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.35, delay: index * 0.06 }}
+      className="group bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col"
+    >
+      {/* Card header with gradient */}
+      <div
+        className={`relative h-40 bg-gradient-to-br ${gradient} overflow-hidden`}
+      >
+        {/* Pattern overlay */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-4 right-4 w-24 h-24 rounded-full border-4 border-white" />
+          <div className="absolute bottom-2 left-6 w-16 h-16 rounded-full border-4 border-white" />
+          <div className="absolute top-12 left-2 w-8 h-8 rounded-full border-2 border-white" />
+        </div>
+
+        {/* Trip emoji */}
+        <div className="absolute top-4 left-4 text-4xl">{emoji}</div>
+
+        {/* Status badge */}
+        <div className="absolute top-4 right-4">
+          <span
+            className={`text-xs px-2.5 py-1 rounded-full font-medium border ${
+              trip.status === "completed"
+                ? "bg-green-500/20 text-green-100 border-green-400/30"
+                : trip.status === "generating"
+                  ? "bg-yellow-500/20 text-yellow-100 border-yellow-400/30"
+                  : "bg-white/20 text-white border-white/30"
+            }`}
+          >
+            {trip.status === "completed"
+              ? "✓ Ready"
+              : trip.status === "generating"
+                ? "⏳ Generating"
+                : "Draft"}
+          </span>
+        </div>
+
+        {/* Delete button */}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button
+              className="absolute bottom-3 right-3 w-8 h-8 bg-black/20 hover:bg-red-500/80 backdrop-blur-sm rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+              title="Delete trip"
+            >
+              {deleting ? (
+                <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
+              ) : (
+                <Trash2 className="w-3.5 h-3.5 text-white" />
+              )}
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Delete &quot;{trip.name}&quot;?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. Your trip itinerary and all
+                associated data will be permanently deleted.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete Trip
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Bottom gradient overlay */}
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/40 to-transparent" />
+
+        {/* Destination on image */}
+        <div className="absolute bottom-3 left-4 right-12">
+          <p className="text-white text-xs font-medium opacity-90 truncate">
+            {trip.destinations.join(" → ")}
+          </p>
+        </div>
+      </div>
+
+      {/* Card body */}
+      <div className="p-4 flex flex-col flex-1 gap-3">
+        {/* Title */}
+        <div>
+          <h3 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-1">
+            {trip.name}
+          </h3>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {formatDate(trip.startDate)} — {formatDate(trip.endDate)}
+          </p>
+        </div>
+
+        {/* Stats grid */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex items-center gap-2 p-2.5 bg-blue-50 rounded-xl">
+            <Clock className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+            <div>
+              <p className="text-xs text-gray-400 leading-none">Duration</p>
+              <p className="text-xs font-semibold text-gray-800 mt-0.5">
+                {trip.duration} days
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 p-2.5 bg-green-50 rounded-xl">
+            <Wallet className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+            <div>
+              <p className="text-xs text-gray-400 leading-none">Budget</p>
+              <p className="text-xs font-semibold text-gray-800 mt-0.5">
+                ${trip.budget.toLocaleString()}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 p-2.5 bg-purple-50 rounded-xl">
+            <Users className="w-3.5 h-3.5 text-purple-500 flex-shrink-0" />
+            <div>
+              <p className="text-xs text-gray-400 leading-none">Travelers</p>
+              <p className="text-xs font-semibold text-gray-800 mt-0.5">
+                {trip.travelers} {trip.travelers === 1 ? "person" : "people"}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 p-2.5 bg-orange-50 rounded-xl">
+            <Plane className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
+            <div>
+              <p className="text-xs text-gray-400 leading-none">Style</p>
+              <p className="text-xs font-semibold text-gray-800 mt-0.5 capitalize">
+                {trip.tripType}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* View button */}
+        <Link href={`/app/trips/${trip._id}`} className="mt-auto">
+          <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium flex items-center justify-center gap-2 rounded-xl h-9">
+            View Itinerary
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </Link>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+export default function TripsPage() {
   const { data: session } = useSession();
   const userid = session?.user?._id;
-  const [trips, setTrips] = useState<any[]>([]);
+
+  const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [paginationData, setPaginationData] = useState<any>(null);
+
+  // ── Fetch trips ────────────────────────────────────────────────────────────
 
   async function getTrips(page = 1) {
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/trip/get-trips/${userid}?page=${page}&limit=6`,
+        `/api/trip/get-trips/${userid}?page=${page}&limit=9`,
       );
       const result = await res.json();
       if (!res.ok) {
         toast.error(result.message);
-        setLoading(false);
         return;
       }
       setTrips(result?.data?.trips || []);
@@ -80,186 +335,130 @@ export default function Trips() {
     if (userid) {
       getTrips(currentPage);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userid, currentPage]);
 
-  const filteredTrips = trips.filter(
-    (trip: any) =>
+  // ── Delete handler ─────────────────────────────────────────────────────────
+
+  const handleDelete = (id: string) => {
+    setTrips((prev) => prev.filter((t) => t._id !== id));
+    if (paginationData) {
+      setPaginationData((prev: any) => ({
+        ...prev,
+        total: Math.max(0, prev.total - 1),
+      }));
+    }
+  };
+
+  // ── Filter ─────────────────────────────────────────────────────────────────
+
+  const filteredTrips = trips.filter((trip) => {
+    const matchesSearch =
       trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      trip.destinations.some((d: string) =>
+      trip.destinations.some((d) =>
         d.toLowerCase().includes(searchTerm.toLowerCase()),
-      ),
-  );
+      );
+    const matchesType = filterType === "all" || trip.tripType === filterType;
+    return matchesSearch && matchesType;
+  });
+
+  const tripTypes = [
+    "all",
+    ...Array.from(new Set(trips.map((t) => t.tripType))),
+  ];
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 py-6 px-4">
-      <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">My Trips</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            {paginationData?.total || 0} trips • {filteredTrips.length} shown
-          </p>
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero banner */}
+      <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white">
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold mb-1">
+                  My Trips ✈️
+                </h1>
+                <p className="text-blue-200 text-sm">
+                  {paginationData?.total || 0} trip
+                  {(paginationData?.total || 0) !== 1 ? "s" : ""} planned
+                </p>
+              </div>
+              <Link
+                href="/app/new-trip"
+                className="flex items-center gap-2 bg-white text-blue-600 hover:bg-blue-50 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                New Trip
+              </Link>
+            </div>
 
-        {/* Search - Desktop only (mobile has floating button) */}
-        <div className="hidden md:block mb-6">
-          <Input
-            type="text"
-            placeholder="Search trips..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="h-10 max-w-md bg-white"
-          />
+            {/* Search bar */}
+            <div className="mt-5 relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-300" />
+              <input
+                type="text"
+                placeholder="Search trips or destinations..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-blue-300 text-sm focus:outline-none focus:ring-2 focus:ring-white/30 focus:bg-white/20 transition-all"
+              />
+            </div>
+          </motion.div>
         </div>
+      </div>
 
-        {/* Trips Grid */}
+      {/* Content */}
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        {/* Filter chips */}
+        {trips.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-5 scrollbar-hide">
+            {tripTypes.map((type) => (
+              <button
+                key={type}
+                onClick={() => setFilterType(type)}
+                className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium border transition-colors capitalize ${
+                  filterType === type
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
+                }`}
+              >
+                {type === "all"
+                  ? `All (${trips.length})`
+                  : `${TRIP_TYPE_EMOJI[type] || "✈️"} ${type}`}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Loading state */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {Array(6)
               .fill(null)
               .map((_, i) => (
-                <CardSkeleton key={i} />
+                <TripCardSkeleton key={i} />
               ))}
           </div>
-        ) : filteredTrips && filteredTrips.length > 0 ? (
+        ) : filteredTrips.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTrips.map((trip: any) => (
-                <div key={trip?._id} className="group h-full cursor-pointer">
-                  <Card className="w-full overflow-hidden h-full flex flex-col bg-white shadow-sm hover:shadow-md transition-shadow">
-                    {/* Image Section */}
-                    <CardHeader className="p-0 relative h-44 overflow-hidden">
-                      <Image
-                        className="w-full h-full object-cover"
-                        width={500}
-                        height={300}
-                        src="/assets/kumrat.jpg"
-                        alt={trip.name}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-
-                      {/* Delete Button */}
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <button className="absolute top-3 right-3 bg-white/90 hover:bg-white rounded-full p-2 transition-colors">
-                            <Trash2 className="text-gray-700 h-4 w-4" />
-                          </button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Trip?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. Your trip itinerary
-                              will be permanently deleted.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() =>
-                                toast.success("Trip deleted successfully!")
-                              }
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-
-                      {/* Title and Date Overlay */}
-                      <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                        <p className="text-xs font-medium opacity-90 mb-1">
-                          {formatDate(trip.startDate)} —{" "}
-                          {formatDate(trip.endDate)}
-                        </p>
-                        <h3 className="text-lg font-semibold line-clamp-1">
-                          {trip.name}
-                        </h3>
-                      </div>
-                    </CardHeader>
-
-                    {/* Content Section */}
-                    <CardContent className="p-5 space-y-4 flex-grow relative z-10">
-                      {/* Quick Stats */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
-                          <div className="flex items-center gap-2">
-                            <Clock className="text-blue-600 h-4 w-4" />
-                            <div className="flex flex-col">
-                              <span className="text-xs text-gray-500">
-                                Duration
-                              </span>
-                              <span className="font-semibold text-gray-900">
-                                {trip?.duration} days
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
-                          <div className="flex items-center gap-2">
-                            <Wallet className="text-blue-600 h-4 w-4" />
-                            <div className="flex flex-col">
-                              <span className="text-xs text-gray-500">
-                                Budget
-                              </span>
-                              <span className="font-semibold text-gray-900 text-sm">
-                                ₨{(trip?.budget / 1000)?.toFixed(0)}k
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Trip Type Badge */}
-                      <div className="flex items-center gap-2 pt-1">
-                        <Plane className="text-blue-600 h-4 w-4" />
-                        <Badge className="bg-blue-100 text-blue-700 border-0">
-                          {trip?.tripType}
-                        </Badge>
-                      </div>
-
-                      {/* Destinations */}
-                      <div className="space-y-2 pt-2 border-t border-gray-100">
-                        <p className="text-xs font-medium text-gray-500 flex items-center gap-1.5">
-                          <MapPin className="h-3.5 w-3.5 text-blue-600" />
-                          Destinations
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {trip.destinations?.slice(0, 2).map((d: any) => (
-                            <Badge
-                              key={d}
-                              variant="outline"
-                              className="text-xs font-medium bg-white text-gray-600 border-gray-200"
-                            >
-                              {d}
-                            </Badge>
-                          ))}
-                          {trip.destinations?.length > 2 && (
-                            <Badge
-                              variant="outline"
-                              className="text-xs font-medium bg-white text-gray-600 border-gray-200"
-                            >
-                              +{trip.destinations.length - 2}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-
-                    {/* Footer */}
-                    <CardFooter className="p-4 border-t border-gray-100 mt-auto bg-gray-50">
-                      <Link href={`/app/trips/${trip._id}`} className="w-full">
-                        <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium flex items-center justify-center gap-2">
-                          View Itinerary
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                    </CardFooter>
-                  </Card>
-                </div>
-              ))}
-            </div>
+            <AnimatePresence>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {filteredTrips.map((trip, idx) => (
+                  <TripCard
+                    key={trip._id}
+                    trip={trip}
+                    index={idx}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </div>
+            </AnimatePresence>
 
             {/* Pagination */}
             {paginationData && paginationData.totalPages > 1 && (
@@ -268,7 +467,7 @@ export default function Trips() {
                   variant="outline"
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
-                  className="h-9 px-3"
+                  className="h-9 px-4 rounded-xl"
                 >
                   Previous
                 </Button>
@@ -282,10 +481,11 @@ export default function Trips() {
                       key={page}
                       variant={currentPage === page ? "default" : "outline"}
                       onClick={() => setCurrentPage(page)}
-                      className={`
-                        h-9 w-9 p-0
-                        ${currentPage === page ? "bg-blue-600 hover:bg-blue-700" : ""}
-                      `}
+                      className={`h-9 w-9 p-0 rounded-xl ${
+                        currentPage === page
+                          ? "bg-blue-600 hover:bg-blue-700"
+                          : ""
+                      }`}
                     >
                       {page}
                     </Button>
@@ -300,7 +500,7 @@ export default function Trips() {
                     )
                   }
                   disabled={currentPage === paginationData.totalPages}
-                  className="h-9 px-3"
+                  className="h-9 px-4 rounded-xl"
                 >
                   Next
                 </Button>
@@ -308,25 +508,54 @@ export default function Trips() {
             )}
           </>
         ) : (
-          /* Empty State */
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="mb-4 p-6 bg-blue-100 rounded-full">
-              <Plane className="h-12 w-12 text-blue-600" />
+          /* Empty state */
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex flex-col items-center justify-center py-20 text-center"
+          >
+            <div className="relative mb-6">
+              <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center">
+                <Globe className="w-12 h-12 text-blue-400" />
+              </div>
+              <div className="absolute -top-1 -right-1 w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-yellow-500" />
+              </div>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              No trips yet
+
+            <h2 className="text-xl font-bold text-gray-900 mb-2">
+              {searchTerm || filterType !== "all"
+                ? "No trips match your search"
+                : "No trips yet"}
             </h2>
-            <p className="text-gray-500 mb-6 max-w-sm">
-              Plan your first trip and let our AI create an amazing itinerary
-              for you.
+            <p className="text-gray-500 mb-6 max-w-sm text-sm leading-relaxed">
+              {searchTerm || filterType !== "all"
+                ? "Try adjusting your search or filters to find your trips."
+                : "Let our AI plan your perfect trip! Just tell us where you want to go and we'll handle the rest."}
             </p>
-            <Link href="/app/new-trip">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Plan a Trip
-              </Button>
-            </Link>
-          </div>
+
+            {!searchTerm && filterType === "all" && (
+              <Link href="/app/new-trip">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 rounded-xl px-6">
+                  <Plus className="w-4 h-4" />
+                  Plan Your First Trip
+                </Button>
+              </Link>
+            )}
+
+            {(searchTerm || filterType !== "all") && (
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  setFilterType("all");
+                }}
+                className="text-sm text-blue-600 hover:underline"
+              >
+                Clear filters
+              </button>
+            )}
+          </motion.div>
         )}
       </div>
     </div>

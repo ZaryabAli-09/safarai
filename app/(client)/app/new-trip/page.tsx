@@ -1,543 +1,1178 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { DateRange, Range, RangeKeyDict } from "react-date-range";
+import { format, differenceInDays, addDays } from "date-fns";
+import { Slider } from "@/components/ui/slider";
 import toast from "react-hot-toast";
 import {
-  Send,
+  Plane,
   MapPin,
   Calendar,
-  Wallet,
+  DollarSign,
   Users,
-  Sparkles,
-  Loader2,
+  Zap,
+  ChevronRight,
   Bot,
+  User,
+  Loader2,
   CheckCircle2,
+  Plus,
   X,
+  Wallet,
+  Globe,
 } from "lucide-react";
 
-// Chat message type
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  isLoading?: boolean;
-}
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-// Collected trip data
-interface TripData {
+type TripType =
+  | "adventure"
+  | "cultural"
+  | "relaxation"
+  | "family"
+  | "honeymoon"
+  | "solo";
+type TripPace = "slow" | "moderate" | "fast";
+type Accommodation = "budget" | "mid-range" | "luxury";
+type Transportation = "flight" | "road" | "train" | "mix";
+
+interface TripFormData {
   name: string;
   destinations: string[];
   startDate: string;
   endDate: string;
   duration: number;
   budget: number;
+  currency: string;
+  customCurrencyAmount: string;
+  tripType: TripType;
+  tripPace: TripPace;
+  accommodation: Accommodation;
+  transportation: Transportation;
   travelers: number;
-  tripType: string;
   interests: string[];
-  accommodation: string;
-  tripPace: string;
 }
 
-// Options
-const TRIP_TYPES = [
-  { value: "adventure", label: "Adventure" },
-  { value: "cultural", label: "Cultural" },
-  { value: "relaxation", label: "Relaxation" },
-  { value: "family", label: "Family" },
-  { value: "honeymoon", label: "Honeymoon" },
-  { value: "solo", label: "Solo" },
-];
+type ChatStep =
+  | "welcome"
+  | "destination"
+  | "dates"
+  | "budget"
+  | "travelers"
+  | "tripType"
+  | "preferences"
+  | "summary"
+  | "generating";
 
-const ACCOMMODATION_OPTIONS = [
-  { value: "budget", label: "Budget" },
-  { value: "mid-range", label: "Mid-range" },
-  { value: "luxury", label: "Luxury" },
-];
+interface ChatMessage {
+  id: string;
+  role: "bot" | "user";
+  content: React.ReactNode;
+  timestamp: Date;
+}
 
-const TRIP_PACES = [
-  { value: "relaxed", label: "Relaxed" },
-  { value: "moderate", label: "Moderate" },
-  { value: "fast", label: "Fast-paced" },
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const TRIP_TYPES: { value: TripType; label: string; emoji: string }[] = [
+  { value: "adventure", label: "Adventure", emoji: "🏔️" },
+  { value: "cultural", label: "Cultural", emoji: "🏛️" },
+  { value: "relaxation", label: "Relaxation", emoji: "🏖️" },
+  { value: "family", label: "Family", emoji: "👨‍👩‍👧‍👦" },
+  { value: "honeymoon", label: "Honeymoon", emoji: "💑" },
+  { value: "solo", label: "Solo", emoji: "🎒" },
 ];
 
 const INTERESTS = [
-  "hiking",
-  "photography",
-  "food",
-  "history",
-  "culture",
-  "nature",
-  "adventure",
-  "shopping",
-  "nightlife",
-  "wildlife",
+  "Photography",
+  "Food & Cuisine",
+  "History",
+  "Nature",
+  "Nightlife",
+  "Shopping",
+  "Sports",
+  "Art",
+  "Music",
+  "Architecture",
+  "Wildlife",
+  "Beaches",
 ];
 
-export default function NewTrip() {
-  const router = useRouter();
+const CURRENCIES = [
+  { code: "USD", symbol: "$", name: "US Dollar" },
+  { code: "EUR", symbol: "€", name: "Euro" },
+  { code: "GBP", symbol: "£", name: "British Pound" },
+  { code: "PKR", symbol: "₨", name: "Pakistani Rupee" },
+  { code: "INR", symbol: "₹", name: "Indian Rupee" },
+  { code: "AED", symbol: "د.إ", name: "UAE Dirham" },
+  { code: "SAR", symbol: "﷼", name: "Saudi Riyal" },
+  { code: "TRY", symbol: "₺", name: "Turkish Lira" },
+];
+
+const BUDGET_MIN = 500;
+const BUDGET_MAX = 20000;
+
+// ─── Helper ───────────────────────────────────────────────────────────────────
+
+function genId() {
+  return Math.random().toString(36).slice(2, 10);
+}
+
+function formatBudget(val: number) {
+  if (val >= 1000) return `$${(val / 1000).toFixed(val % 1000 === 0 ? 0 : 1)}k`;
+  return `$${val}`;
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+/** Animated typing dots for bot "thinking" */
+function TypingIndicator() {
+  return (
+    <div className="flex items-center gap-1 px-4 py-3">
+      {[0, 1, 2].map((i) => (
+        <motion.span
+          key={i}
+          className="w-2 h-2 rounded-full bg-blue-400"
+          animate={{ y: [0, -6, 0] }}
+          transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** Single chat bubble */
+function ChatBubble({
+  message,
+  isNew,
+}: {
+  message: ChatMessage;
+  isNew?: boolean;
+}) {
+  const isBot = message.role === "bot";
+  return (
+    <motion.div
+      initial={isNew ? { opacity: 0, y: 16 } : false}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className={`flex gap-3 ${isBot ? "justify-start" : "justify-end"}`}
+    >
+      {isBot && (
+        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 mt-1">
+          <Bot className="w-4 h-4 text-white" />
+        </div>
+      )}
+      <div
+        className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
+          isBot
+            ? "bg-white border border-gray-100 text-gray-800 rounded-tl-sm"
+            : "bg-blue-600 text-white rounded-tr-sm"
+        }`}
+      >
+        {message.content}
+      </div>
+      {!isBot && (
+        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 mt-1">
+          <User className="w-4 h-4 text-gray-600" />
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+export default function NewTripPage() {
   const { data: session } = useSession();
-  const userid = session?.user?._id;
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      role: "assistant",
-      content:
-        "👋 Hi! I'm your AI travel planner. I'll help you create the perfect trip!\n\nLet's start - **what's the name of your trip?** (e.g., Dubai Adventure)",
-    },
-  ]);
+  // ── State ──────────────────────────────────────────────────────────────────
 
-  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [currentStep, setCurrentStep] = useState<ChatStep>("welcome");
+  const [isTyping, setIsTyping] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [step, setStep] = useState(0);
-  const [tripData, setTripData] = useState<TripData>({
+  const [newMessageIds, setNewMessageIds] = useState<Set<string>>(new Set());
+
+  // Form data
+  const [formData, setFormData] = useState<TripFormData>({
     name: "",
     destinations: [],
     startDate: "",
     endDate: "",
     duration: 0,
-    budget: 500,
-    travelers: 1,
-    tripType: "",
-    interests: [],
-    accommodation: "mid-range",
+    budget: 2000,
+    currency: "USD",
+    customCurrencyAmount: "",
+    tripType: "adventure",
     tripPace: "moderate",
+    accommodation: "mid-range",
+    transportation: "mix",
+    travelers: 2,
+    interests: [],
   });
 
-  // Steps in the conversation
-  const steps = [
-    {
-      key: "name",
-      question: "What's the name of your trip?",
-      field: "name" as const,
-    },
-    {
-      key: "destination",
-      question: "Where would you like to travel? (city, country)",
-      field: "destinations" as const,
-      isArray: true,
-    },
-    {
-      key: "startDate",
-      question: "When do you want to start your trip? (YYYY-MM-DD)",
-      field: "startDate" as const,
-    },
-    {
-      key: "endDate",
-      question: "When does your trip end? (YYYY-MM-DD)",
-      field: "endDate" as const,
-    },
-    {
-      key: "budget",
-      question: "What's your estimated budget in USD?",
-      field: "budget" as const,
-      isNumber: true,
-    },
-    {
-      key: "travelers",
-      question: "How many travelers?",
-      field: "travelers" as const,
-      isNumber: true,
-    },
-    {
-      key: "type",
-      question: "What type of trip?",
-      field: "tripType" as const,
-      isSelect: true,
-      options: TRIP_TYPES,
-    },
-    {
-      key: "accommodation",
-      question: "What accommodation preference?",
-      field: "accommodation" as const,
-      isSelect: true,
-      options: ACCOMMODATION_OPTIONS,
-    },
-    {
-      key: "pace",
-      question: "What's your preferred pace?",
-      field: "tripPace" as const,
-      isSelect: true,
-      options: TRIP_PACES,
-    },
-    {
-      key: "interests",
-      question: "What are your interests? (select multiple)",
-      field: "interests" as const,
-      isMulti: true,
-      options: INTERESTS,
-    },
-  ];
+  // Destination input
+  const [destInput, setDestInput] = useState("");
 
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  // Date range picker
+  const [dateRange, setDateRange] = useState<Range>({
+    startDate: new Date(),
+    endDate: addDays(new Date(), 6),
+    key: "selection",
+  });
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
-  // Calculate duration when dates are set
+  // Budget
+  const [budgetSlider, setBudgetSlider] = useState([2000]);
+  const [showCurrencyInput, setShowCurrencyInput] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState("USD");
+
+  // ── Scroll to bottom ───────────────────────────────────────────────────────
+
+  const scrollToBottom = useCallback(() => {
+    setTimeout(() => {
+      chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  }, []);
+
   useEffect(() => {
-    if (tripData.startDate && tripData.endDate) {
-      const start = new Date(tripData.startDate);
-      const end = new Date(tripData.endDate);
-      const days =
-        Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) +
-        1;
-      setTripData((prev) => ({ ...prev, duration: Math.max(1, days) }));
+    scrollToBottom();
+  }, [messages, isTyping, scrollToBottom]);
+
+  // ── Add message helper ─────────────────────────────────────────────────────
+
+  const addMessage = useCallback(
+    (role: "bot" | "user", content: React.ReactNode) => {
+      const id = genId();
+      setNewMessageIds((prev) => new Set(prev).add(id));
+      setMessages((prev) => [
+        ...prev,
+        { id, role, content, timestamp: new Date() },
+      ]);
+      setTimeout(() => {
+        setNewMessageIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      }, 1000);
+    },
+    [],
+  );
+
+  const botSay = useCallback(
+    async (content: React.ReactNode, delay = 600) => {
+      setIsTyping(true);
+      await new Promise((r) => setTimeout(r, delay));
+      setIsTyping(false);
+      addMessage("bot", content);
+    },
+    [addMessage],
+  );
+
+  // ── Initialize chat ────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    const init = async () => {
+      await botSay(
+        <span>
+          👋 Hey there! I&apos;m <strong>SafarAI</strong>, your personal travel
+          planner. I&apos;ll help you create an amazing trip itinerary in just a
+          few steps!
+        </span>,
+        400,
+      );
+      await botSay(
+        <span>
+          🌍 Let&apos;s start with your <strong>destination</strong>. Where
+          would you like to go? You can add multiple destinations!
+        </span>,
+        800,
+      );
+      setCurrentStep("destination");
+    };
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Step handlers ──────────────────────────────────────────────────────────
+
+  const handleAddDestination = () => {
+    const trimmed = destInput.trim();
+    if (!trimmed) return;
+    if (formData.destinations.includes(trimmed)) {
+      toast.error("Destination already added");
+      return;
     }
-  }, [tripData.startDate, tripData.endDate]);
-
-  const addMessage = (
-    role: "user" | "assistant",
-    content: string,
-    isLoading = false,
-  ) => {
-    setMessages((prev) => [
+    setFormData((prev) => ({
       ...prev,
-      { id: Date.now().toString(), role, content, isLoading },
-    ]);
+      destinations: [...prev.destinations, trimmed],
+    }));
+    setDestInput("");
   };
 
-  const updateLastAssistantMessage = (content: string) => {
-    setMessages((prev) => {
-      const newMessages = [...prev];
-      const lastIndex = newMessages.length - 1;
-      if (lastIndex >= 0 && newMessages[lastIndex].role === "assistant") {
-        newMessages[lastIndex] = {
-          ...newMessages[lastIndex],
-          content,
-          isLoading: false,
-        };
-      }
-      return newMessages;
-    });
+  const handleRemoveDestination = (dest: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      destinations: prev.destinations.filter((d) => d !== dest),
+    }));
   };
 
-  const handleSend = async () => {
-    if (!input.trim() || isGenerating) return;
-
-    const userInput = input.trim();
-    setInput("");
-    addMessage("user", userInput);
-
-    const currentStep = steps[step];
-
-    // Process the input based on current step
-    if (currentStep.isArray) {
-      // Handle array fields (like destinations)
-      setTripData((prev) => ({
-        ...prev,
-        [currentStep.field]: [
-          ...(prev[currentStep.field as keyof TripData] as string[]),
-          userInput,
-        ],
-      }));
-    } else if (currentStep.isNumber) {
-      // Handle number fields
-      const num = parseInt(userInput);
-      if (isNaN(num)) {
-        addMessage("assistant", "Please enter a valid number.");
-        return;
-      }
-      setTripData((prev) => ({ ...prev, [currentStep.field]: num }));
-    } else if (currentStep.isSelect) {
-      // Handle select fields - user should choose from options
-      const option = currentStep.options?.find(
-        (o) =>
-          o.label.toLowerCase() === userInput.toLowerCase() ||
-          o.value.toLowerCase() === userInput.toLowerCase(),
-      );
-      if (option) {
-        setTripData((prev) => ({ ...prev, [currentStep.field]: option.value }));
-      } else {
-        addMessage(
-          "assistant",
-          `Please choose from: ${currentStep.options?.map((o) => o.label).join(", ")}`,
-        );
-        return;
-      }
-    } else {
-      // Handle regular text fields
-      setTripData((prev) => ({ ...prev, [currentStep.field]: userInput }));
+  const handleDestinationConfirm = async () => {
+    if (formData.destinations.length === 0) {
+      toast.error("Please add at least one destination");
+      return;
     }
+    const destList = formData.destinations.join(", ");
+    addMessage("user", `📍 ${destList}`);
 
-    // Move to next step
-    if (step < steps.length - 1) {
-      const nextStep = steps[step + 1];
-      addMessage("assistant", `Got it! ${nextStep.question}`, true);
-      setStep(step + 1);
-    } else {
-      // All steps complete - generate trip
-      addMessage(
-        "assistant",
-        "🎉 Perfect! I have all the information I need. Let me generate your trip...",
-        true,
-      );
-      await generateTrip();
-    }
+    // Auto-generate trip name
+    const tripName = `Trip to ${formData.destinations[0]}`;
+    setFormData((prev) => ({ ...prev, name: tripName }));
+
+    await botSay(
+      <span>
+        ✈️ Amazing choice! <strong>{destList}</strong> sounds incredible.
+      </span>,
+      700,
+    );
+    await botSay(
+      <span>
+        📅 Now, when are you planning to travel? Select your{" "}
+        <strong>start and end dates</strong> below.
+      </span>,
+      900,
+    );
+    setCurrentStep("dates");
+    setShowDatePicker(true);
   };
 
-  const handleSelectOption = (value: string, optionValue?: string) => {
-    const currentStep = steps[step];
-
-    if (currentStep.isMulti && currentStep.options) {
-      // Handle multi-select (interests)
-      const current = tripData[currentStep.field as keyof TripData] as string[];
-      const newValue = current.includes(optionValue || value)
-        ? current.filter((i) => i !== (optionValue || value))
-        : [...current, optionValue || value];
-      setTripData((prev) => ({ ...prev, [currentStep.field]: newValue }));
-    } else {
-      // Handle single select
-      setTripData((prev) => ({
-        ...prev,
-        [currentStep.field]: optionValue || value,
-      }));
+  const handleDateConfirm = async () => {
+    if (!dateRange.startDate || !dateRange.endDate) {
+      toast.error("Please select travel dates");
+      return;
     }
+    const start = format(dateRange.startDate, "MMM d, yyyy");
+    const end = format(dateRange.endDate, "MMM d, yyyy");
+    const days = differenceInDays(dateRange.endDate, dateRange.startDate) + 1;
+
+    setFormData((prev) => ({
+      ...prev,
+      startDate: format(dateRange.startDate!, "yyyy-MM-dd"),
+      endDate: format(dateRange.endDate!, "yyyy-MM-dd"),
+      duration: days,
+    }));
+
+    setShowDatePicker(false);
+    addMessage("user", `📅 ${start} → ${end} (${days} days)`);
+
+    await botSay(
+      <span>
+        🗓️ Perfect! <strong>{days} days</strong> from <strong>{start}</strong>{" "}
+        to <strong>{end}</strong>.
+      </span>,
+      700,
+    );
+    await botSay(
+      <span>
+        💰 What&apos;s your <strong>total budget</strong> for this trip? Use the
+        slider to set your budget in USD, or add an optional amount in another
+        currency.
+      </span>,
+      900,
+    );
+    setCurrentStep("budget");
+  };
+
+  const handleBudgetConfirm = async () => {
+    const budget = budgetSlider[0];
+    setFormData((prev) => ({
+      ...prev,
+      budget,
+      currency: selectedCurrency,
+    }));
+
+    const currencyInfo = CURRENCIES.find((c) => c.code === selectedCurrency);
+    const extraInfo =
+      showCurrencyInput && formData.customCurrencyAmount
+        ? ` (${currencyInfo?.symbol}${formData.customCurrencyAmount} ${selectedCurrency})`
+        : "";
+
+    addMessage("user", `💰 $${budget.toLocaleString()} USD${extraInfo}`);
+
+    await botSay(
+      <span>
+        💵 Great budget! <strong>${budget.toLocaleString()}</strong> gives us
+        plenty to work with.
+      </span>,
+      700,
+    );
+    await botSay(
+      <span>
+        👥 How many <strong>travelers</strong> are going on this trip?
+      </span>,
+      900,
+    );
+    setCurrentStep("travelers");
+  };
+
+  const handleTravelersConfirm = async (count: number) => {
+    setFormData((prev) => ({ ...prev, travelers: count }));
+    addMessage("user", `👥 ${count} ${count === 1 ? "traveler" : "travelers"}`);
+
+    await botSay(
+      <span>
+        👍 Got it — <strong>{count}</strong>{" "}
+        {count === 1 ? "traveler" : "travelers"}.
+      </span>,
+      700,
+    );
+    await botSay(
+      <span>
+        🎯 What <strong>type of trip</strong> are you looking for?
+      </span>,
+      900,
+    );
+    setCurrentStep("tripType");
+  };
+
+  const handleTripTypeSelect = async (type: TripType) => {
+    setFormData((prev) => ({ ...prev, tripType: type }));
+    const found = TRIP_TYPES.find((t) => t.value === type);
+    addMessage("user", `${found?.emoji} ${found?.label}`);
+
+    await botSay(
+      <span>
+        {found?.emoji} <strong>{found?.label}</strong> trip — excellent choice!
+      </span>,
+      700,
+    );
+    await botSay(
+      <span>
+        🎨 Almost done! Select your <strong>interests</strong> and{" "}
+        <strong>preferences</strong> to personalize your itinerary.
+      </span>,
+      900,
+    );
+    setCurrentStep("preferences");
   };
 
   const handleInterestToggle = (interest: string) => {
-    const current = tripData.interests;
-    const newInterests = current.includes(interest)
-      ? current.filter((i) => i !== interest)
-      : [...current, interest];
-    setTripData((prev) => ({ ...prev, interests: newInterests }));
+    setFormData((prev) => ({
+      ...prev,
+      interests: prev.interests.includes(interest)
+        ? prev.interests.filter((i) => i !== interest)
+        : [...prev.interests, interest],
+    }));
   };
 
-  const generateTrip = async () => {
-    if (!userid) return;
+  const handlePreferencesConfirm = async () => {
+    const interestStr =
+      formData.interests.length > 0
+        ? formData.interests.join(", ")
+        : "General sightseeing";
+    addMessage(
+      "user",
+      `🎨 ${interestStr} | ${formData.tripPace} pace | ${formData.accommodation} stay`,
+    );
+
+    await botSay(
+      <span>
+        🌟 Perfect! Here&apos;s a summary of your trip. Ready to generate your
+        personalized itinerary?
+      </span>,
+      700,
+    );
+    setCurrentStep("summary");
+  };
+
+  const handleGenerateTrip = async () => {
+    if (!session?.user?._id) {
+      toast.error("Please sign in to generate a trip");
+      return;
+    }
 
     setIsGenerating(true);
+    setCurrentStep("generating");
+    addMessage("user", "🚀 Yes! Generate my trip itinerary!");
+
+    await botSay(
+      <span>
+        🤖 Excellent! I&apos;m now crafting your personalized{" "}
+        <strong>{formData.duration}-day</strong> itinerary for{" "}
+        <strong>{formData.destinations.join(", ")}</strong>. This may take up to
+        a minute...
+      </span>,
+      500,
+    );
+
     try {
-      const res = await fetch(`/api/trip/generate/${userid}`, {
+      const payload = {
+        name: formData.name,
+        destinations: formData.destinations,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        duration: formData.duration,
+        budget: formData.budget,
+        currency: formData.currency,
+        tripType: formData.tripType,
+        tripPace: formData.tripPace,
+        accommodation: formData.accommodation,
+        transportation: formData.transportation,
+        travelers: formData.travelers,
+        interests: formData.interests,
+      };
+
+      const res = await fetch(`/api/trip/generate/${session.user._id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(tripData),
+        body: JSON.stringify(payload),
       });
 
       const result = await res.json();
 
-      if (!res.ok) {
-        updateLastAssistantMessage(
-          result.message || "Failed to generate trip. Please try again.",
+      if (!res.ok || !result.success) {
+        throw new Error(
+          result.message || "AI generation failed. Please try again.",
         );
-        toast.error(result.message || "Failed to generate trip");
-        return;
       }
 
-      updateLastAssistantMessage(
-        "🎉 **Your trip has been generated!**\n\nCheck your trips to see the full itinerary with day-by-day activities, budget breakdown, packing list, and travel tips!",
+      const tripId = result.data?._id;
+      if (!tripId) {
+        throw new Error(
+          "Trip was created but no ID returned. Please check your trips.",
+        );
+      }
+
+      await botSay(
+        <span>
+          ✅ Your trip itinerary is ready! Redirecting you to your personalized
+          plan...
+        </span>,
+        500,
       );
 
+      toast.success("Trip generated successfully! 🎉");
+
       setTimeout(() => {
-        router.push("/app/trips");
-      }, 2000);
+        router.push(`/app/trips/${tripId}`);
+      }, 1500);
     } catch (error) {
-      updateLastAssistantMessage("Something went wrong. Please try again.");
-      toast.error((error as Error).message);
-    } finally {
       setIsGenerating(false);
+      setCurrentStep("summary");
+      const msg =
+        error instanceof Error ? error.message : "Failed to generate trip";
+      toast.error(msg);
+      await botSay(
+        <span>
+          ❌ Oops! Something went wrong: <strong>{msg}</strong>. Please try
+          again.
+        </span>,
+        300,
+      );
     }
   };
 
-  const currentStep = steps[step];
-  const isLastStep = step === steps.length - 1;
+  // ── Render input area based on step ───────────────────────────────────────
 
-  return (
-    <div className="container mx-auto py-6 px-4 max-w-3xl h-[calc(100vh-120px)] flex flex-col">
-      <Card className="flex-1 flex flex-col overflow-hidden">
-        <CardHeader className="border-b pb-4">
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            Plan Your Trip with AI
-          </CardTitle>
-        </CardHeader>
-
-        {/* Progress indicator */}
-        <div className="px-4 py-2 border-b bg-muted/30">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>
-              Step {step + 1} of {steps.length}
-            </span>
-            <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary transition-all duration-300"
-                style={{ width: `${((step + 1) / steps.length) * 100}%` }}
-              />
-            </div>
-          </div>
+  const renderInputArea = () => {
+    if (currentStep === "generating") {
+      return (
+        <div className="flex items-center justify-center gap-3 py-4 text-gray-500">
+          <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+          <span className="text-sm font-medium">
+            Generating your trip itinerary...
+          </span>
         </div>
+      );
+    }
 
-        {/* Chat Messages */}
-        <ScrollArea className="flex-1 p-4">
-          <div className="space-y-4">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                {msg.role === "assistant" && (
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Bot className="h-4 w-4 text-primary" />
-                  </div>
-                )}
-                <div
-                  className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                    msg.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                  }`}
+    if (currentStep === "welcome") {
+      return null;
+    }
+
+    if (currentStep === "destination") {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-3"
+        >
+          {/* Added destinations */}
+          {formData.destinations.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {formData.destinations.map((dest) => (
+                <span
+                  key={dest}
+                  className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-sm px-3 py-1.5 rounded-full"
                 >
-                  {msg.isLoading ? (
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span className="text-sm">Processing...</span>
-                    </div>
-                  ) : (
-                    <p className="whitespace-pre-wrap text-sm">{msg.content}</p>
-                  )}
-                </div>
-              </div>
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-        </ScrollArea>
-
-        {/* Input Area */}
-        <div className="p-4 border-t bg-background">
-          {currentStep?.isSelect && !currentStep.isMulti ? (
-            // Show buttons for select options
-            <div className="space-y-3">
-              <p className="text-sm font-medium">{currentStep.question}</p>
-              <div className="flex flex-wrap gap-2">
-                {currentStep.options?.map((opt) => (
-                  <Button
-                    key={opt.value}
-                    variant={
-                      tripData[currentStep.field as keyof TripData] ===
-                      opt.value
-                        ? "default"
-                        : "outline"
-                    }
-                    size="sm"
-                    onClick={() => handleSelectOption(opt.label, opt.value)}
+                  <MapPin className="w-3 h-3" />
+                  {dest}
+                  <button
+                    onClick={() => handleRemoveDestination(dest)}
+                    className="ml-1 hover:text-red-500 transition-colors"
                   >
-                    {opt.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          ) : currentStep?.isMulti ? (
-            // Show multi-select for interests
-            <div className="space-y-3">
-              <p className="text-sm font-medium">{currentStep.question}</p>
-              <div className="flex flex-wrap gap-2">
-                {INTERESTS.map((interest) => (
-                  <Button
-                    key={interest}
-                    variant={
-                      tripData.interests.includes(interest)
-                        ? "default"
-                        : "outline"
-                    }
-                    size="sm"
-                    onClick={() => handleInterestToggle(interest)}
-                  >
-                    {interest}
-                  </Button>
-                ))}
-              </div>
-              {tripData.interests.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      if (step < steps.length - 1) {
-                        setStep(step + 1);
-                        addMessage("assistant", steps[step + 1].question, true);
-                      } else {
-                        addMessage(
-                          "assistant",
-                          "🎉 Perfect! Let me generate your trip...",
-                          true,
-                        );
-                        generateTrip();
-                      }
-                    }}
-                  >
-                    {isLastStep ? "Generate Trip" : "Continue"}
-                  </Button>
-                </div>
-              )}
-            </div>
-          ) : (
-            // Text input
-            <div className="flex gap-2">
-              <Input
-                placeholder={currentStep?.question || "Type your answer..."}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                disabled={isGenerating}
-                className="flex-1"
-              />
-              <Button
-                onClick={handleSend}
-                disabled={isGenerating || !input.trim()}
-              >
-                {isGenerating ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </Button>
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
             </div>
           )}
-        </div>
-      </Card>
 
-      {/* Trip Summary Preview */}
-      {(tripData.name || tripData.destinations.length > 0) && (
-        <Card className="mt-4">
-          <CardContent className="p-4">
-            <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-              Trip Summary
-            </h4>
-            <div className="flex flex-wrap gap-2 text-sm">
-              {tripData.name && (
-                <Badge variant="secondary">📌 {tripData.name}</Badge>
-              )}
-              {tripData.destinations.map((d) => (
-                <Badge key={d} variant="outline">
-                  📍 {d}
-                </Badge>
-              ))}
-              {tripData.duration > 0 && (
-                <Badge variant="outline">📅 {tripData.duration} days</Badge>
-              )}
-              {tripData.budget > 0 && (
-                <Badge variant="outline">💰 ${tripData.budget}</Badge>
-              )}
-              {tripData.travelers > 0 && (
-                <Badge variant="outline">
-                  👥 {tripData.travelers} travelers
-                </Badge>
-              )}
-              {tripData.tripType && (
-                <Badge variant="outline">🏷️ {tripData.tripType}</Badge>
+          {/* Input row */}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                value={destInput}
+                onChange={(e) => setDestInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleAddDestination();
+                }}
+                placeholder="e.g. Paris, Kumrat Valley, Tokyo..."
+                className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              />
+            </div>
+            <button
+              onClick={handleAddDestination}
+              className="px-3 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+              title="Add destination"
+            >
+              <Plus className="w-4 h-4 text-gray-600" />
+            </button>
+          </div>
+
+          <button
+            onClick={handleDestinationConfirm}
+            disabled={formData.destinations.length === 0}
+            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
+          >
+            Continue
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </motion.div>
+      );
+    }
+
+    if (currentStep === "dates") {
+      const days =
+        dateRange.startDate && dateRange.endDate
+          ? differenceInDays(dateRange.endDate, dateRange.startDate) + 1
+          : 0;
+
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-3"
+        >
+          {/* Date range display */}
+          <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
+            <Calendar className="w-4 h-4 text-blue-600 flex-shrink-0" />
+            <div className="flex-1 text-sm">
+              {dateRange.startDate && dateRange.endDate ? (
+                <span className="font-medium text-blue-800">
+                  {format(dateRange.startDate, "MMM d, yyyy")} →{" "}
+                  {format(dateRange.endDate, "MMM d, yyyy")}
+                  <span className="ml-2 text-blue-600 font-normal">
+                    ({days} {days === 1 ? "day" : "days"})
+                  </span>
+                </span>
+              ) : (
+                <span className="text-gray-400">Select your travel dates</span>
               )}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+
+          {/* Date range picker */}
+          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+            <DateRange
+              ranges={[dateRange]}
+              onChange={(item: RangeKeyDict) => {
+                setDateRange(item.selection);
+              }}
+              minDate={new Date()}
+              maxDate={addDays(new Date(), 365)}
+              months={1}
+              direction="horizontal"
+              showMonthAndYearPickers
+              rangeColors={["#2563eb"]}
+              className="!font-sans"
+            />
+          </div>
+
+          <button
+            onClick={handleDateConfirm}
+            disabled={!dateRange.startDate || !dateRange.endDate}
+            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
+          >
+            Confirm Dates
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </motion.div>
+      );
+    }
+
+    if (currentStep === "budget") {
+      const budget = budgetSlider[0];
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-4"
+        >
+          {/* Budget display */}
+          <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl border border-green-100">
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-green-600" />
+              <span className="text-sm text-gray-600">Total Budget (USD)</span>
+            </div>
+            <span className="text-xl font-bold text-green-700">
+              ${budget.toLocaleString()}
+            </span>
+          </div>
+
+          {/* Slider */}
+          <div className="px-1 space-y-2">
+            <Slider
+              min={BUDGET_MIN}
+              max={BUDGET_MAX}
+              step={100}
+              value={budgetSlider}
+              onValueChange={setBudgetSlider}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-gray-400">
+              <span>{formatBudget(BUDGET_MIN)}</span>
+              <span className="text-blue-600 font-medium">
+                {formatBudget(budget)}
+              </span>
+              <span>{formatBudget(BUDGET_MAX)}</span>
+            </div>
+          </div>
+
+          {/* Quick budget presets */}
+          <div className="flex gap-2 flex-wrap">
+            {[500, 1000, 2500, 5000, 10000, 20000].map((preset) => (
+              <button
+                key={preset}
+                onClick={() => setBudgetSlider([preset])}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  budgetSlider[0] === preset
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
+                }`}
+              >
+                {formatBudget(preset)}
+              </button>
+            ))}
+          </div>
+
+          {/* Optional currency input */}
+          <div className="border border-dashed border-gray-200 rounded-xl p-3 space-y-2">
+            <button
+              onClick={() => setShowCurrencyInput(!showCurrencyInput)}
+              className="flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors"
+            >
+              <Globe className="w-4 h-4" />
+              {showCurrencyInput
+                ? "Hide"
+                : "Add amount in another currency (optional)"}
+            </button>
+
+            {showCurrencyInput && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="flex gap-2"
+              >
+                <select
+                  value={selectedCurrency}
+                  onChange={(e) => setSelectedCurrency(e.target.value)}
+                  className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  {CURRENCIES.filter((c) => c.code !== "USD").map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.symbol} {c.code} — {c.name}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  value={formData.customCurrencyAmount}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      customCurrencyAmount: e.target.value,
+                    }))
+                  }
+                  placeholder={`Amount in ${selectedCurrency}`}
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                />
+              </motion.div>
+            )}
+          </div>
+
+          <button
+            onClick={handleBudgetConfirm}
+            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
+          >
+            Confirm Budget
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </motion.div>
+      );
+    }
+
+    if (currentStep === "travelers") {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-3"
+        >
+          <div className="flex items-center justify-center gap-4">
+            <button
+              onClick={() =>
+                setFormData((prev) => ({
+                  ...prev,
+                  travelers: Math.max(1, prev.travelers - 1),
+                }))
+              }
+              className="w-10 h-10 rounded-full border-2 border-gray-200 hover:border-blue-400 flex items-center justify-center text-xl font-bold text-gray-600 transition-colors"
+            >
+              −
+            </button>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-blue-600">
+                {formData.travelers}
+              </div>
+              <div className="text-sm text-gray-500">
+                {formData.travelers === 1 ? "traveler" : "travelers"}
+              </div>
+            </div>
+            <button
+              onClick={() =>
+                setFormData((prev) => ({
+                  ...prev,
+                  travelers: Math.min(20, prev.travelers + 1),
+                }))
+              }
+              className="w-10 h-10 rounded-full border-2 border-gray-200 hover:border-blue-400 flex items-center justify-center text-xl font-bold text-gray-600 transition-colors"
+            >
+              +
+            </button>
+          </div>
+
+          {/* Quick select */}
+          <div className="flex gap-2 justify-center flex-wrap">
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <button
+                key={n}
+                onClick={() => handleTravelersConfirm(n)}
+                className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
+                  formData.travelers === n
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
+                }`}
+              >
+                {n === 1 ? "Solo" : n === 2 ? "Couple" : `${n} people`}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => handleTravelersConfirm(formData.travelers)}
+            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
+          >
+            Continue
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </motion.div>
+      );
+    }
+
+    if (currentStep === "tripType") {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-2 sm:grid-cols-3 gap-2"
+        >
+          {TRIP_TYPES.map((type) => (
+            <button
+              key={type.value}
+              onClick={() => handleTripTypeSelect(type.value)}
+              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                formData.tripType === type.value
+                  ? "border-blue-500 bg-blue-50 text-blue-700"
+                  : "border-gray-200 bg-white text-gray-600 hover:border-blue-300"
+              }`}
+            >
+              <span className="text-2xl">{type.emoji}</span>
+              <span className="text-xs font-medium">{type.label}</span>
+            </button>
+          ))}
+        </motion.div>
+      );
+    }
+
+    if (currentStep === "preferences") {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-4"
+        >
+          {/* Interests */}
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              Interests (select all that apply)
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {INTERESTS.map((interest) => (
+                <button
+                  key={interest}
+                  onClick={() => handleInterestToggle(interest)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                    formData.interests.includes(interest)
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
+                  }`}
+                >
+                  {interest}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Trip Pace */}
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              Trip Pace
+            </p>
+            <div className="flex gap-2">
+              {(["slow", "moderate", "fast"] as TripPace[]).map((pace) => (
+                <button
+                  key={pace}
+                  onClick={() =>
+                    setFormData((prev) => ({ ...prev, tripPace: pace }))
+                  }
+                  className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-colors capitalize ${
+                    formData.tripPace === pace
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
+                  }`}
+                >
+                  {pace === "slow"
+                    ? "🐢 Slow"
+                    : pace === "moderate"
+                      ? "🚶 Moderate"
+                      : "⚡ Fast"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Accommodation */}
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              Accommodation
+            </p>
+            <div className="flex gap-2">
+              {(["budget", "mid-range", "luxury"] as Accommodation[]).map(
+                (acc) => (
+                  <button
+                    key={acc}
+                    onClick={() =>
+                      setFormData((prev) => ({ ...prev, accommodation: acc }))
+                    }
+                    className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-colors ${
+                      formData.accommodation === acc
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
+                    }`}
+                  >
+                    {acc === "budget"
+                      ? "🏕️ Budget"
+                      : acc === "mid-range"
+                        ? "🏨 Mid-range"
+                        : "🏰 Luxury"}
+                  </button>
+                ),
+              )}
+            </div>
+          </div>
+
+          <button
+            onClick={handlePreferencesConfirm}
+            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
+          >
+            Continue
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </motion.div>
+      );
+    }
+
+    if (currentStep === "summary") {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-3"
+        >
+          {/* Summary card */}
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-4 space-y-3">
+            <div className="flex items-center gap-2 text-blue-700 font-semibold text-sm">
+              <CheckCircle2 className="w-4 h-4" />
+              Trip Summary
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="flex items-center gap-1.5 text-gray-600">
+                <MapPin className="w-3.5 h-3.5 text-blue-500" />
+                <span className="font-medium">
+                  {formData.destinations.join(", ")}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 text-gray-600">
+                <Calendar className="w-3.5 h-3.5 text-blue-500" />
+                <span>{formData.duration} days</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-gray-600">
+                <Wallet className="w-3.5 h-3.5 text-blue-500" />
+                <span>${formData.budget.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-gray-600">
+                <Users className="w-3.5 h-3.5 text-blue-500" />
+                <span>{formData.travelers} travelers</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-gray-600">
+                <Zap className="w-3.5 h-3.5 text-blue-500" />
+                <span className="capitalize">{formData.tripType}</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-gray-600">
+                <Plane className="w-3.5 h-3.5 text-blue-500" />
+                <span className="capitalize">{formData.tripPace} pace</span>
+              </div>
+            </div>
+            {formData.interests.length > 0 && (
+              <div className="flex flex-wrap gap-1 pt-1 border-t border-blue-100">
+                {formData.interests.map((i) => (
+                  <span
+                    key={i}
+                    className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs"
+                  >
+                    {i}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={handleGenerateTrip}
+            disabled={isGenerating}
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition-all text-sm shadow-md hover:shadow-lg"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Zap className="w-4 h-4" />
+                Generate My Trip Itinerary
+              </>
+            )}
+          </button>
+        </motion.div>
+      );
+    }
+
+    return null;
+  };
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+
+  return (
+    <div className="flex flex-col h-[calc(100vh-4rem)] bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3 flex-shrink-0">
+        <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center">
+          <Bot className="w-5 h-5 text-white" />
+        </div>
+        <div>
+          <h1 className="font-semibold text-gray-900 text-sm">
+            SafarAI Planner
+          </h1>
+          <p className="text-xs text-green-500 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+            Online
+          </p>
+        </div>
+      </div>
+
+      {/* Chat messages — scrollable */}
+      <div
+        ref={chatContainerRef}
+        className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scroll-smooth"
+        style={{
+          scrollbarWidth: "thin",
+          scrollbarColor: "#cbd5e1 transparent",
+        }}
+      >
+        <AnimatePresence initial={false}>
+          {messages.map((msg) => (
+            <ChatBubble
+              key={msg.id}
+              message={msg}
+              isNew={newMessageIds.has(msg.id)}
+            />
+          ))}
+        </AnimatePresence>
+
+        {/* Typing indicator */}
+        {isTyping && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="flex gap-3 justify-start"
+          >
+            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+              <Bot className="w-4 h-4 text-white" />
+            </div>
+            <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-sm shadow-sm">
+              <TypingIndicator />
+            </div>
+          </motion.div>
+        )}
+
+        <div ref={chatEndRef} />
+      </div>
+
+      {/* Input area — fixed at bottom */}
+      <div className="bg-white border-t border-gray-100 px-4 py-3 flex-shrink-0">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentStep}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            {renderInputArea()}
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
