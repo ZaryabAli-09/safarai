@@ -25,28 +25,3 @@ export async function generateOtp() {
 
   return { otp, expiry };
 }
-
-// function to calculate trip statistics
-export function calculateTripStatistics(trip: ITrip) {
-  const budgetPerDay = Math.round(trip.budget / trip.duration);
-  const budgetPerDestination = Math.round(
-    trip.budget / trip.destinations.length,
-  );
-  const daysPerDestination = Math.round(
-    trip.duration / trip.destinations.length,
-  );
-  const activitiesCount = trip.aiSuggestions.reduce(
-    (total, day) => total + day.activities.length,
-    0,
-  );
-
-  return {
-    budgetPerDay,
-    budgetPerDestination,
-    daysPerDestination,
-    totalActivities: activitiesCount,
-    totalDestinations: trip.destinations.length,
-    totalDays: trip.duration,
-    totalBudget: trip.budget,
-  };
-}
