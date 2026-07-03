@@ -238,20 +238,20 @@ export async function POST(
       // ── Step 1: Generate itinerary with AI ──────────────────────────────
       const aiResult = await generateItineraryWithAI(tripData);
 
-      // Normalize itinerary — ensure IDs and dates are set
-      if (aiResult.itinerary) {
-        aiResult.itinerary = aiResult.itinerary.map(
-          (day: any, idx: number) => ({
-            ...day,
-            dayNumber: day.dayNumber ?? idx + 1,
-            date: day.date || buildDateForDay(tripData.startDate, idx),
-            activities: (day.activities || []).map((activity: any) => ({
-              ...activity,
-              id: activity.id || generateId(),
-            })),
-          }),
-        );
-      }
+      const normalizedItinerary = (aiResult.itinerary || []).map(
+        (day: any, idx: number) => ({
+          ...day,
+          dayNumber: day.dayNumber ?? idx + 1,
+          date: day.date || buildDateForDay(tripData.startDate, idx),
+          activities: (day.activities || []).map((activity: any) => ({
+            ...activity,
+            id: activity.id || generateId(),
+          })),
+        }),
+      );
+
+      // Assign itinerary BEFORE enrichment so there's something to attach to
+      trip.itinerary = normalizedItinerary;
 
       // ── Step 2: Geocode main destination and enhance activities ─────────
       let coordinates: { lat: number; lng: number } | undefined;
@@ -263,13 +263,9 @@ export async function POST(
             `[Generate] Geocoded ${tripData.destinations[0]}: ${coordinates.lat}, ${coordinates.lng}`,
           );
 
-          // Add coordinates to first day's activities
           if (trip.itinerary[0]?.activities) {
             trip.itinerary[0].activities = trip.itinerary[0].activities.map(
-              (activity: IActivity) => ({
-                ...activity,
-                coordinates,
-              }),
+              (activity: IActivity) => ({ ...activity, coordinates }),
             );
           }
         }
@@ -279,11 +275,10 @@ export async function POST(
         );
       }
 
-      // ── Step 3: Get weather forecast and enhance activities ─────────────────
-      let weatherData = null;
+      // ── Step 3: Get weather forecast and enhance activities ─────────────
       try {
         if (coordinates) {
-          weatherData = await getWeatherForLocation(
+          const weatherData = await getWeatherForLocation(
             coordinates.lat,
             coordinates.lng,
             tripData.startDate.toISOString().split("T")[0],
@@ -294,17 +289,17 @@ export async function POST(
               `[Generate] Got weather for ${weatherData.length} days`,
             );
 
-            // Map weather data to itinerary days
             trip.itinerary = trip.itinerary.map((day, index) => {
-              if (weatherData[index]) {
+              const dayWeather = weatherData[index];
+              if (dayWeather) {
                 return {
                   ...day,
                   activities: day.activities.map((activity: IActivity) => ({
                     ...activity,
                     weather: {
-                      temp: weatherData[index].temp_c,
-                      condition: weatherData[index].condition.text,
-                      icon: weatherData[index].condition.icon,
+                      temp: dayWeather.temp_max, // e.g. "27°C"
+                      condition: dayWeather.condition,
+                      icon: dayWeather.icon,
                     },
                   })),
                 };
@@ -320,7 +315,6 @@ export async function POST(
       }
 
       // ── Step 4: Save completed trip ─────────────────────────────────────
-      trip.itinerary = aiResult.itinerary || [];
       trip.summary = aiResult.summary || {
         totalDays: tripData.duration,
         destinations: tripData.destinations,
