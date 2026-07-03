@@ -1,6 +1,7 @@
 import { response } from "@/lib/helperFunctions";
 import { NextRequest } from "next/server";
 import { Trip } from "@/models/Trip";
+import { IActivity } from "@/models/Trip";
 import { dbConnect } from "@/config/db";
 import { generateAICompletion, OpenRouterMessage } from "@/config/ai";
 import { geocodeLocation } from "@/lib/services/location";
@@ -252,7 +253,7 @@ export async function POST(
         );
       }
 
-      // ── Step 2: Geocode main destination (optional) ─────────────────────
+      // ── Step 2: Geocode main destination and enhance activities ─────────
       let coordinates: { lat: number; lng: number } | undefined;
       try {
         const locationData = await geocodeLocation(tripData.destinations[0]);
@@ -261,6 +262,16 @@ export async function POST(
           console.log(
             `[Generate] Geocoded ${tripData.destinations[0]}: ${coordinates.lat}, ${coordinates.lng}`,
           );
+
+          // Add coordinates to first day's activities
+          if (trip.itinerary[0]?.activities) {
+            trip.itinerary[0].activities = trip.itinerary[0].activities.map(
+              (activity: IActivity) => ({
+                ...activity,
+                coordinates,
+              }),
+            );
+          }
         }
       } catch {
         console.warn(
@@ -268,7 +279,7 @@ export async function POST(
         );
       }
 
-      // ── Step 3: Get weather forecast (optional) ─────────────────────────
+      // ── Step 3: Get weather forecast and enhance activities ─────────────────
       let weatherData = null;
       try {
         if (coordinates) {
@@ -282,6 +293,24 @@ export async function POST(
             console.log(
               `[Generate] Got weather for ${weatherData.length} days`,
             );
+
+            // Map weather data to itinerary days
+            trip.itinerary = trip.itinerary.map((day, index) => {
+              if (weatherData[index]) {
+                return {
+                  ...day,
+                  activities: day.activities.map((activity: IActivity) => ({
+                    ...activity,
+                    weather: {
+                      temp: weatherData[index].temp_c,
+                      condition: weatherData[index].condition.text,
+                      icon: weatherData[index].condition.icon,
+                    },
+                  })),
+                };
+              }
+              return day;
+            });
           }
         }
       } catch {
