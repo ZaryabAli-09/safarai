@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
+import dynamic from "next/dynamic";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -34,6 +35,11 @@ import {
 import toast from "react-hot-toast";
 import Link from "next/link";
 
+// Dynamically import TripDayMap with ssr: false (requires window/DOM)
+const TripDayMap = dynamic(() => import("@/components/TripDayMap"), {
+  ssr: false,
+});
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Activity {
@@ -46,6 +52,8 @@ interface Activity {
   duration?: string;
   category?: string;
   weather?: { temp?: string; condition?: string; icon?: string };
+  coordinates?: { lat: number; lng: number };
+  image?: { url: string; attribution?: string };
 }
 
 interface DayItinerary {
@@ -181,6 +189,31 @@ function ActivityCard({
       transition={{ duration: 0.4, delay: index * 0.1 + dayIndex * 0.05 }}
       className={`relative flex gap-4 p-4 rounded-xl border ${timeConfig.border} ${timeConfig.bg} group hover:shadow-md transition-shadow`}
     >
+      {/* Location image or placeholder */}
+      <div className="flex-shrink-0">
+        {activity.image?.url ? (
+          <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-200">
+            <img
+              src={activity.image.url}
+              alt={activity.location || activity.title}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+            {activity.image.attribution && (
+              <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-white text-[10px] px-1 py-0.5 text-center">
+                {activity.image.attribution}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div
+            className={`w-20 h-20 rounded-lg flex items-center justify-center ${timeConfig.bg} border ${timeConfig.border}`}
+          >
+            <CategoryIcon className="w-8 h-8 text-gray-400" />
+          </div>
+        )}
+      </div>
+
       {/* Time badge */}
       <div className="flex-shrink-0">
         <div
@@ -331,6 +364,12 @@ function DayCard({
             className="overflow-hidden"
           >
             <div className="px-4 pb-4 space-y-3 border-t border-gray-50 pt-3">
+              {/* Map showing all activities for this day */}
+              {day.activities && day.activities.length > 0 && (
+                <TripDayMap activities={day.activities} />
+              )}
+
+              {/* Activity cards */}
               {day.activities && day.activities.length > 0 ? (
                 day.activities.map((activity, actIdx) => (
                   <ActivityCard

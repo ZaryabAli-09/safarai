@@ -15,6 +15,10 @@ export interface IActivity {
     condition?: string;
     icon?: string;
   };
+  image?: {
+    url: string;
+    attribution?: string;
+  };
   rating?: number;
 }
 
@@ -90,6 +94,10 @@ const ActivitySchema = new mongoose.Schema(
       temp: { type: String },
       condition: { type: String },
       icon: { type: String },
+    },
+    image: {
+      url: { type: String },
+      attribution: { type: String },
     },
     rating: { type: Number },
   },

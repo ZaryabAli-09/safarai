@@ -4,8 +4,12 @@ import { Trip } from "@/models/Trip";
 import { IActivity } from "@/models/Trip";
 import { dbConnect } from "@/config/db";
 import { generateAICompletion, OpenRouterMessage } from "@/config/ai";
-import { geocodeLocation } from "@/lib/services/location";
+import {
+  geocodeLocation,
+  geocodeMultipleLocations,
+} from "@/lib/services/location";
 import { getWeatherForLocation } from "@/lib/services/weather";
+import { getLocationImages } from "@/lib/services/locationImage";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -253,34 +257,102 @@ export async function POST(
       // Assign itinerary BEFORE enrichment so there's something to attach to
       trip.itinerary = normalizedItinerary;
 
-      // ── Step 2: Geocode main destination and enhance activities ─────────
-      let coordinates: { lat: number; lng: number } | undefined;
+      // ── Step 2: Geocode all activities and fetch location images ────────
+      let dayCoordinates: { lat: number; lng: number } | undefined;
       try {
-        const locationData = await geocodeLocation(tripData.destinations[0]);
-        if (locationData) {
-          coordinates = { lat: locationData.lat, lng: locationData.lng };
-          console.log(
-            `[Generate] Geocoded ${tripData.destinations[0]}: ${coordinates.lat}, ${coordinates.lng}`,
-          );
+        // Collect all unique location strings from all activities
+        const locationStrings = new Set<string>();
+        trip.itinerary.forEach((day: any) => {
+          day.activities.forEach((activity: IActivity) => {
+            const locStr = activity.location || day.location;
+            if (locStr) {
+              locationStrings.add(locStr);
+            }
+          });
+        });
 
-          if (trip.itinerary[0]?.activities) {
-            trip.itinerary[0].activities = trip.itinerary[0].activities.map(
-              (activity: IActivity) => ({ ...activity, coordinates }),
-            );
-          }
-        }
+        const uniqueLocations = Array.from(locationStrings);
+        console.log(
+          `[Generate] Geocoding ${uniqueLocations.length} unique locations...`,
+        );
+
+        // Geocode all locations in one batch (with rate limiting)
+        const geocodedMap = await geocodeMultipleLocations(uniqueLocations);
+
+        // Attach coordinates to each activity
+        trip.itinerary = trip.itinerary.map((day: any, dayIdx: number) => ({
+          ...day,
+          activities: day.activities.map((activity: IActivity) => {
+            const locStr = activity.location || day.location;
+            const coords = locStr ? geocodedMap.get(locStr) : null;
+            if (coords && !dayCoordinates) {
+              dayCoordinates = { lat: coords.lat, lng: coords.lng };
+            }
+            return {
+              ...activity,
+              coordinates: coords
+                ? { lat: coords.lat, lng: coords.lng }
+                : undefined,
+            };
+          }),
+        }));
+
+        console.log(
+          `[Generate] Geocoding complete. Found coordinates for ${geocodedMap.size} locations.`,
+        );
       } catch {
         console.warn(
           "[Generate] Geocoding failed, continuing without coordinates",
         );
       }
 
+      // ── Step 2b: Fetch location images for all activities ───────────────
+      try {
+        const locationStrings = new Set<string>();
+        trip.itinerary.forEach((day: any) => {
+          day.activities.forEach((activity: IActivity) => {
+            const locStr = activity.location || day.location;
+            if (locStr) {
+              locationStrings.add(locStr);
+            }
+          });
+        });
+
+        const uniqueLocations = Array.from(locationStrings);
+        console.log(
+          `[Generate] Fetching images for ${uniqueLocations.length} locations...`,
+        );
+
+        const imagesMap = await getLocationImages(uniqueLocations);
+
+        // Attach images to each activity
+        trip.itinerary = trip.itinerary.map((day: any) => ({
+          ...day,
+          activities: day.activities.map((activity: IActivity) => {
+            const locStr = activity.location || day.location;
+            const image = locStr ? imagesMap.get(locStr) : null;
+            return {
+              ...activity,
+              image: image || undefined,
+            };
+          }),
+        }));
+
+        console.log(
+          `[Generate] Image fetching complete. Found images for ${imagesMap.size} locations.`,
+        );
+      } catch {
+        console.warn(
+          "[Generate] Image lookup failed, continuing without images",
+        );
+      }
+
       // ── Step 3: Get weather forecast and enhance activities ─────────────
       try {
-        if (coordinates) {
+        if (dayCoordinates) {
           const weatherData = await getWeatherForLocation(
-            coordinates.lat,
-            coordinates.lng,
+            dayCoordinates.lat,
+            dayCoordinates.lng,
             tripData.startDate.toISOString().split("T")[0],
             tripData.endDate.toISOString().split("T")[0],
           );
@@ -289,7 +361,7 @@ export async function POST(
               `[Generate] Got weather for ${weatherData.length} days`,
             );
 
-            trip.itinerary = trip.itinerary.map((day, index) => {
+            trip.itinerary = trip.itinerary.map((day: any, index: number) => {
               const dayWeather = weatherData[index];
               if (dayWeather) {
                 return {
