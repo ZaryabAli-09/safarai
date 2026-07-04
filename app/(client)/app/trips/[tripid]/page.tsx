@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import dynamic from "next/dynamic";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,14 +30,10 @@ import {
   Loader2,
   Share2,
   Download,
+  MapIcon,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Link from "next/link";
-
-// Dynamically import TripDayMap with ssr: false (requires window/DOM)
-const TripDayMap = dynamic(() => import("@/components/TripDayMap"), {
-  ssr: false,
-});
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -278,6 +273,21 @@ function ActivityCard({
             )}
           </div>
         )}
+
+        {/* Google Maps button */}
+        {activity.coordinates && (
+          <div className="mt-3">
+            <a
+              href={`https://www.google.com/maps?q=${activity.coordinates.lat},${activity.coordinates.lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <MapIcon className="w-3.5 h-3.5" />
+              See on Google Maps
+            </a>
+          </div>
+        )}
       </div>
     </motion.div>
   );
@@ -364,11 +374,6 @@ function DayCard({
             className="overflow-hidden"
           >
             <div className="px-4 pb-4 space-y-3 border-t border-gray-50 pt-3">
-              {/* Map showing all activities for this day */}
-              {day.activities && day.activities.length > 0 && (
-                <TripDayMap activities={day.activities} />
-              )}
-
               {/* Activity cards */}
               {day.activities && day.activities.length > 0 ? (
                 day.activities.map((activity, actIdx) => (
