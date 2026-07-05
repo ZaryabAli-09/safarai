@@ -58,10 +58,12 @@ interface TripFormData {
 
 type ChatStep =
   | "welcome"
+  | "currentLocation"
   | "destination"
   | "dates"
   | "budget"
   | "travelers"
+  | "transportation"
   | "tripType"
   | "preferences"
   | "summary"
@@ -449,6 +451,32 @@ export default function NewTripPage() {
     await botSay(
       <span>
         {found?.emoji} <strong>{found?.label}</strong> trip — excellent choice!
+      </span>,
+      700,
+    );
+    await botSay(
+      <span>
+        🚗 How do you plan to travel? This helps me suggest realistic activities
+        and travel times.
+      </span>,
+      900,
+    );
+    setCurrentStep("transportation");
+  };
+
+  const handleTransportationSelect = async (transport: Transportation) => {
+    setFormData((prev) => ({ ...prev, transportation: transport }));
+    const transportLabels: Record<Transportation, string> = {
+      flight: "✈️ Flight",
+      road: "🚗 Road/Car",
+      train: "🚂 Train",
+      mix: "🔄 Mix of all",
+    };
+    addMessage("user", transportLabels[transport]);
+
+    await botSay(
+      <span>
+        Perfect! <strong>{transportLabels[transport]}</strong> it is.
       </span>,
       700,
     );
@@ -917,6 +945,42 @@ export default function NewTripPage() {
             >
               <span className="text-2xl">{type.emoji}</span>
               <span className="text-xs font-medium">{type.label}</span>
+            </button>
+          ))}
+        </motion.div>
+      );
+    }
+
+    if (currentStep === "transportation") {
+      const transportOptions: {
+        value: Transportation;
+        label: string;
+        emoji: string;
+      }[] = [
+        { value: "flight", label: "Flight", emoji: "✈️" },
+        { value: "road", label: "Road/Car", emoji: "🚗" },
+        { value: "train", label: "Train", emoji: "🚂" },
+        { value: "mix", label: "Mix of all", emoji: "🔄" },
+      ];
+
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-2 gap-2"
+        >
+          {transportOptions.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => handleTransportationSelect(option.value)}
+              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                formData.transportation === option.value
+                  ? "border-blue-500 bg-blue-50 text-blue-700"
+                  : "border-gray-200 bg-white text-gray-600 hover:border-blue-300"
+              }`}
+            >
+              <span className="text-2xl">{option.emoji}</span>
+              <span className="text-xs font-medium">{option.label}</span>
             </button>
           ))}
         </motion.div>

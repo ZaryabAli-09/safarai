@@ -120,7 +120,7 @@ Return this exact structure:
           "timeOfDay": "morning",
           "title": "Activity name",
           "description": "2-3 sentence description",
-          "location": "Specific place",
+          "location": "Specific place name (MUST be a real, specific location)",
           "estimatedCost": "$20-30",
           "duration": "2 hours",
           "category": "sightseeing"
@@ -150,10 +150,13 @@ Return this exact structure:
   "aiNotes": "Brief notes"
 }
 
-Rules:
+CRITICAL RULES:
 - Exactly 3 activities per day: morning, afternoon, evening
 - timeOfDay: "morning" | "afternoon" | "evening" only
 - category: "sightseeing" | "food" | "adventure" | "culture" | "shopping" | "nature" | "accommodation" | "transport"
+- EVERY activity MUST have a specific, real location name (e.g., "Faisal Mosque", "Margalla Hills", "Lok Virsa Museum")
+- NEVER use generic locations like "Hotel" or "Airport" unless absolutely necessary
+- DO NOT include airport arrival/hotel check-in on Day 1 unless the traveler is flying in from far away
 - packingList: 8-10 items
 - travelTips: 4-6 items
 - All costs in USD`,
@@ -167,7 +170,15 @@ Rules:
 - Budget: $${tripData.budget} for ${tripData.travelers} traveler(s)
 - Pace: ${tripData.tripPace}
 - Accommodation: ${tripData.accommodation}
+- Transportation: ${tripData.transportation}
 - Interests: ${interestStr}
+
+IMPORTANT: 
+- Create a realistic, practical itinerary with SPECIFIC location names
+- Avoid generic activities like "Airport Transfer" or "Hotel Check-in" unless necessary
+- Every activity location must be a real, specific place that can be found on a map
+- Consider the transportation method (${tripData.transportation}) when planning activities
+- Make activities relevant to the traveler's interests and trip pace
 
 Generate the complete JSON itinerary now.`,
   };
