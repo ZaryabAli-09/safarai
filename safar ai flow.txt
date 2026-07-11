@@ -1,0 +1,48 @@
+┌─────────────────────────────────────────────────────────────────┐
+│ 1. USER CREATES TRIP                                            │
+│    Input: Destination, Duration, Budget, Interests              │
+└────────────────────────┬────────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ 2. AI GENERATES ITINERARY                                       │
+│    Output: JSON with venue, city, country for each activity     │
+└────────────────────────┬────────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ 3. JSON EXTRACTION                                              │
+│    Extracts valid JSON from AI response (handles text/escapes)  │
+└────────────────────────┬────────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ 4. NORMALIZE ACTIVITIES                                         │
+│    Derive location field: "venue, city"                         │
+│    Store venue, city, country separately                        │
+└────────────────────────┬────────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ 5. GEOCODE LOCATIONS                                            │
+│    Query: "venue, city, country" → Nominatim → Coordinates     │
+│    Fallback: "city, country" if venue not found                 │
+└────────────────────────┬────────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ 6. FETCH IMAGES                                                 │
+│    Search Wikipedia for venue → Get article → Fetch thumbnail   │
+│    Fallback: Search by city if venue not found                  │
+└────────────────────────┬────────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ 7. GET WEATHER                                                  │
+│    Use first activity coordinates → Open-Meteo → Forecast       │
+└────────────────────────┬────────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ 8. SAVE TO DATABASE                                             │
+│    Store complete trip with all enriched data                   │
+└────────────────────────┬────────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ 9. DISPLAY IN UI                                                │
+│    Show activities with images, weather, maps links             │
+│    Maps button uses: venue, city, country for search            │
+└─────────────────────────────────────────────────────────────────┘
