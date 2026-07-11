@@ -67,24 +67,108 @@ function extractJSON(text: string): any {
     return JSON.parse(cleaned);
   } catch {}
 
-  // Find the outermost JSON object
+  // Find the outermost JSON object - look for { followed by "itinerary"
   const start = cleaned.indexOf("{");
-  const end = cleaned.lastIndexOf("}");
-  if (start !== -1 && end !== -1 && end > start) {
-    try {
-      return JSON.parse(cleaned.slice(start, end + 1));
-    } catch {}
+  if (start !== -1) {
+    // Find the matching closing brace by counting braces and quotes
+    let braceCount = 0;
+    let end = -1;
+    let inString = false;
+    let escapeNext = false;
+
+    for (let i = start; i < cleaned.length; i++) {
+      const char = cleaned[i];
+
+      if (escapeNext) {
+        escapeNext = false;
+        continue;
+      }
+
+      if (char === "\\") {
+        escapeNext = true;
+        continue;
+      }
+
+      if (char === '"') {
+        inString = !inString;
+        continue;
+      }
+
+      if (!inString) {
+        if (char === "{") braceCount++;
+        if (char === "}") {
+          braceCount--;
+          if (braceCount === 0) {
+            end = i;
+            break;
+          }
+        }
+      }
+    }
+
+    if (end !== -1) {
+      try {
+        const jsonStr = cleaned.slice(start, end + 1);
+        return JSON.parse(jsonStr);
+      } catch (e) {
+        console.warn("Failed to parse JSON object with brace matching:", e);
+      }
+    }
   }
 
   // Try to find JSON array
   const arrStart = cleaned.indexOf("[");
-  const arrEnd = cleaned.lastIndexOf("]");
-  if (arrStart !== -1 && arrEnd !== -1 && arrEnd > arrStart) {
-    try {
-      return JSON.parse(cleaned.slice(arrStart, arrEnd + 1));
-    } catch {}
+  if (arrStart !== -1) {
+    let bracketCount = 0;
+    let arrEnd = -1;
+    let inString = false;
+    let escapeNext = false;
+
+    for (let i = arrStart; i < cleaned.length; i++) {
+      const char = cleaned[i];
+
+      if (escapeNext) {
+        escapeNext = false;
+        continue;
+      }
+
+      if (char === "\\") {
+        escapeNext = true;
+        continue;
+      }
+
+      if (char === '"') {
+        inString = !inString;
+        continue;
+      }
+
+      if (!inString) {
+        if (char === "[") bracketCount++;
+        if (char === "]") {
+          bracketCount--;
+          if (bracketCount === 0) {
+            arrEnd = i;
+            break;
+          }
+        }
+      }
+    }
+
+    if (arrEnd !== -1) {
+      try {
+        const jsonStr = cleaned.slice(arrStart, arrEnd + 1);
+        return JSON.parse(jsonStr);
+      } catch (e) {
+        console.warn("Failed to parse JSON array with bracket matching:", e);
+      }
+    }
   }
 
+  // Log the problematic text for debugging
+  console.error(
+    "Could not extract JSON from response. First 500 chars:",
+    cleaned.slice(0, 500),
+  );
   throw new Error("No valid JSON found in AI response");
 }
 
@@ -104,9 +188,8 @@ async function generateItineraryWithAI(tripData: any): Promise<any> {
    */
   const systemMessage: OpenRouterMessage = {
     role: "system",
-    content: `You are a travel planner. Output ONLY valid JSON, no markdown, no explanation.
+    content: `You are a JSON-only travel planner. RESPOND WITH ONLY VALID JSON. NO TEXT BEFORE OR AFTER JSON. NO MARKDOWN. NO EXPLANATION.
 
-Return this exact structure:
 {
   "itinerary": [
     {
@@ -120,7 +203,9 @@ Return this exact structure:
           "timeOfDay": "morning",
           "title": "Activity name",
           "description": "2-3 sentence description",
-          "location": "Specific place name (MUST be a real, specific location)",
+          "venue": "Specific place name (e.g., Faisal Mosque)",
+          "city": "City name (e.g., Islamabad)",
+          "country": "Country name (e.g., Pakistan)",
           "estimatedCost": "$20-30",
           "duration": "2 hours",
           "category": "sightseeing"
@@ -150,16 +235,7 @@ Return this exact structure:
   "aiNotes": "Brief notes"
 }
 
-CRITICAL RULES:
-- Exactly 3 activities per day: morning, afternoon, evening
-- timeOfDay: "morning" | "afternoon" | "evening" only
-- category: "sightseeing" | "food" | "adventure" | "culture" | "shopping" | "nature" | "accommodation" | "transport"
-- EVERY activity MUST have a specific, real location name (e.g., "Faisal Mosque", "Margalla Hills", "Lok Virsa Museum")
-- NEVER use generic locations like "Hotel" or "Airport" unless absolutely necessary
-- DO NOT include airport arrival/hotel check-in on Day 1 unless the traveler is flying in from far away
-- packingList: 8-10 items
-- travelTips: 4-6 items
-- All costs in USD`,
+RULES: 3 activities/day (morning, afternoon, evening). venue=specific real place. city=destination city. country=destination country. packingList=8-10 items. travelTips=4-6 items. All costs USD.`,
   };
 
   const userMessage: OpenRouterMessage = {
@@ -258,10 +334,20 @@ export async function POST(
           ...day,
           dayNumber: day.dayNumber ?? idx + 1,
           date: day.date || buildDateForDay(tripData.startDate, idx),
-          activities: (day.activities || []).map((activity: any) => ({
-            ...activity,
-            id: activity.id || generateId(),
-          })),
+          activities: (day.activities || []).map((activity: any) => {
+            // Normalize activity: set location from venue/city for backward compatibility
+            const normalizedActivity = {
+              ...activity,
+              id: activity.id || generateId(),
+            };
+            // If venue and city are present, derive location as "venue, city"
+            if (activity.venue && activity.city) {
+              normalizedActivity.location = `${activity.venue}, ${activity.city}`;
+            } else if (!normalizedActivity.location && activity.venue) {
+              normalizedActivity.location = activity.venue;
+            }
+            return normalizedActivity;
+          }),
         }),
       );
 
@@ -271,31 +357,55 @@ export async function POST(
       // ── Step 2: Geocode all activities and fetch location images ────────
       let dayCoordinates: { lat: number; lng: number } | undefined;
       try {
-        // Collect all unique location strings from all activities
-        const locationStrings = new Set<string>();
+        // Build geocoding queries from venue/city/country for each activity
+        const geocodingQueries = new Set<string>();
         trip.itinerary.forEach((day: any) => {
           day.activities.forEach((activity: IActivity) => {
-            const locStr = activity.location || day.location;
-            if (locStr) {
-              locationStrings.add(locStr);
+            // Add full venue query first
+            if (activity.venue && activity.city && activity.country) {
+              geocodingQueries.add(
+                `${activity.venue}, ${activity.city}, ${activity.country}`,
+              );
+            } else if (activity.venue && activity.city) {
+              geocodingQueries.add(`${activity.venue}, ${activity.city}`);
+            } else if (activity.location) {
+              geocodingQueries.add(activity.location);
+            }
+            // Also add city-level fallback query
+            if (activity.city && activity.country) {
+              geocodingQueries.add(`${activity.city}, ${activity.country}`);
             }
           });
         });
 
-        const uniqueLocations = Array.from(locationStrings);
+        const uniqueQueries = Array.from(geocodingQueries);
         console.log(
-          `[Generate] Geocoding ${uniqueLocations.length} unique locations...`,
+          `[Generate] Geocoding ${uniqueQueries.length} unique locations...`,
         );
 
         // Geocode all locations in one batch (with rate limiting)
-        const geocodedMap = await geocodeMultipleLocations(uniqueLocations);
+        const geocodedMap = await geocodeMultipleLocations(uniqueQueries);
 
-        // Attach coordinates to each activity
+        // Attach coordinates to each activity with fallback logic
         trip.itinerary = trip.itinerary.map((day: any, dayIdx: number) => ({
           ...day,
           activities: day.activities.map((activity: IActivity) => {
-            const locStr = activity.location || day.location;
-            const coords = locStr ? geocodedMap.get(locStr) : null;
+            // Try full query first (venue, city, country)
+            let query = activity.location || day.location;
+            if (activity.venue && activity.city && activity.country) {
+              query = `${activity.venue}, ${activity.city}, ${activity.country}`;
+            } else if (activity.venue && activity.city) {
+              query = `${activity.venue}, ${activity.city}`;
+            }
+
+            let coords = query ? geocodedMap.get(query) : null;
+
+            // Fallback: if full query failed and we have venue/city/country, try city-level
+            if (!coords && activity.city && activity.country) {
+              const fallbackQuery = `${activity.city}, ${activity.country}`;
+              coords = geocodedMap.get(fallbackQuery);
+            }
+
             if (coords && !dayCoordinates) {
               dayCoordinates = { lat: coords.lat, lng: coords.lng };
             }

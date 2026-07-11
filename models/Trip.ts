@@ -6,6 +6,9 @@ export interface IActivity {
   title: string;
   description: string;
   location?: string;
+  venue?: string; // Specific place name (e.g., "Faisal Mosque")
+  city?: string; // City name (e.g., "Islamabad")
+  country?: string; // Country name (e.g., "Pakistan")
   coordinates?: { lat: number; lng: number };
   estimatedCost: string;
   duration?: string;
@@ -83,6 +86,9 @@ const ActivitySchema = new mongoose.Schema(
     title: { type: String, required: true },
     description: { type: String, default: "" },
     location: { type: String, default: "" },
+    venue: { type: String, default: "" },
+    city: { type: String, default: "" },
+    country: { type: String, default: "" },
     coordinates: {
       lat: { type: Number },
       lng: { type: Number },

@@ -43,6 +43,9 @@ interface Activity {
   title: string;
   description: string;
   location?: string;
+  venue?: string;
+  city?: string;
+  country?: string;
   estimatedCost: string;
   duration?: string;
   category?: string;
@@ -275,17 +278,40 @@ function ActivityCard({
         )}
 
         {/* Google Maps button */}
-        {activity.coordinates && (
+        {(activity.venue || activity.coordinates) && (
           <div className="mt-3">
-            <a
-              href={`https://www.google.com/maps?q=${activity.coordinates.lat},${activity.coordinates.lng}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors"
-            >
-              <MapIcon className="w-3.5 h-3.5" />
-              See on Google Maps
-            </a>
+            {(() => {
+              // Prefer text-search link if venue/city/country are available
+              if (activity.venue && activity.city && activity.country) {
+                const query = `${activity.venue}, ${activity.city}, ${activity.country}`;
+                return (
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    <MapIcon className="w-3.5 h-3.5" />
+                    See on Google Maps
+                  </a>
+                );
+              }
+              // Fallback to coordinates if available
+              if (activity.coordinates) {
+                return (
+                  <a
+                    href={`https://www.google.com/maps?q=${activity.coordinates.lat},${activity.coordinates.lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    <MapIcon className="w-3.5 h-3.5" />
+                    See on Google Maps
+                  </a>
+                );
+              }
+              return null;
+            })()}
           </div>
         )}
       </div>
