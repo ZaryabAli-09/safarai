@@ -12,8 +12,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -29,7 +27,6 @@ import {
   Clock,
   Users,
   Search,
-  Filter,
   Loader2,
   Globe,
   Sparkles,
@@ -63,26 +60,6 @@ function formatDate(dateStr: string) {
   });
 }
 
-/** Deterministic gradient per trip based on name */
-const GRADIENTS = [
-  "from-blue-500 to-indigo-600",
-  "from-emerald-500 to-teal-600",
-  "from-orange-500 to-rose-600",
-  "from-violet-500 to-purple-600",
-  "from-cyan-500 to-blue-600",
-  "from-pink-500 to-rose-600",
-  "from-amber-500 to-orange-600",
-  "from-green-500 to-emerald-600",
-];
-
-function getTripGradient(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return GRADIENTS[Math.abs(hash) % GRADIENTS.length];
-}
-
 /** Trip type emoji */
 const TRIP_TYPE_EMOJI: Record<string, string> = {
   adventure: "🏔️",
@@ -97,16 +74,16 @@ const TRIP_TYPE_EMOJI: Record<string, string> = {
 
 function TripCardSkeleton() {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden animate-pulse">
-      <div className="h-40 bg-gray-200" />
+    <div className="bg-white rounded-2xl border border-border overflow-hidden animate-pulse">
+      <div className="h-36 bg-muted" />
       <div className="p-4 space-y-3">
-        <div className="h-4 bg-gray-200 rounded w-3/4" />
-        <div className="h-3 bg-gray-100 rounded w-1/2" />
+        <div className="h-4 bg-muted rounded w-3/4" />
+        <div className="h-3 bg-muted rounded w-1/2" />
         <div className="grid grid-cols-2 gap-2">
-          <div className="h-12 bg-gray-100 rounded-xl" />
-          <div className="h-12 bg-gray-100 rounded-xl" />
+          <div className="h-12 bg-muted rounded-xl" />
+          <div className="h-12 bg-muted rounded-xl" />
         </div>
-        <div className="h-9 bg-gray-200 rounded-xl" />
+        <div className="h-9 bg-muted rounded-xl" />
       </div>
     </div>
   );
@@ -123,7 +100,6 @@ function TripCard({
   index: number;
   onDelete: (id: string) => void;
 }) {
-  const gradient = getTripGradient(trip.name);
   const emoji = TRIP_TYPE_EMOJI[trip.tripType] || "✈️";
   const [deleting, setDeleting] = useState(false);
 
@@ -150,13 +126,11 @@ function TripCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.35, delay: index * 0.06 }}
-      className="group bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col"
+      className="group bg-white rounded-2xl border border-border overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col"
     >
-      {/* Card header with gradient */}
-      <div
-        className={`relative h-40 bg-gradient-to-br ${gradient} overflow-hidden`}
-      >
-        {/* Pattern overlay */}
+      {/* Card header — flat primary */}
+      <div className="relative h-36 bg-primary overflow-hidden">
+        {/* Subtle pattern overlay */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-4 right-4 w-24 h-24 rounded-full border-4 border-white" />
           <div className="absolute bottom-2 left-6 w-16 h-16 rounded-full border-4 border-white" />
@@ -171,10 +145,10 @@ function TripCard({
           <span
             className={`text-xs px-2.5 py-1 rounded-full font-medium border ${
               trip.status === "completed"
-                ? "bg-green-500/20 text-green-100 border-green-400/30"
+                ? "bg-white/20 text-white border-white/40"
                 : trip.status === "generating"
-                  ? "bg-yellow-500/20 text-yellow-100 border-yellow-400/30"
-                  : "bg-white/20 text-white border-white/30"
+                  ? "bg-white/10 text-white/80 border-white/20"
+                  : "bg-white/10 text-white/70 border-white/20"
             }`}
           >
             {trip.status === "completed"
@@ -189,7 +163,7 @@ function TripCard({
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <button
-              className="absolute bottom-3 right-3 w-8 h-8 bg-black/20 hover:bg-red-500/80 backdrop-blur-sm rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+              className="absolute bottom-3 right-3 w-8 h-8 bg-black/20 hover:bg-destructive/80 backdrop-blur-sm rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
               title="Delete trip"
             >
               {deleting ? (
@@ -213,7 +187,7 @@ function TripCard({
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDelete}
-                className="bg-red-600 hover:bg-red-700"
+                className="bg-destructive hover:bg-destructive/90 text-white"
               >
                 Delete Trip
               </AlertDialogAction>
@@ -221,8 +195,8 @@ function TripCard({
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Bottom gradient overlay */}
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/40 to-transparent" />
+        {/* Bottom overlay */}
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/30 to-transparent" />
 
         {/* Destination on image */}
         <div className="absolute bottom-3 left-4 right-12">
@@ -236,48 +210,56 @@ function TripCard({
       <div className="p-4 flex flex-col flex-1 gap-3">
         {/* Title */}
         <div>
-          <h3 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-1">
+          <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-1">
             {trip.name}
           </h3>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             {formatDate(trip.startDate)} — {formatDate(trip.endDate)}
           </p>
         </div>
 
         {/* Stats grid */}
         <div className="grid grid-cols-2 gap-2">
-          <div className="flex items-center gap-2 p-2.5 bg-blue-50 rounded-xl">
-            <Clock className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+          <div className="flex items-center gap-2 p-2.5 bg-muted rounded-xl">
+            <Clock className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
             <div>
-              <p className="text-xs text-gray-400 leading-none">Duration</p>
-              <p className="text-xs font-semibold text-gray-800 mt-0.5">
+              <p className="text-xs text-muted-foreground leading-none">
+                Duration
+              </p>
+              <p className="text-xs font-semibold text-foreground mt-0.5">
                 {trip.duration} days
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 p-2.5 bg-green-50 rounded-xl">
-            <Wallet className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+          <div className="flex items-center gap-2 p-2.5 bg-muted rounded-xl">
+            <Wallet className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
             <div>
-              <p className="text-xs text-gray-400 leading-none">Budget</p>
-              <p className="text-xs font-semibold text-gray-800 mt-0.5">
+              <p className="text-xs text-muted-foreground leading-none">
+                Budget
+              </p>
+              <p className="text-xs font-semibold text-foreground mt-0.5">
                 ${trip.budget.toLocaleString()}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 p-2.5 bg-purple-50 rounded-xl">
-            <Users className="w-3.5 h-3.5 text-purple-500 flex-shrink-0" />
+          <div className="flex items-center gap-2 p-2.5 bg-muted rounded-xl">
+            <Users className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
             <div>
-              <p className="text-xs text-gray-400 leading-none">Travelers</p>
-              <p className="text-xs font-semibold text-gray-800 mt-0.5">
+              <p className="text-xs text-muted-foreground leading-none">
+                Travelers
+              </p>
+              <p className="text-xs font-semibold text-foreground mt-0.5">
                 {trip.travelers} {trip.travelers === 1 ? "person" : "people"}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 p-2.5 bg-orange-50 rounded-xl">
-            <Plane className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
+          <div className="flex items-center gap-2 p-2.5 bg-muted rounded-xl">
+            <Plane className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
             <div>
-              <p className="text-xs text-gray-400 leading-none">Style</p>
-              <p className="text-xs font-semibold text-gray-800 mt-0.5 capitalize">
+              <p className="text-xs text-muted-foreground leading-none">
+                Style
+              </p>
+              <p className="text-xs font-semibold text-foreground mt-0.5 capitalize">
                 {trip.tripType}
               </p>
             </div>
@@ -286,7 +268,7 @@ function TripCard({
 
         {/* View button */}
         <Link href={`/app/trips/${trip._id}`} className="mt-auto">
-          <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium flex items-center justify-center gap-2 rounded-xl h-9">
+          <Button className="w-full bg-primary hover:bg-primary/90 text-white text-sm font-medium flex items-center justify-center gap-2 rounded-xl h-9">
             View Itinerary
             <ChevronRight className="w-4 h-4" />
           </Button>
@@ -370,9 +352,9 @@ export default function TripsPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero banner */}
-      <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white">
+    <div className="min-h-screen bg-secondary">
+      {/* Hero banner — flat primary, no gradient */}
+      <div className="bg-primary text-white">
         <div className="max-w-6xl mx-auto px-4 py-8">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -384,29 +366,22 @@ export default function TripsPage() {
                 <h1 className="text-2xl sm:text-3xl font-bold mb-1">
                   My Trips ✈️
                 </h1>
-                <p className="text-blue-200 text-sm">
+                <p className="text-white/70 text-sm">
                   {paginationData?.total || 0} trip
                   {(paginationData?.total || 0) !== 1 ? "s" : ""} planned
                 </p>
               </div>
-              <Link
-                href="/app/new-trip"
-                className="flex items-center gap-2 bg-white text-blue-600 hover:bg-blue-50 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm"
-              >
-                <Plus className="w-4 h-4" />
-                New Trip
-              </Link>
             </div>
 
             {/* Search bar */}
             <div className="mt-5 relative">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-300" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
               <input
                 type="text"
                 placeholder="Search trips or destinations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-blue-300 text-sm focus:outline-none focus:ring-2 focus:ring-white/30 focus:bg-white/20 transition-all"
+                className="w-full pl-10 pr-4 py-2.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-white/50 text-sm focus:outline-none focus:ring-2 focus:ring-white/30 focus:bg-white/20 transition-all"
               />
             </div>
           </motion.div>
@@ -424,8 +399,8 @@ export default function TripsPage() {
                 onClick={() => setFilterType(type)}
                 className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium border transition-colors capitalize ${
                   filterType === type
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
+                    ? "bg-primary text-white border-primary"
+                    : "bg-white text-muted-foreground border-border hover:border-primary/40"
                 }`}
               >
                 {type === "all"
@@ -483,7 +458,7 @@ export default function TripsPage() {
                       onClick={() => setCurrentPage(page)}
                       className={`h-9 w-9 p-0 rounded-xl ${
                         currentPage === page
-                          ? "bg-blue-600 hover:bg-blue-700"
+                          ? "bg-primary hover:bg-primary/90"
                           : ""
                       }`}
                     >
@@ -516,20 +491,20 @@ export default function TripsPage() {
             className="flex flex-col items-center justify-center py-20 text-center"
           >
             <div className="relative mb-6">
-              <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center">
-                <Globe className="w-12 h-12 text-blue-400" />
+              <div className="w-24 h-24 bg-accent rounded-full flex items-center justify-center">
+                <Globe className="w-12 h-12 text-primary" />
               </div>
-              <div className="absolute -top-1 -right-1 w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-yellow-500" />
+              <div className="absolute -top-1 -right-1 w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-muted-foreground" />
               </div>
             </div>
 
-            <h2 className="text-xl font-bold text-gray-900 mb-2">
+            <h2 className="text-xl font-bold text-foreground mb-2">
               {searchTerm || filterType !== "all"
                 ? "No trips match your search"
                 : "No trips yet"}
             </h2>
-            <p className="text-gray-500 mb-6 max-w-sm text-sm leading-relaxed">
+            <p className="text-muted-foreground mb-6 max-w-sm text-sm leading-relaxed">
               {searchTerm || filterType !== "all"
                 ? "Try adjusting your search or filters to find your trips."
                 : "Let our AI plan your perfect trip! Just tell us where you want to go and we'll handle the rest."}
@@ -537,7 +512,7 @@ export default function TripsPage() {
 
             {!searchTerm && filterType === "all" && (
               <Link href="/app/new-trip">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 rounded-xl px-6">
+                <Button className="bg-primary hover:bg-primary/90 text-white flex items-center gap-2 rounded-xl px-6">
                   <Plus className="w-4 h-4" />
                   Plan Your First Trip
                 </Button>
@@ -550,7 +525,7 @@ export default function TripsPage() {
                   setSearchTerm("");
                   setFilterType("all");
                 }}
-                className="text-sm text-blue-600 hover:underline"
+                className="text-sm text-primary hover:underline"
               >
                 Clear filters
               </button>

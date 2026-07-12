@@ -106,30 +106,31 @@ interface Trip {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
+// Single neutral treatment for all time-of-day — differentiated by icon/label only
 const TIME_OF_DAY_CONFIG = {
   morning: {
     label: "Morning",
     icon: Sun,
-    color: "text-amber-500",
-    bg: "bg-amber-50",
-    border: "border-amber-200",
-    badge: "bg-amber-100 text-amber-700",
+    color: "text-muted-foreground",
+    bg: "bg-secondary",
+    border: "border-border",
+    badge: "bg-muted text-foreground",
   },
   afternoon: {
     label: "Afternoon",
     icon: Sunset,
-    color: "text-orange-500",
-    bg: "bg-orange-50",
-    border: "border-orange-200",
-    badge: "bg-orange-100 text-orange-700",
+    color: "text-muted-foreground",
+    bg: "bg-secondary",
+    border: "border-border",
+    badge: "bg-muted text-foreground",
   },
   evening: {
     label: "Evening",
     icon: Moon,
-    color: "text-indigo-500",
-    bg: "bg-indigo-50",
-    border: "border-indigo-200",
-    badge: "bg-indigo-100 text-indigo-700",
+    color: "text-muted-foreground",
+    bg: "bg-secondary",
+    border: "border-border",
+    badge: "bg-muted text-foreground",
   },
 };
 
