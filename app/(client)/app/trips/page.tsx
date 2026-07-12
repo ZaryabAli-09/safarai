@@ -383,33 +383,33 @@ export default function TripsPage() {
   // ── Infinite scroll observer ────────────────────────────────────────────────
 
   useEffect(() => {
+    if (!observerTarget.current) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
-        if (
-          entries[0].isIntersecting &&
-          hasMore &&
-          !loading &&
-          trips.length > 0
-        ) {
-          const nextPage = currentPage + 1;
-          setCurrentPage(nextPage);
-          getTrips(nextPage, true);
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          setCurrentPage((prev) => prev + 1);
         }
       },
       { threshold: 0.1 },
     );
 
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
-    }
+    observer.observe(observerTarget.current);
 
     return () => {
       if (observerTarget.current) {
         observer.unobserve(observerTarget.current);
       }
     };
+  }, [hasMore, loading]);
+
+  // Fetch next page when currentPage changes
+  useEffect(() => {
+    if (currentPage > 1) {
+      getTrips(currentPage, true);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasMore, loading, currentPage, trips.length]);
+  }, [currentPage]);
 
   // ── Delete handler ─────────────────────────────────────────────────────────
 
