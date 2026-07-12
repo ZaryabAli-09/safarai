@@ -644,13 +644,13 @@ export default function TripDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero header */}
-      <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white">
+      {/* Hero header — flat primary, no gradient */}
+      <div className="bg-primary text-white">
         <div className="max-w-4xl mx-auto px-4 py-6">
           {/* Back button */}
           <Link
             href="/app/trips"
-            className="inline-flex items-center gap-1.5 text-blue-200 hover:text-white text-sm mb-4 transition-colors"
+            className="inline-flex items-center gap-1.5 text-white/70 hover:text-white text-sm mb-4 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             My Trips

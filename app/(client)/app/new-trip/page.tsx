@@ -58,7 +58,6 @@ interface TripFormData {
 
 type ChatStep =
   | "welcome"
-  | "currentLocation"
   | "destination"
   | "dates"
   | "budget"
@@ -277,9 +276,14 @@ export default function NewTripPage() {
     [addMessage],
   );
 
-  // ── Initialize chat ────────────────────────────────────────────────────────
+  // ── Initialize chat — mount guard prevents double-fire in StrictMode ──────
+
+  const initRan = useRef(false);
 
   useEffect(() => {
+    if (initRan.current) return;
+    initRan.current = true;
+
     const init = async () => {
       await botSay(
         <span>
