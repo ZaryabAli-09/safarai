@@ -12,8 +12,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import {
@@ -30,8 +36,14 @@ import {
   Loader2,
   Globe,
   Sparkles,
+  ChevronDown,
+  Home,
+  User,
+  LogOut,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
+import Logo from "@/public/assets/logo.png";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -48,6 +60,13 @@ interface Trip {
   travelers: number;
   status: "generating" | "completed" | "draft";
   createdAt: string;
+  itinerary?: Array<{
+    activities?: Array<{
+      image?: {
+        url: string;
+      };
+    }>;
+  }>;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -69,6 +88,22 @@ const TRIP_TYPE_EMOJI: Record<string, string> = {
   honeymoon: "💑",
   solo: "🎒",
 };
+
+// Get random activity image from trip
+function getRandomActivityImage(trip: Trip): string | null {
+  if (!trip.itinerary || trip.itinerary.length === 0) return null;
+
+  const allActivities = trip.itinerary.flatMap((day) => day.activities || []);
+  const activitiesWithImages = allActivities.filter((a) => a.image?.url);
+
+  if (activitiesWithImages.length === 0) return null;
+
+  const randomActivity =
+    activitiesWithImages[
+      Math.floor(Math.random() * activitiesWithImages.length)
+    ];
+  return randomActivity.image?.url || null;
+}
 
 // ─── Skeleton card ────────────────────────────────────────────────────────────
 
@@ -102,6 +137,7 @@ function TripCard({
 }) {
   const emoji = TRIP_TYPE_EMOJI[trip.tripType] || "✈️";
   const [deleting, setDeleting] = useState(false);
+  const activityImage = getRandomActivityImage(trip);
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -128,17 +164,27 @@ function TripCard({
       transition={{ duration: 0.35, delay: index * 0.06 }}
       className="group bg-white rounded-2xl border border-border overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col"
     >
-      {/* Card header — flat primary */}
+      {/* Card header — image or flat primary */}
       <div className="relative h-36 bg-primary overflow-hidden">
-        {/* Subtle pattern overlay */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-4 right-4 w-24 h-24 rounded-full border-4 border-white" />
-          <div className="absolute bottom-2 left-6 w-16 h-16 rounded-full border-4 border-white" />
-          <div className="absolute top-12 left-2 w-8 h-8 rounded-full border-2 border-white" />
-        </div>
+        {activityImage ? (
+          <img
+            src={activityImage}
+            alt={trip.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <>
+            {/* Subtle pattern overlay */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-4 right-4 w-24 h-24 rounded-full border-4 border-white" />
+              <div className="absolute bottom-2 left-6 w-16 h-16 rounded-full border-4 border-white" />
+              <div className="absolute top-12 left-2 w-8 h-8 rounded-full border-2 border-white" />
+            </div>
 
-        {/* Trip emoji */}
-        <div className="absolute top-4 left-4 text-4xl">{emoji}</div>
+            {/* Trip emoji */}
+            <div className="absolute top-4 left-4 text-4xl">{emoji}</div>
+          </>
+        )}
 
         {/* Status badge */}
         <div className="absolute top-4 right-4">
@@ -287,25 +333,38 @@ export default function TripsPage() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<"latest" | "oldest" | "a-z" | "z-a">(
+    "latest",
+  );
   const [filterType, setFilterType] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [paginationData, setPaginationData] = useState<any>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const observerTarget = useRef<HTMLDivElement>(null);
 
   // ── Fetch trips ────────────────────────────────────────────────────────────
 
-  async function getTrips(page = 1) {
+  async function getTrips(page = 1, append = false) {
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/trip/get-trips/${userid}?page=${page}&limit=9`,
+        `/api/trip/get-trips/${userid}?page=${page}&limit=12`,
       );
       const result = await res.json();
       if (!res.ok) {
         toast.error(result.message);
         return;
       }
-      setTrips(result?.data?.trips || []);
+
+      const newTrips = result?.data?.trips || [];
+      if (append) {
+        setTrips((prev) => [...prev, ...newTrips]);
+      } else {
+        setTrips(newTrips);
+      }
+
       setPaginationData(result?.data?.pagination);
+      setHasMore(page < (result?.data?.pagination?.totalPages || 1));
     } catch (error) {
       toast.error((error as Error).message);
     } finally {
@@ -315,10 +374,41 @@ export default function TripsPage() {
 
   useEffect(() => {
     if (userid) {
-      getTrips(currentPage);
+      getTrips(1, false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userid, currentPage]);
+  }, [userid]);
+
+  // ── Infinite scroll observer ────────────────────────────────────────────────
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0].isIntersecting &&
+          hasMore &&
+          !loading &&
+          trips.length > 0
+        ) {
+          const nextPage = currentPage + 1;
+          setCurrentPage(nextPage);
+          getTrips(nextPage, true);
+        }
+      },
+      { threshold: 0.1 },
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasMore, loading, currentPage, trips.length]);
 
   // ── Delete handler ─────────────────────────────────────────────────────────
 
@@ -332,17 +422,36 @@ export default function TripsPage() {
     }
   };
 
-  // ── Filter ─────────────────────────────────────────────────────────────────
+  // ── Sort and filter ────────────────────────────────────────────────────────
 
-  const filteredTrips = trips.filter((trip) => {
-    const matchesSearch =
-      trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      trip.destinations.some((d) =>
-        d.toLowerCase().includes(searchTerm.toLowerCase()),
-      );
-    const matchesType = filterType === "all" || trip.tripType === filterType;
-    return matchesSearch && matchesType;
-  });
+  const filteredTrips = trips
+    .filter((trip) => {
+      const matchesSearch =
+        trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        trip.destinations.some((d) =>
+          d.toLowerCase().includes(searchTerm.toLowerCase()),
+        );
+      const matchesType = filterType === "all" || trip.tripType === filterType;
+      return matchesSearch && matchesType;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "latest":
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        case "oldest":
+          return (
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+        case "a-z":
+          return a.name.localeCompare(b.name);
+        case "z-a":
+          return b.name.localeCompare(a.name);
+        default:
+          return 0;
+      }
+    });
 
   const tripTypes = [
     "all",
@@ -352,16 +461,112 @@ export default function TripsPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-secondary">
-      {/* Hero banner — flat primary, no gradient */}
-      <div className="bg-primary text-white">
+    <div className="min-h-screen bg-secondary pb-20 md:pb-0">
+      {/* Mobile Top Bar */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-border">
+        <div className="flex items-center justify-between px-4 py-3">
+          <Link href="/app/trips" className="flex items-center">
+            <Image src={Logo} alt="SafarAI" className="h-8 w-auto" priority />
+          </Link>
+          <h1 className="text-lg font-semibold text-foreground">My Trips</h1>
+          <div className="w-8" />
+        </div>
+      </div>
+
+      {/* Mobile Sticky Search & Filter */}
+      <div className="md:hidden fixed top-14 left-0 right-0 z-40 bg-white border-b border-border">
+        <div className="px-4 py-3 space-y-3">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search trips..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-muted border border-border rounded-lg text-sm placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+
+          {/* Sort & Filter */}
+          <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="flex-1 h-9 text-xs flex items-center justify-center gap-1"
+                >
+                  <span>Sort</span>
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-40">
+                <DropdownMenuItem
+                  onClick={() => setSortBy("latest")}
+                  className={sortBy === "latest" ? "bg-accent" : ""}
+                >
+                  Latest
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setSortBy("oldest")}
+                  className={sortBy === "oldest" ? "bg-accent" : ""}
+                >
+                  Oldest
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setSortBy("a-z")}
+                  className={sortBy === "a-z" ? "bg-accent" : ""}
+                >
+                  A - Z
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setSortBy("z-a")}
+                  className={sortBy === "z-a" ? "bg-accent" : ""}
+                >
+                  Z - A
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {trips.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="flex-1 h-9 text-xs flex items-center justify-center gap-1"
+                  >
+                    <span>Filter</span>
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  {tripTypes.map((type) => (
+                    <DropdownMenuItem
+                      key={type}
+                      onClick={() => setFilterType(type)}
+                      className={filterType === type ? "bg-accent" : ""}
+                    >
+                      {type === "all"
+                        ? `All (${trips.length})`
+                        : `${TRIP_TYPE_EMOJI[type] || "✈️"} ${type}`}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Hero banner */}
+      <div className="hidden md:block bg-primary text-white">
         <div className="max-w-6xl mx-auto px-4 py-8">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center justify-between gap-4 mb-5">
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold mb-1">
                   My Trips ✈️
@@ -373,8 +578,8 @@ export default function TripsPage() {
               </div>
             </div>
 
-            {/* Search bar */}
-            <div className="mt-5 relative">
+            {/* Desktop Search bar */}
+            <div className="relative mb-5">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
               <input
                 type="text"
@@ -384,35 +589,63 @@ export default function TripsPage() {
                 className="w-full pl-10 pr-4 py-2.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-white/50 text-sm focus:outline-none focus:ring-2 focus:ring-white/30 focus:bg-white/20 transition-all"
               />
             </div>
+
+            {/* Desktop Sort & Filter */}
+            <div className="flex gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="bg-white/10 border-white/20 text-white hover:bg-white/20 h-9 text-sm flex items-center gap-2"
+                  >
+                    Sort: {sortBy}
+                    <ChevronDown className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-40">
+                  <DropdownMenuItem onClick={() => setSortBy("latest")}>
+                    Latest
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy("oldest")}>
+                    Oldest
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy("a-z")}>
+                    A - Z
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy("z-a")}>
+                    Z - A
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {trips.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto">
+                  {tripTypes.map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setFilterType(type)}
+                      className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium border transition-colors capitalize ${
+                        filterType === type
+                          ? "bg-white text-primary border-white"
+                          : "bg-white/10 text-white border-white/20 hover:border-white/40"
+                      }`}
+                    >
+                      {type === "all"
+                        ? `All (${trips.length})`
+                        : `${TRIP_TYPE_EMOJI[type] || "✈️"} ${type}`}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </motion.div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* Filter chips */}
-        {trips.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto pb-2 mb-5 scrollbar-hide">
-            {tripTypes.map((type) => (
-              <button
-                key={type}
-                onClick={() => setFilterType(type)}
-                className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium border transition-colors capitalize ${
-                  filterType === type
-                    ? "bg-primary text-white border-primary"
-                    : "bg-white text-muted-foreground border-border hover:border-primary/40"
-                }`}
-              >
-                {type === "all"
-                  ? `All (${trips.length})`
-                  : `${TRIP_TYPE_EMOJI[type] || "✈️"} ${type}`}
-              </button>
-            ))}
-          </div>
-        )}
-
+      <div className="max-w-6xl mx-auto px-4 py-6 md:py-8 mt-32 md:mt-0">
         {/* Loading state */}
-        {loading ? (
+        {loading && trips.length === 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {Array(6)
               .fill(null)
@@ -435,50 +668,15 @@ export default function TripsPage() {
               </div>
             </AnimatePresence>
 
-            {/* Pagination */}
-            {paginationData && paginationData.totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-8">
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  className="h-9 px-4 rounded-xl"
-                >
-                  Previous
-                </Button>
-
-                <div className="flex items-center gap-1">
-                  {Array.from(
-                    { length: paginationData.totalPages },
-                    (_, i) => i + 1,
-                  ).map((page) => (
-                    <Button
-                      key={page}
-                      variant={currentPage === page ? "default" : "outline"}
-                      onClick={() => setCurrentPage(page)}
-                      className={`h-9 w-9 p-0 rounded-xl ${
-                        currentPage === page
-                          ? "bg-primary hover:bg-primary/90"
-                          : ""
-                      }`}
-                    >
-                      {page}
-                    </Button>
-                  ))}
-                </div>
-
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    setCurrentPage(
-                      Math.min(paginationData.totalPages, currentPage + 1),
-                    )
-                  }
-                  disabled={currentPage === paginationData.totalPages}
-                  className="h-9 px-4 rounded-xl"
-                >
-                  Next
-                </Button>
+            {/* Infinite scroll trigger */}
+            {hasMore && (
+              <div
+                ref={observerTarget}
+                className="h-10 flex items-center justify-center mt-8"
+              >
+                {loading && (
+                  <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                )}
               </div>
             )}
           </>

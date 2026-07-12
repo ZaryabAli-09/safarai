@@ -103,11 +103,20 @@ export function AppNav() {
                 key={item.label}
                 href={item.href}
                 className={cn(
-                  "flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors",
-                  active ? "text-primary" : "text-muted-foreground",
+                  "flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all",
+                  active
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground",
                 )}
               >
-                <Icon className="w-5 h-5" />
+                <div
+                  className={cn(
+                    "w-5 h-5 flex items-center justify-center transition-all",
+                    active && "scale-110",
+                  )}
+                >
+                  <Icon className={cn("w-5 h-5", active && "fill-current")} />
+                </div>
                 <span className="text-xs font-medium">{item.label}</span>
               </Link>
             );
@@ -117,7 +126,7 @@ export function AppNav() {
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="flex flex-col items-center gap-1 px-4 py-2 text-muted-foreground disabled:opacity-50"
+            className="flex flex-col items-center gap-1 px-4 py-2 text-muted-foreground disabled:opacity-50 transition-colors hover:text-foreground"
           >
             <LogOut className="w-5 h-5" />
             <span className="text-xs font-medium">Logout</span>
