@@ -551,35 +551,24 @@ export default function TripsPage() {
         </div>
       </div>
 
-      {/* Desktop Hero banner */}
-      <div className="hidden md:block bg-primary text-white">
-        <div className="max-w-6xl mx-auto px-4 py-8">
+      {/* Desktop Search & Filter Bar */}
+      <div className="hidden md:block bg-white ">
+        <div className="max-w-6xl mx-auto px-4 py-4">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
+            className="space-y-3"
           >
-            <div className="flex items-center justify-between gap-4 mb-5">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold mb-1">
-                  My Trips ✈️
-                </h1>
-                <p className="text-white/70 text-sm">
-                  {paginationData?.total || 0} trip
-                  {(paginationData?.total || 0) !== 1 ? "s" : ""} planned
-                </p>
-              </div>
-            </div>
-
             {/* Desktop Search bar */}
-            <div className="relative mb-5">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search trips or destinations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-white/50 text-sm focus:outline-none focus:ring-2 focus:ring-white/30 focus:bg-white/20 transition-all"
+                className="w-full pl-10 pr-4 py-2.5  border border-border rounded-xl text-foreground placeholder-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
               />
             </div>
 
@@ -589,7 +578,7 @@ export default function TripsPage() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
-                    className="bg-white/10 border-white/20 text-white hover:bg-white/20 h-9 text-sm flex items-center gap-2"
+                    className="h-9 text-sm flex items-center gap-2"
                   >
                     Sort: {sortBy}
                     <ChevronDown className="w-4 h-4" />
@@ -619,8 +608,8 @@ export default function TripsPage() {
                       onClick={() => setFilterType(type)}
                       className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium border transition-colors capitalize ${
                         filterType === type
-                          ? "bg-white text-primary border-white"
-                          : "bg-white/10 text-white border-white/20 hover:border-white/40"
+                          ? "bg-primary text-white border-primary"
+                          : "bg-white text-muted-foreground border-border hover:border-primary/40"
                       }`}
                     >
                       {type === "all"
