@@ -44,6 +44,7 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import Logo from "@/public/assets/logo.png";
+import { MobileTopBar } from "@/app/_components/navigation/MobileTopBar";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -463,18 +464,10 @@ export default function TripsPage() {
   return (
     <div className="min-h-screen bg-secondary pb-20 md:pb-0">
       {/* Mobile Top Bar */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-border">
-        <div className="flex items-center justify-between px-4 py-3">
-          <Link href="/app/trips" className="flex items-center">
-            <Image src={Logo} alt="SafarAI" className="h-8 w-auto" priority />
-          </Link>
-          <h1 className="text-lg font-semibold text-foreground">My Trips</h1>
-          <div className="w-8" />
-        </div>
-      </div>
+      <MobileTopBar pageName="My Trips" />
 
-      {/* Mobile Sticky Search & Filter */}
-      <div className="md:hidden fixed top-14 left-0 right-0 z-40 bg-white border-b border-border">
+      {/* Mobile Search & Filter */}
+      <div className="md:hidden fixed top-12 left-0 right-0 z-40 bg-white border-b border-border">
         <div className="px-4 py-3 space-y-3">
           {/* Search */}
           <div className="relative">

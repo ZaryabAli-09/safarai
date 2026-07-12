@@ -6,6 +6,7 @@ import { z } from "zod";
 import toast from "react-hot-toast";
 import { Calendar } from "lucide-react";
 
+import { MobileTopBar } from "@/app/_components/navigation/MobileTopBar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -141,159 +142,162 @@ export default function Profile() {
   /* -------------------- UI -------------------- */
 
   return (
-    <div className="container mx-auto py-10 px-4 max-w-2xl border-none bg-transparent shadow-none">
-      {initialLoading ? (
-        <Card className="border-none bg-transparent shadow-none">
-          <CardHeader>
-            <Skeleton className="h-8 w-48 mb-2" />
-            <Skeleton className="h-4 w-64" />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </CardContent>
-          <CardFooter>
-            <Skeleton className="h-10 w-32" />
-          </CardFooter>
-        </Card>
-      ) : (
-        <Card className="border bg-transparent shadow-none">
-          <CardHeader>
-            <CardTitle>Profile</CardTitle>
-            <CardDescription>
-              Manage your personal information and account settings.
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-6">
-              {/* Avatar Section */}
-              <div className="flex items-center gap-4">
-                <div className="h-16 w-16 rounded-full border-2 border-muted flex items-center justify-center text-xl font-semibold bg-muted">
-                  {formData.username
-                    ? formData.username.slice(0, 2).toUpperCase()
-                    : "U"}
+    <>
+      <MobileTopBar pageName="Profile" />
+      <div className="container mx-auto py-10 px-4 max-w-2xl border-none bg-transparent shadow-none md:mt-0 mt-16 pb-20 md:pb-0">
+        {initialLoading ? (
+          <Card className="border-none bg-transparent shadow-none">
+            <CardHeader>
+              <Skeleton className="h-8 w-48 mb-2" />
+              <Skeleton className="h-4 w-64" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </CardContent>
+            <CardFooter>
+              <Skeleton className="h-10 w-32" />
+            </CardFooter>
+          </Card>
+        ) : (
+          <Card className="border bg-transparent shadow-none">
+            <CardHeader>
+              <CardTitle>Profile</CardTitle>
+              <CardDescription>
+                Manage your personal information and account settings.
+              </CardDescription>
+            </CardHeader>
+            <form onSubmit={handleSubmit}>
+              <CardContent className="space-y-6">
+                {/* Avatar Section */}
+                <div className="flex items-center gap-4">
+                  <div className="h-16 w-16 rounded-full border-2 border-muted flex items-center justify-center text-xl font-semibold bg-muted">
+                    {formData.username
+                      ? formData.username.slice(0, 2).toUpperCase()
+                      : "U"}
+                  </div>
+                  <div>
+                    <p className="font-medium">{formData.username || "User"}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {formData.email}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium">{formData.username || "User"}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {formData.email}
+
+                {/* Name Field */}
+                <div className="space-y-2">
+                  <Label htmlFor="username">Full Name</Label>
+                  <Input
+                    id="username"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleInputChange}
+                    disabled={loading}
+                    placeholder="Enter your full name"
+                  />
+                </div>
+
+                {/* Email Field */}
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    disabled
+                    className="bg-muted"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Email cannot be changed
                   </p>
                 </div>
-              </div>
 
-              {/* Name Field */}
-              <div className="space-y-2">
-                <Label htmlFor="username">Full Name</Label>
-                <Input
-                  id="username"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleInputChange}
+                {/* Gender and DOB Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Date of Birth */}
+                  <div className="space-y-2">
+                    <Label>Date of Birth</Label>
+                    <Popover
+                      open={openDatePicker}
+                      onOpenChange={setOpenDatePicker}
+                    >
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-between"
+                        >
+                          {formData.dob
+                            ? new Date(formData.dob).toLocaleDateString()
+                            : "Select date"}
+                          <Calendar className="ml-2 h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={
+                            formData.dob ? new Date(formData.dob) : undefined
+                          }
+                          captionLayout="dropdown"
+                          onSelect={(date) => {
+                            if (!date) return;
+                            setFormData((prev) => ({
+                              ...prev,
+                              dob: formatDate(date),
+                            }));
+                            setOpenDatePicker(false);
+                          }}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  {/* Gender */}
+                  <div className="space-y-2">
+                    <Label>Gender</Label>
+                    <Select
+                      value={formData.gender || ""}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          gender: value,
+                        }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                        <SelectItem value="prefer_not_to_say">
+                          Prefer not to say
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fetchUser()}
                   disabled={loading}
-                  placeholder="Enter your full name"
-                />
-              </div>
-
-              {/* Email Field */}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  disabled
-                  className="bg-muted"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Email cannot be changed
-                </p>
-              </div>
-
-              {/* Gender and DOB Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Date of Birth */}
-                <div className="space-y-2">
-                  <Label>Date of Birth</Label>
-                  <Popover
-                    open={openDatePicker}
-                    onOpenChange={setOpenDatePicker}
-                  >
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-between"
-                      >
-                        {formData.dob
-                          ? new Date(formData.dob).toLocaleDateString()
-                          : "Select date"}
-                        <Calendar className="ml-2 h-4 w-4" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={
-                          formData.dob ? new Date(formData.dob) : undefined
-                        }
-                        captionLayout="dropdown"
-                        onSelect={(date) => {
-                          if (!date) return;
-                          setFormData((prev) => ({
-                            ...prev,
-                            dob: formatDate(date),
-                          }));
-                          setOpenDatePicker(false);
-                        }}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {/* Gender */}
-                <div className="space-y-2">
-                  <Label>Gender</Label>
-                  <Select
-                    value={formData.gender || ""}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        gender: value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                      <SelectItem value="prefer_not_to_say">
-                        Prefer not to say
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => fetchUser()}
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? "Saving..." : "Save Changes"}
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
-      )}
-    </div>
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={loading}>
+                  {loading ? "Saving..." : "Save Changes"}
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
+        )}
+      </div>
+    </>
   );
 }

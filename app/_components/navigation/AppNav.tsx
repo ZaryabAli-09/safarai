@@ -103,20 +103,11 @@ export function AppNav() {
                 key={item.label}
                 href={item.href}
                 className={cn(
-                  "flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all",
-                  active
-                    ? "text-primary bg-primary/10"
-                    : "text-muted-foreground",
+                  "flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors",
+                  active ? "text-primary" : "text-muted-foreground",
                 )}
               >
-                <div
-                  className={cn(
-                    "w-5 h-5 flex items-center justify-center transition-all",
-                    active && "scale-110",
-                  )}
-                >
-                  <Icon className={cn("w-5 h-5", active && "fill-current")} />
-                </div>
+                <Icon className="w-5 h-5" />
                 <span className="text-xs font-medium">{item.label}</span>
               </Link>
             );
