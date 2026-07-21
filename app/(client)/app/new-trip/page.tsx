@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { DateRange, Range, RangeKeyDict } from "react-date-range";
 import { format, differenceInDays, addDays } from "date-fns";
 import { Slider } from "@/components/ui/slider";
+import { Spinner } from "@/components/ui/loader";
 import toast from "react-hot-toast";
 import {
   Plane,
@@ -18,12 +19,12 @@ import {
   ChevronRight,
   Bot,
   User,
-  Loader2,
   CheckCircle2,
   Plus,
   X,
   Wallet,
   Globe,
+  Check,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -115,6 +116,20 @@ const CURRENCIES = [
 const BUDGET_MIN = 500;
 const BUDGET_MAX = 20000;
 
+// Step order for progress tracking
+const STEP_ORDER: ChatStep[] = [
+  "welcome",
+  "destination",
+  "dates",
+  "budget",
+  "travelers",
+  "transportation",
+  "tripType",
+  "preferences",
+  "summary",
+  "generating",
+];
+
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
 function genId() {
@@ -135,7 +150,7 @@ function TypingIndicator() {
       {[0, 1, 2].map((i) => (
         <motion.span
           key={i}
-          className="w-2 h-2 rounded-full bg-blue-400"
+          className="w-2 h-2 rounded-full bg-primary/40"
           animate={{ y: [0, -6, 0] }}
           transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
         />
@@ -144,7 +159,7 @@ function TypingIndicator() {
   );
 }
 
-/** Single chat bubble */
+/** Single chat bubble — matches new_trip_wizard_redesign mockup */
 function ChatBubble({
   message,
   isNew,
@@ -161,25 +176,146 @@ function ChatBubble({
       className={`flex gap-3 ${isBot ? "justify-start" : "justify-end"}`}
     >
       {isBot && (
-        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 mt-1">
-          <Bot className="w-4 h-4 text-white" />
+        <div className="w-8 h-8 rounded-full bg-accent border border-primary/20 flex items-center justify-center flex-shrink-0 mt-1">
+          <Bot className="w-4 h-4 text-primary" />
         </div>
       )}
       <div
-        className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
+        className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
           isBot
-            ? "bg-white border border-gray-100 text-gray-800 rounded-tl-sm"
-            : "bg-blue-600 text-white rounded-tr-sm"
+            ? "bg-muted text-foreground rounded-tl-sm"
+            : "bg-accent text-primary rounded-tr-sm border border-primary/20"
         }`}
       >
         {message.content}
       </div>
       {!isBot && (
-        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 mt-1">
-          <User className="w-4 h-4 text-gray-600" />
+        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
+          <User className="w-4 h-4 text-muted-foreground" />
         </div>
       )}
     </motion.div>
+  );
+}
+
+/** "Trip so far" side panel — desktop only */
+function TripSoFarPanel({
+  formData,
+  currentStep,
+}: {
+  formData: TripFormData;
+  currentStep: ChatStep;
+}) {
+  const stepIndex = STEP_ORDER.indexOf(currentStep);
+  // Steps that count toward progress (exclude welcome/generating)
+  const totalSteps = 8; // destination→summary = 8 steps
+  const completedSteps = Math.max(0, stepIndex - 1); // -1 for welcome
+  const progressPct = Math.min(
+    100,
+    Math.round((completedSteps / totalSteps) * 100),
+  );
+
+  const rows: {
+    icon: React.ElementType;
+    label: string;
+    value: string | null;
+  }[] = [
+    {
+      icon: MapPin,
+      label: "Destination",
+      value:
+        formData.destinations.length > 0
+          ? formData.destinations.join(", ")
+          : null,
+    },
+    {
+      icon: Calendar,
+      label: "Dates",
+      value:
+        formData.startDate && formData.endDate
+          ? `${formData.duration} days`
+          : currentStep === "dates"
+            ? "In progress"
+            : null,
+    },
+    {
+      icon: DollarSign,
+      label: "Budget",
+      value:
+        formData.budget && formData.budget !== 2000 && completedSteps >= 3
+          ? `$${formData.budget.toLocaleString()}`
+          : null,
+    },
+    {
+      icon: Users,
+      label: "Travelers",
+      value: completedSteps >= 4 ? `${formData.travelers}` : null,
+    },
+  ];
+
+  return (
+    <div className="hidden lg:flex flex-col gap-4 w-72 flex-shrink-0">
+      {/* Trip so far card */}
+      <div className="bg-white rounded-2xl border border-border p-5 shadow-sm">
+        <h2 className="text-sm font-semibold text-foreground mb-4">
+          Trip so far
+        </h2>
+        <div className="space-y-3">
+          {rows.map((row) => {
+            const Icon = row.icon;
+            const isDone = row.value !== null && row.value !== "In progress";
+            const isInProgress = row.value === "In progress";
+            return (
+              <div key={row.label} className="flex items-start gap-3">
+                {/* Check icon when done, muted icon otherwise */}
+                {isDone ? (
+                  <div className="w-6 h-6 rounded-full bg-[#dcfce7] flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Check className="w-3.5 h-3.5 text-[color:var(--success)]" />
+                  </div>
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                  </div>
+                )}
+                <div>
+                  <p
+                    className={`text-xs ${isDone || isInProgress ? "text-muted-foreground" : "text-muted-foreground/50"}`}
+                  >
+                    {row.label}
+                  </p>
+                  {row.value ? (
+                    <p
+                      className={`text-sm font-semibold ${isInProgress ? "text-muted-foreground" : "text-foreground"}`}
+                    >
+                      {row.value}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground/40">—</p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Step progress */}
+      <div className="bg-white rounded-2xl border border-border p-4 shadow-sm">
+        <div className="flex items-center justify-between mb-2">
+          <div className="h-1.5 flex-1 bg-muted rounded-full overflow-hidden mr-3">
+            <motion.div
+              className="h-full bg-primary rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPct}%` }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            />
+          </div>
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
+            Step {Math.min(completedSteps + 1, totalSteps)} of {totalSteps}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -287,16 +423,14 @@ export default function NewTripPage() {
     const init = async () => {
       await botSay(
         <span>
-          👋 Hey there! I&apos;m <strong>SafarAI</strong>, your personal travel
-          planner. I&apos;ll help you create an amazing trip itinerary in just a
-          few steps!
+          Hey there, I am <strong>SafarAI</strong>. I will help you build a trip
+          in a few quick steps.
         </span>,
         400,
       );
       await botSay(
         <span>
-          🌍 Let&apos;s start with your <strong>destination</strong>. Where
-          would you like to go? You can add multiple destinations!
+          Where would you like to go? You can add more than one destination.
         </span>,
         800,
       );
@@ -335,24 +469,15 @@ export default function NewTripPage() {
       return;
     }
     const destList = formData.destinations.join(", ");
-    addMessage("user", `📍 ${destList}`);
+    addMessage("user", destList);
 
     // Auto-generate trip name
     const tripName = `Trip to ${formData.destinations[0]}`;
     setFormData((prev) => ({ ...prev, name: tripName }));
 
     await botSay(
-      <span>
-        ✈️ Amazing choice! <strong>{destList}</strong> sounds incredible.
-      </span>,
+      <span>Great choice. Now pick your travel dates below.</span>,
       700,
-    );
-    await botSay(
-      <span>
-        📅 Now, when are you planning to travel? Select your{" "}
-        <strong>start and end dates</strong> below.
-      </span>,
-      900,
     );
     setCurrentStep("dates");
     setShowDatePicker(true);
@@ -375,18 +500,18 @@ export default function NewTripPage() {
     }));
 
     setShowDatePicker(false);
-    addMessage("user", `📅 ${start} → ${end} (${days} days)`);
+    addMessage("user", `${start} → ${end} (${days} days)`);
 
     await botSay(
       <span>
-        🗓️ Perfect! <strong>{days} days</strong> from <strong>{start}</strong>{" "}
-        to <strong>{end}</strong>.
+        Perfect! <strong>{days} days</strong> from <strong>{start}</strong> to{" "}
+        <strong>{end}</strong>.
       </span>,
       700,
     );
     await botSay(
       <span>
-        💰 What&apos;s your <strong>total budget</strong> for this trip? Use the
+        What&apos;s your <strong>total budget</strong> for this trip? Use the
         slider to set your budget in USD, or add an optional amount in another
         currency.
       </span>,
@@ -395,32 +520,51 @@ export default function NewTripPage() {
     setCurrentStep("budget");
   };
 
+  // ── FIX: custom currency amount takes priority over slider ─────────────────
   const handleBudgetConfirm = async () => {
-    const budget = budgetSlider[0];
+    // If the user typed a custom currency amount, use that value as the budget
+    // and the selected currency. Otherwise fall back to the slider value in USD.
+    let finalBudget: number;
+    let finalCurrency: string;
+
+    if (showCurrencyInput && formData.customCurrencyAmount) {
+      const parsed = parseFloat(formData.customCurrencyAmount);
+      if (!isNaN(parsed) && parsed > 0) {
+        finalBudget = parsed;
+        finalCurrency = selectedCurrency;
+      } else {
+        toast.error("Please enter a valid custom amount");
+        return;
+      }
+    } else {
+      finalBudget = budgetSlider[0];
+      finalCurrency = "USD";
+    }
+
     setFormData((prev) => ({
       ...prev,
-      budget,
-      currency: selectedCurrency,
+      budget: finalBudget,
+      currency: finalCurrency,
     }));
 
-    const currencyInfo = CURRENCIES.find((c) => c.code === selectedCurrency);
-    const extraInfo =
-      showCurrencyInput && formData.customCurrencyAmount
-        ? ` (${currencyInfo?.symbol}${formData.customCurrencyAmount} ${selectedCurrency})`
-        : "";
+    const currencyInfo = CURRENCIES.find((c) => c.code === finalCurrency);
+    const displayStr =
+      finalCurrency === "USD"
+        ? `$${finalBudget.toLocaleString()} USD`
+        : `${currencyInfo?.symbol}${finalBudget.toLocaleString()} ${finalCurrency}`;
 
-    addMessage("user", `💰 $${budget.toLocaleString()} USD${extraInfo}`);
+    addMessage("user", displayStr);
 
     await botSay(
       <span>
-        💵 Great budget! <strong>${budget.toLocaleString()}</strong> gives us
-        plenty to work with.
+        Great budget! <strong>{displayStr}</strong> gives us plenty to work
+        with.
       </span>,
       700,
     );
     await botSay(
       <span>
-        👥 How many <strong>travelers</strong> are going on this trip?
+        How many <strong>travelers</strong> are going on this trip?
       </span>,
       900,
     );
@@ -429,18 +573,18 @@ export default function NewTripPage() {
 
   const handleTravelersConfirm = async (count: number) => {
     setFormData((prev) => ({ ...prev, travelers: count }));
-    addMessage("user", `👥 ${count} ${count === 1 ? "traveler" : "travelers"}`);
+    addMessage("user", `${count} ${count === 1 ? "traveler" : "travelers"}`);
 
     await botSay(
       <span>
-        👍 Got it — <strong>{count}</strong>{" "}
+        Got it — <strong>{count}</strong>{" "}
         {count === 1 ? "traveler" : "travelers"}.
       </span>,
       700,
     );
     await botSay(
       <span>
-        🎯 What <strong>type of trip</strong> are you looking for?
+        What <strong>type of trip</strong> are you looking for?
       </span>,
       900,
     );
@@ -460,7 +604,7 @@ export default function NewTripPage() {
     );
     await botSay(
       <span>
-        🚗 How do you plan to travel? This helps me suggest realistic activities
+        How do you plan to travel? This helps me suggest realistic activities
         and travel times.
       </span>,
       900,
@@ -486,7 +630,7 @@ export default function NewTripPage() {
     );
     await botSay(
       <span>
-        🎨 Almost done! Select your <strong>interests</strong> and{" "}
+        Almost done! Select your <strong>interests</strong> and{" "}
         <strong>preferences</strong> to personalize your itinerary.
       </span>,
       900,
@@ -510,12 +654,12 @@ export default function NewTripPage() {
         : "General sightseeing";
     addMessage(
       "user",
-      `🎨 ${interestStr} | ${formData.tripPace} pace | ${formData.accommodation} stay`,
+      `${interestStr} | ${formData.tripPace} pace | ${formData.accommodation} stay`,
     );
 
     await botSay(
       <span>
-        🌟 Perfect! Here&apos;s a summary of your trip. Ready to generate your
+        Perfect! Here&apos;s a summary of your trip. Ready to generate your
         personalized itinerary?
       </span>,
       700,
@@ -531,11 +675,11 @@ export default function NewTripPage() {
 
     setIsGenerating(true);
     setCurrentStep("generating");
-    addMessage("user", "🚀 Yes! Generate my trip itinerary!");
+    addMessage("user", "Yes! Generate my trip itinerary!");
 
     await botSay(
       <span>
-        🤖 Excellent! I&apos;m now crafting your personalized{" "}
+        Excellent! I&apos;m now crafting your personalized{" "}
         <strong>{formData.duration}-day</strong> itinerary for{" "}
         <strong>{formData.destinations.join(", ")}</strong>. This may take up to
         a minute...
@@ -615,8 +759,8 @@ export default function NewTripPage() {
   const renderInputArea = () => {
     if (currentStep === "generating") {
       return (
-        <div className="flex items-center justify-center gap-3 py-4 text-gray-500">
-          <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+        <div className="flex items-center justify-center gap-3 py-4 text-muted-foreground">
+          <Spinner size="small" />
           <span className="text-sm font-medium">
             Generating your trip itinerary...
           </span>
@@ -641,13 +785,13 @@ export default function NewTripPage() {
               {formData.destinations.map((dest) => (
                 <span
                   key={dest}
-                  className="flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-sm px-3 py-1.5 rounded-full"
+                  className="flex items-center gap-1.5 bg-accent border border-primary/20 text-primary text-sm px-3 py-1.5 rounded-full"
                 >
                   <MapPin className="w-3 h-3" />
                   {dest}
                   <button
                     onClick={() => handleRemoveDestination(dest)}
-                    className="ml-1 hover:text-red-500 transition-colors"
+                    className="ml-1 hover:text-destructive transition-colors"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -656,34 +800,41 @@ export default function NewTripPage() {
             </div>
           )}
 
-          {/* Input row */}
+          {/* Input row — Enter key adds destination */}
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
                 value={destInput}
                 onChange={(e) => setDestInput(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") handleAddDestination();
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (destInput.trim()) {
+                      handleAddDestination();
+                    } else if (formData.destinations.length > 0) {
+                      handleDestinationConfirm();
+                    }
+                  }
                 }}
                 placeholder="e.g. Paris, Kumrat Valley, Tokyo..."
-                className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                className="w-full pl-9 pr-4 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-transparent bg-white"
               />
             </div>
             <button
               onClick={handleAddDestination}
-              className="px-3 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+              className="px-3 py-2.5 bg-muted hover:bg-border rounded-xl transition-colors"
               title="Add destination"
             >
-              <Plus className="w-4 h-4 text-gray-600" />
+              <Plus className="w-4 h-4 text-muted-foreground" />
             </button>
           </div>
 
           <button
             onClick={handleDestinationConfirm}
             disabled={formData.destinations.length === 0}
-            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
+            className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
           >
             Continue
             <ChevronRight className="w-4 h-4" />
@@ -705,25 +856,27 @@ export default function NewTripPage() {
           className="space-y-3"
         >
           {/* Date range display */}
-          <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
-            <Calendar className="w-4 h-4 text-blue-600 flex-shrink-0" />
+          <div className="flex items-center gap-3 p-3 bg-accent rounded-xl border border-primary/20">
+            <Calendar className="w-4 h-4 text-primary flex-shrink-0" />
             <div className="flex-1 text-sm">
               {dateRange.startDate && dateRange.endDate ? (
-                <span className="font-medium text-blue-800">
+                <span className="font-medium text-primary">
                   {format(dateRange.startDate, "MMM d, yyyy")} →{" "}
                   {format(dateRange.endDate, "MMM d, yyyy")}
-                  <span className="ml-2 text-blue-600 font-normal">
+                  <span className="ml-2 text-primary/70 font-normal">
                     ({days} {days === 1 ? "day" : "days"})
                   </span>
                 </span>
               ) : (
-                <span className="text-gray-400">Select your travel dates</span>
+                <span className="text-muted-foreground">
+                  Select your travel dates
+                </span>
               )}
             </div>
           </div>
 
           {/* Date range picker */}
-          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+          <div className="overflow-x-auto rounded-xl border border-border bg-white">
             <DateRange
               ranges={[dateRange]}
               onChange={(item: RangeKeyDict) => {
@@ -742,7 +895,7 @@ export default function NewTripPage() {
           <button
             onClick={handleDateConfirm}
             disabled={!dateRange.startDate || !dateRange.endDate}
-            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
+            className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
           >
             Confirm Dates
             <ChevronRight className="w-4 h-4" />
@@ -760,12 +913,14 @@ export default function NewTripPage() {
           className="space-y-4"
         >
           {/* Budget display */}
-          <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl border border-green-100">
+          <div className="flex items-center justify-between p-3 bg-muted rounded-xl border border-border">
             <div className="flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-green-600" />
-              <span className="text-sm text-gray-600">Total Budget (USD)</span>
+              <DollarSign className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                Total Budget (USD)
+              </span>
             </div>
-            <span className="text-xl font-bold text-green-700">
+            <span className="text-xl font-bold text-foreground">
               ${budget.toLocaleString()}
             </span>
           </div>
@@ -780,9 +935,9 @@ export default function NewTripPage() {
               onValueChange={setBudgetSlider}
               className="w-full"
             />
-            <div className="flex justify-between text-xs text-gray-400">
+            <div className="flex justify-between text-xs text-muted-foreground">
               <span>{formatBudget(BUDGET_MIN)}</span>
-              <span className="text-blue-600 font-medium">
+              <span className="text-primary font-medium">
                 {formatBudget(budget)}
               </span>
               <span>{formatBudget(BUDGET_MAX)}</span>
@@ -797,8 +952,8 @@ export default function NewTripPage() {
                 onClick={() => setBudgetSlider([preset])}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                   budgetSlider[0] === preset
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
+                    ? "bg-primary text-white border-primary"
+                    : "bg-white text-muted-foreground border-border hover:border-primary/40"
                 }`}
               >
                 {formatBudget(preset)}
@@ -807,10 +962,10 @@ export default function NewTripPage() {
           </div>
 
           {/* Optional currency input */}
-          <div className="border border-dashed border-gray-200 rounded-xl p-3 space-y-2">
+          <div className="border border-dashed border-border rounded-xl p-3 space-y-2">
             <button
               onClick={() => setShowCurrencyInput(!showCurrencyInput)}
-              className="flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors"
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
             >
               <Globe className="w-4 h-4" />
               {showCurrencyInput
@@ -827,7 +982,7 @@ export default function NewTripPage() {
                 <select
                   value={selectedCurrency}
                   onChange={(e) => setSelectedCurrency(e.target.value)}
-                  className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
                 >
                   {CURRENCIES.filter((c) => c.code !== "USD").map((c) => (
                     <option key={c.code} value={c.code}>
@@ -844,8 +999,14 @@ export default function NewTripPage() {
                       customCurrencyAmount: e.target.value,
                     }))
                   }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleBudgetConfirm();
+                    }
+                  }}
                   placeholder={`Amount in ${selectedCurrency}`}
-                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="flex-1 px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
                 />
               </motion.div>
             )}
@@ -853,7 +1014,7 @@ export default function NewTripPage() {
 
           <button
             onClick={handleBudgetConfirm}
-            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
+            className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
           >
             Confirm Budget
             <ChevronRight className="w-4 h-4" />
@@ -877,15 +1038,15 @@ export default function NewTripPage() {
                   travelers: Math.max(1, prev.travelers - 1),
                 }))
               }
-              className="w-10 h-10 rounded-full border-2 border-gray-200 hover:border-blue-400 flex items-center justify-center text-xl font-bold text-gray-600 transition-colors"
+              className="w-10 h-10 rounded-full border-2 border-border hover:border-primary flex items-center justify-center text-xl font-bold text-muted-foreground transition-colors"
             >
               −
             </button>
             <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600">
+              <div className="text-4xl font-bold text-primary">
                 {formData.travelers}
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-muted-foreground">
                 {formData.travelers === 1 ? "traveler" : "travelers"}
               </div>
             </div>
@@ -896,7 +1057,7 @@ export default function NewTripPage() {
                   travelers: Math.min(20, prev.travelers + 1),
                 }))
               }
-              className="w-10 h-10 rounded-full border-2 border-gray-200 hover:border-blue-400 flex items-center justify-center text-xl font-bold text-gray-600 transition-colors"
+              className="w-10 h-10 rounded-full border-2 border-border hover:border-primary flex items-center justify-center text-xl font-bold text-muted-foreground transition-colors"
             >
               +
             </button>
@@ -910,8 +1071,8 @@ export default function NewTripPage() {
                 onClick={() => handleTravelersConfirm(n)}
                 className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
                   formData.travelers === n
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
+                    ? "bg-primary text-white border-primary"
+                    : "bg-white text-muted-foreground border-border hover:border-primary/40"
                 }`}
               >
                 {n === 1 ? "Solo" : n === 2 ? "Couple" : `${n} people`}
@@ -921,7 +1082,7 @@ export default function NewTripPage() {
 
           <button
             onClick={() => handleTravelersConfirm(formData.travelers)}
-            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
+            className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
           >
             Continue
             <ChevronRight className="w-4 h-4" />
@@ -943,8 +1104,8 @@ export default function NewTripPage() {
               onClick={() => handleTripTypeSelect(type.value)}
               className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
                 formData.tripType === type.value
-                  ? "border-blue-500 bg-blue-50 text-blue-700"
-                  : "border-gray-200 bg-white text-gray-600 hover:border-blue-300"
+                  ? "border-primary bg-accent text-primary"
+                  : "border-border bg-white text-muted-foreground hover:border-primary/40"
               }`}
             >
               <span className="text-2xl">{type.emoji}</span>
@@ -979,8 +1140,8 @@ export default function NewTripPage() {
               onClick={() => handleTransportationSelect(option.value)}
               className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
                 formData.transportation === option.value
-                  ? "border-blue-500 bg-blue-50 text-blue-700"
-                  : "border-gray-200 bg-white text-gray-600 hover:border-blue-300"
+                  ? "border-primary bg-accent text-primary"
+                  : "border-border bg-white text-muted-foreground hover:border-primary/40"
               }`}
             >
               <span className="text-2xl">{option.emoji}</span>
@@ -1000,7 +1161,7 @@ export default function NewTripPage() {
         >
           {/* Interests */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
               Interests (select all that apply)
             </p>
             <div className="flex flex-wrap gap-2">
@@ -1010,8 +1171,8 @@ export default function NewTripPage() {
                   onClick={() => handleInterestToggle(interest)}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                     formData.interests.includes(interest)
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
+                      ? "bg-primary text-white border-primary"
+                      : "bg-white text-muted-foreground border-border hover:border-primary/40"
                   }`}
                 >
                   {interest}
@@ -1022,7 +1183,7 @@ export default function NewTripPage() {
 
           {/* Trip Pace */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
               Trip Pace
             </p>
             <div className="flex gap-2">
@@ -1034,8 +1195,8 @@ export default function NewTripPage() {
                   }
                   className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-colors capitalize ${
                     formData.tripPace === pace
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
+                      ? "bg-primary text-white border-primary"
+                      : "bg-white text-muted-foreground border-border hover:border-primary/40"
                   }`}
                 >
                   {pace === "slow"
@@ -1050,7 +1211,7 @@ export default function NewTripPage() {
 
           {/* Accommodation */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
               Accommodation
             </p>
             <div className="flex gap-2">
@@ -1063,8 +1224,8 @@ export default function NewTripPage() {
                     }
                     className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-colors ${
                       formData.accommodation === acc
-                        ? "bg-blue-600 text-white border-blue-600"
-                        : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
+                        ? "bg-primary text-white border-primary"
+                        : "bg-white text-muted-foreground border-border hover:border-primary/40"
                     }`}
                   >
                     {acc === "budget"
@@ -1080,7 +1241,7 @@ export default function NewTripPage() {
 
           <button
             onClick={handlePreferencesConfirm}
-            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
+            className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
           >
             Continue
             <ChevronRight className="w-4 h-4" />
@@ -1097,45 +1258,45 @@ export default function NewTripPage() {
           className="space-y-3"
         >
           {/* Summary card */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-4 space-y-3">
-            <div className="flex items-center gap-2 text-blue-700 font-semibold text-sm">
-              <CheckCircle2 className="w-4 h-4" />
+          <div className="bg-muted border border-border rounded-xl p-4 space-y-3">
+            <div className="flex items-center gap-2 text-foreground font-semibold text-sm">
+              <CheckCircle2 className="w-4 h-4 text-primary" />
               Trip Summary
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="flex items-center gap-1.5 text-gray-600">
-                <MapPin className="w-3.5 h-3.5 text-blue-500" />
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <MapPin className="w-3.5 h-3.5 text-primary" />
                 <span className="font-medium">
                   {formData.destinations.join(", ")}
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 text-gray-600">
-                <Calendar className="w-3.5 h-3.5 text-blue-500" />
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Calendar className="w-3.5 h-3.5 text-primary" />
                 <span>{formData.duration} days</span>
               </div>
-              <div className="flex items-center gap-1.5 text-gray-600">
-                <Wallet className="w-3.5 h-3.5 text-blue-500" />
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Wallet className="w-3.5 h-3.5 text-primary" />
                 <span>${formData.budget.toLocaleString()}</span>
               </div>
-              <div className="flex items-center gap-1.5 text-gray-600">
-                <Users className="w-3.5 h-3.5 text-blue-500" />
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Users className="w-3.5 h-3.5 text-primary" />
                 <span>{formData.travelers} travelers</span>
               </div>
-              <div className="flex items-center gap-1.5 text-gray-600">
-                <Zap className="w-3.5 h-3.5 text-blue-500" />
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Zap className="w-3.5 h-3.5 text-primary" />
                 <span className="capitalize">{formData.tripType}</span>
               </div>
-              <div className="flex items-center gap-1.5 text-gray-600">
-                <Plane className="w-3.5 h-3.5 text-blue-500" />
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Plane className="w-3.5 h-3.5 text-primary" />
                 <span className="capitalize">{formData.tripPace} pace</span>
               </div>
             </div>
             {formData.interests.length > 0 && (
-              <div className="flex flex-wrap gap-1 pt-1 border-t border-blue-100">
+              <div className="flex flex-wrap gap-1 pt-1 border-t border-border">
                 {formData.interests.map((i) => (
                   <span
                     key={i}
-                    className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs"
+                    className="px-2 py-0.5 bg-accent text-primary rounded-full text-xs border border-primary/20"
                   >
                     {i}
                   </span>
@@ -1147,11 +1308,14 @@ export default function NewTripPage() {
           <button
             onClick={handleGenerateTrip}
             disabled={isGenerating}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition-all text-sm shadow-md hover:shadow-lg"
+            className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition-all text-sm"
           >
             {isGenerating ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Spinner
+                  size="small"
+                  className="border-white/30 border-t-white"
+                />
                 Generating...
               </>
             ) : (
@@ -1171,75 +1335,83 @@ export default function NewTripPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3 flex-shrink-0">
-        <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center">
-          <Bot className="w-5 h-5 text-white" />
+    <div className="flex h-[calc(100vh-4rem)] bg-secondary overflow-hidden">
+      {/* ── Chat column ── */}
+      <div className="flex flex-col flex-1 min-w-0 bg-secondary">
+        {/* Header */}
+        <div className="bg-white border-b border-border px-4 py-3 flex items-center gap-3 flex-shrink-0">
+          <div className="w-9 h-9 rounded-full bg-accent border border-primary/20 flex items-center justify-center">
+            <Bot className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="font-semibold text-foreground text-sm">
+              SafarAI Planner
+            </h1>
+            <p className="text-xs text-[color:var(--success)] flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[color:var(--success)] inline-block" />
+              Online
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="font-semibold text-gray-900 text-sm">
-            SafarAI Planner
-          </h1>
-          <p className="text-xs text-green-500 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
-            Online
-          </p>
+
+        {/* Chat messages — scrollable */}
+        <div
+          ref={chatContainerRef}
+          className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scroll-smooth"
+          style={{
+            scrollbarWidth: "thin",
+            scrollbarColor: "#cbd5e1 transparent",
+          }}
+        >
+          <AnimatePresence initial={false}>
+            {messages.map((msg) => (
+              <ChatBubble
+                key={msg.id}
+                message={msg}
+                isNew={newMessageIds.has(msg.id)}
+              />
+            ))}
+          </AnimatePresence>
+
+          {/* Typing indicator */}
+          {isTyping && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="flex gap-3 justify-start"
+            >
+              <div className="w-8 h-8 rounded-full bg-accent border border-primary/20 flex items-center justify-center flex-shrink-0">
+                <Bot className="w-4 h-4 text-primary" />
+              </div>
+              <div className="bg-muted rounded-2xl rounded-tl-sm">
+                <TypingIndicator />
+              </div>
+            </motion.div>
+          )}
+
+          <div ref={chatEndRef} />
+        </div>
+
+        {/* Input area — fixed at bottom of chat column */}
+        <div className="bg-white border-t border-border px-4 py-3 flex-shrink-0">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+            >
+              {renderInputArea()}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
 
-      {/* Chat messages — scrollable */}
-      <div
-        ref={chatContainerRef}
-        className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scroll-smooth"
-        style={{
-          scrollbarWidth: "thin",
-          scrollbarColor: "#cbd5e1 transparent",
-        }}
-      >
-        <AnimatePresence initial={false}>
-          {messages.map((msg) => (
-            <ChatBubble
-              key={msg.id}
-              message={msg}
-              isNew={newMessageIds.has(msg.id)}
-            />
-          ))}
-        </AnimatePresence>
-
-        {/* Typing indicator */}
-        {isTyping && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="flex gap-3 justify-start"
-          >
-            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
-              <Bot className="w-4 h-4 text-white" />
-            </div>
-            <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-sm shadow-sm">
-              <TypingIndicator />
-            </div>
-          </motion.div>
-        )}
-
-        <div ref={chatEndRef} />
-      </div>
-
-      {/* Input area — fixed at bottom */}
-      <div className="bg-white border-t border-gray-100 px-4 py-3 flex-shrink-0">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2 }}
-          >
-            {renderInputArea()}
-          </motion.div>
-        </AnimatePresence>
+      {/* ── Right panel — desktop only ── */}
+      <div className="hidden lg:flex flex-col gap-4 w-72 flex-shrink-0 p-4 overflow-y-auto">
+        <TripSoFarPanel formData={formData} currentStep={currentStep} />
       </div>
     </div>
   );

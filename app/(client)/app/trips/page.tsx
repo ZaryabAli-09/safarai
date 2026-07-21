@@ -18,8 +18,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Spinner } from "@/components/ui/loader";
 import { useSession } from "next-auth/react";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import {
@@ -28,22 +29,15 @@ import {
   Plus,
   ChevronRight,
   Trash2,
-  Calendar,
-  Wallet,
   Clock,
+  Wallet,
   Users,
   Search,
-  Loader2,
   Globe,
   Sparkles,
   ChevronDown,
-  Home,
-  User,
-  LogOut,
 } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
-import Logo from "@/public/assets/logo.png";
 import { MobileTopBar } from "@/app/_components/navigation/MobileTopBar";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -106,20 +100,23 @@ function getRandomActivityImage(trip: Trip): string | null {
   return randomActivity.image?.url || null;
 }
 
-// ─── Skeleton card ────────────────────────────────────────────────────────────
+// ─── Skeleton card replaced with Spinner-based loader ─────────────────────────
 
 function TripCardSkeleton() {
   return (
-    <div className="bg-white rounded-2xl border border-border overflow-hidden animate-pulse">
-      <div className="h-36 bg-muted" />
-      <div className="p-4 space-y-3">
-        <div className="h-4 bg-muted rounded w-3/4" />
-        <div className="h-3 bg-muted rounded w-1/2" />
+    <div className="bg-white rounded-2xl border border-border overflow-hidden flex flex-col">
+      {/* Flat muted placeholder header */}
+      <div className="h-36 bg-muted flex items-center justify-center">
+        <Spinner size="default" />
+      </div>
+      <div className="p-4 flex flex-col gap-3">
+        <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
+        <div className="h-3 bg-muted rounded w-1/2 animate-pulse" />
         <div className="grid grid-cols-2 gap-2">
-          <div className="h-12 bg-muted rounded-xl" />
-          <div className="h-12 bg-muted rounded-xl" />
+          <div className="h-12 bg-muted rounded-xl animate-pulse" />
+          <div className="h-12 bg-muted rounded-xl animate-pulse" />
         </div>
-        <div className="h-9 bg-muted rounded-xl" />
+        <div className="h-9 bg-muted rounded-xl animate-pulse" />
       </div>
     </div>
   );
@@ -139,6 +136,8 @@ function TripCard({
   const emoji = TRIP_TYPE_EMOJI[trip.tripType] || "✈️";
   const [deleting, setDeleting] = useState(false);
   const activityImage = getRandomActivityImage(trip);
+  const isDraft = trip.status === "draft";
+  const isReady = trip.status === "completed";
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -165,8 +164,12 @@ function TripCard({
       transition={{ duration: 0.35, delay: index * 0.06 }}
       className="group bg-white rounded-2xl border border-border overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col"
     >
-      {/* Card header — image or flat primary */}
-      <div className="relative h-36 bg-primary overflow-hidden">
+      {/* Card header — image or flat muted for drafts */}
+      <div
+        className={`relative h-36 overflow-hidden ${
+          activityImage ? "" : "bg-muted"
+        }`}
+      >
         {activityImage ? (
           <img
             src={activityImage}
@@ -174,36 +177,28 @@ function TripCard({
             className="w-full h-full object-cover"
           />
         ) : (
-          <>
-            {/* Subtle pattern overlay */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-4 right-4 w-24 h-24 rounded-full border-4 border-white" />
-              <div className="absolute bottom-2 left-6 w-16 h-16 rounded-full border-4 border-white" />
-              <div className="absolute top-12 left-2 w-8 h-8 rounded-full border-2 border-white" />
-            </div>
-
-            {/* Trip emoji */}
-            <div className="absolute top-4 left-4 text-4xl">{emoji}</div>
-          </>
+          /* Draft / no-image: flat muted with single centered neutral icon */
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Globe className="w-10 h-10 text-muted-foreground/40" />
+          </div>
         )}
 
-        {/* Status badge */}
-        <div className="absolute top-4 right-4">
-          <span
-            className={`text-xs px-2.5 py-1 rounded-full font-medium border ${
-              trip.status === "completed"
-                ? "bg-white/20 text-white border-white/40"
-                : trip.status === "generating"
-                  ? "bg-white/10 text-white/80 border-white/20"
-                  : "bg-white/10 text-white/70 border-white/20"
-            }`}
-          >
-            {trip.status === "completed"
-              ? "✓ Ready"
-              : trip.status === "generating"
-                ? "⏳ Generating"
-                : "Draft"}
-          </span>
+        {/* Status pill — positioned top-right, semantic colors */}
+        <div className="absolute top-3 right-3">
+          {isReady ? (
+            <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-[#dcfce7] text-[color:var(--success)] border border-[#bbf7d0]">
+              ✓ Ready
+            </span>
+          ) : trip.status === "generating" ? (
+            <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-muted text-muted-foreground border border-border">
+              ⏳ Generating
+            </span>
+          ) : (
+            /* Draft — neutral bordered pill */
+            <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-white text-muted-foreground border border-border">
+              Draft
+            </span>
+          )}
         </div>
 
         {/* Delete button */}
@@ -214,7 +209,10 @@ function TripCard({
               title="Delete trip"
             >
               {deleting ? (
-                <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
+                <Spinner
+                  size="small"
+                  className="border-white border-t-white/60"
+                />
               ) : (
                 <Trash2 className="w-3.5 h-3.5 text-white" />
               )}
@@ -242,20 +240,31 @@ function TripCard({
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Bottom overlay */}
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/30 to-transparent" />
+        {/* Destination label — only show when there's an image */}
+        {activityImage && (
+          <>
+            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/30 to-transparent" />
+            <div className="absolute bottom-3 left-4 right-12">
+              <p className="text-white text-xs font-medium opacity-90 truncate">
+                {trip.destinations.join(" → ")}
+              </p>
+            </div>
+          </>
+        )}
 
-        {/* Destination on image */}
-        <div className="absolute bottom-3 left-4 right-12">
-          <p className="text-white text-xs font-medium opacity-90 truncate">
-            {trip.destinations.join(" → ")}
-          </p>
-        </div>
+        {/* Destination label for draft/no-image cards — below the icon area */}
+        {!activityImage && (
+          <div className="absolute bottom-3 left-4 right-12">
+            <p className="text-muted-foreground text-xs font-medium truncate">
+              {trip.destinations.join(" → ")}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Card body */}
       <div className="p-4 flex flex-col flex-1 gap-3">
-        {/* Title */}
+        {/* Title + date */}
         <div>
           <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-1">
             {trip.name}
@@ -265,52 +274,48 @@ function TripCard({
           </p>
         </div>
 
-        {/* Stats grid */}
+        {/* Stats grid — all four chips use the same flat muted background */}
         <div className="grid grid-cols-2 gap-2">
-          <div className="flex items-center gap-2 p-2.5 bg-muted rounded-xl">
-            <Clock className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-            <div>
-              <p className="text-xs text-muted-foreground leading-none">
-                Duration
-              </p>
-              <p className="text-xs font-semibold text-foreground mt-0.5">
-                {trip.duration} days
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 p-2.5 bg-muted rounded-xl">
-            <Wallet className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-            <div>
-              <p className="text-xs text-muted-foreground leading-none">
-                Budget
-              </p>
-              <p className="text-xs font-semibold text-foreground mt-0.5">
-                ${trip.budget.toLocaleString()}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 p-2.5 bg-muted rounded-xl">
-            <Users className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-            <div>
-              <p className="text-xs text-muted-foreground leading-none">
-                Travelers
-              </p>
-              <p className="text-xs font-semibold text-foreground mt-0.5">
-                {trip.travelers} {trip.travelers === 1 ? "person" : "people"}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 p-2.5 bg-muted rounded-xl">
-            <Plane className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-            <div>
-              <p className="text-xs text-muted-foreground leading-none">
-                Style
-              </p>
-              <p className="text-xs font-semibold text-foreground mt-0.5 capitalize">
-                {trip.tripType}
-              </p>
-            </div>
-          </div>
+          {[
+            {
+              icon: Clock,
+              label: "Duration",
+              value: `${trip.duration} days`,
+            },
+            {
+              icon: Wallet,
+              label: "Budget",
+              value: `$${trip.budget.toLocaleString()}`,
+            },
+            {
+              icon: Users,
+              label: "Travelers",
+              value: `${trip.travelers} ${trip.travelers === 1 ? "person" : "people"}`,
+            },
+            {
+              icon: Plane,
+              label: "Style",
+              value: trip.tripType,
+            },
+          ].map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <div
+                key={stat.label}
+                className="flex items-center gap-2 p-2.5 bg-muted rounded-xl"
+              >
+                <Icon className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                <div>
+                  <p className="text-xs text-muted-foreground leading-none">
+                    {stat.label}
+                  </p>
+                  <p className="text-xs font-semibold text-foreground mt-0.5 capitalize">
+                    {stat.value}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* View button */}
@@ -462,7 +467,7 @@ export default function TripsPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-secondary pb-20 md:pb-0">
+    <div className="min-h-screen bg-secondary pb-24 md:pb-0">
       {/* Mobile Top Bar */}
       <MobileTopBar pageName="My Trips" />
 
@@ -552,7 +557,7 @@ export default function TripsPage() {
       </div>
 
       {/* Desktop Search & Filter Bar */}
-      <div className="hidden md:block bg-white ">
+      <div className="hidden md:block bg-white">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -568,7 +573,7 @@ export default function TripsPage() {
                 placeholder="Search trips or destinations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5  border border-border rounded-xl text-foreground placeholder-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+                className="w-full pl-10 pr-4 py-2.5 border border-border rounded-xl text-foreground placeholder-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
               />
             </div>
 
@@ -626,7 +631,7 @@ export default function TripsPage() {
 
       {/* Content */}
       <div className="max-w-6xl mx-auto px-4 py-6 md:py-8 mt-32 md:mt-0">
-        {/* Loading state */}
+        {/* Loading state — spinner-based, no skeleton */}
         {loading && trips.length === 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {Array(6)
@@ -656,9 +661,7 @@ export default function TripsPage() {
                 ref={observerTarget}
                 className="h-10 flex items-center justify-center mt-8"
               >
-                {loading && (
-                  <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                )}
+                {loading && <Spinner size="default" />}
               </div>
             )}
           </>

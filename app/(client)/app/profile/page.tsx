@@ -23,7 +23,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Card,
   CardContent,
@@ -144,21 +143,22 @@ export default function Profile() {
   return (
     <>
       <MobileTopBar pageName="Profile" />
-      <div className="container mx-auto py-10 px-4 max-w-2xl border-none bg-transparent shadow-none md:mt-0 mt-16 pb-20 md:pb-0">
+      {/* mt-12 on mobile matches the MobileTopBar height (h-12), no extra gap */}
+      <div className="container mx-auto py-6 px-4 max-w-2xl border-none bg-transparent shadow-none mt-12 md:mt-0 pb-24 md:pb-0">
         {initialLoading ? (
           <Card className="border-none bg-transparent shadow-none">
             <CardHeader>
-              <Skeleton className="h-8 w-48 mb-2" />
-              <Skeleton className="h-4 w-64" />
+              <div className="h-8 w-48 mb-2 bg-muted rounded animate-pulse" />
+              <div className="h-4 w-64 bg-muted rounded animate-pulse" />
             </CardHeader>
             <CardContent className="space-y-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
+              <div className="h-10 w-full bg-muted rounded animate-pulse" />
+              <div className="h-10 w-full bg-muted rounded animate-pulse" />
+              <div className="h-10 w-full bg-muted rounded animate-pulse" />
+              <div className="h-10 w-full bg-muted rounded animate-pulse" />
             </CardContent>
             <CardFooter>
-              <Skeleton className="h-10 w-32" />
+              <div className="h-10 w-32 bg-muted rounded animate-pulse" />
             </CardFooter>
           </Card>
         ) : (
@@ -254,7 +254,7 @@ export default function Profile() {
                     </Popover>
                   </div>
 
-                  {/* Gender */}
+                  {/* Gender — explicit text-foreground prevents any destructive color bleed */}
                   <div className="space-y-2">
                     <Label>Gender</Label>
                     <Select
@@ -266,7 +266,7 @@ export default function Profile() {
                         }))
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full text-foreground">
                         <SelectValue placeholder="Select gender" />
                       </SelectTrigger>
                       <SelectContent>
