@@ -25,7 +25,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import {
   Plane,
-  MapPin,
   Plus,
   ChevronRight,
   Trash2,
@@ -39,6 +38,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { MobileTopBar } from "@/app/_components/navigation/MobileTopBar";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -100,23 +100,20 @@ function getRandomActivityImage(trip: Trip): string | null {
   return randomActivity.image?.url || null;
 }
 
-// ─── Skeleton card replaced with Spinner-based loader ─────────────────────────
+// ─── Skeleton card ───────────────────────────────────────────────────────────
 
 function TripCardSkeleton() {
   return (
     <div className="bg-white rounded-2xl border border-border overflow-hidden flex flex-col">
-      {/* Flat muted placeholder header */}
-      <div className="h-36 bg-muted flex items-center justify-center">
-        <Spinner size="default" />
-      </div>
+      <Skeleton className="h-36 w-full rounded-none" />
       <div className="p-4 flex flex-col gap-3">
-        <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
-        <div className="h-3 bg-muted rounded w-1/2 animate-pulse" />
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-3 w-1/2" />
         <div className="grid grid-cols-2 gap-2">
-          <div className="h-12 bg-muted rounded-xl animate-pulse" />
-          <div className="h-12 bg-muted rounded-xl animate-pulse" />
+          <Skeleton className="h-12 rounded-xl" />
+          <Skeleton className="h-12 rounded-xl" />
         </div>
-        <div className="h-9 bg-muted rounded-xl animate-pulse" />
+        <Skeleton className="h-9 rounded-xl" />
       </div>
     </div>
   );
@@ -133,10 +130,8 @@ function TripCard({
   index: number;
   onDelete: (id: string) => void;
 }) {
-  const emoji = TRIP_TYPE_EMOJI[trip.tripType] || "✈️";
   const [deleting, setDeleting] = useState(false);
   const activityImage = getRandomActivityImage(trip);
-  const isDraft = trip.status === "draft";
   const isReady = trip.status === "completed";
 
   const handleDelete = async () => {
@@ -337,7 +332,8 @@ export default function TripsPage() {
   const userid = session?.user?._id;
 
   const [trips, setTrips] = useState<Trip[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"latest" | "oldest" | "a-z" | "z-a">(
     "latest",
@@ -346,15 +342,20 @@ export default function TripsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [paginationData, setPaginationData] = useState<any>(null);
   const [hasMore, setHasMore] = useState(true);
+  const [hasUserScrolled, setHasUserScrolled] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
 
   // ── Fetch trips ────────────────────────────────────────────────────────────
 
   async function getTrips(page = 1, append = false) {
-    setLoading(true);
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setInitialLoading(true);
+    }
     try {
       const res = await fetch(
-        `/api/trip/get-trips/${userid}?page=${page}&limit=12`,
+        `/api/trip/get-trips/${userid}?page=${page}&limit=6`,
       );
       const result = await res.json();
       if (!res.ok) {
@@ -374,25 +375,50 @@ export default function TripsPage() {
     } catch (error) {
       toast.error((error as Error).message);
     } finally {
-      setLoading(false);
+      if (append) {
+        setLoadingMore(false);
+      } else {
+        setInitialLoading(false);
+      }
     }
   }
 
   useEffect(() => {
     if (userid) {
+      setTrips([]);
+      setCurrentPage(1);
+      setPaginationData(null);
+      setHasMore(true);
+      setHasUserScrolled(false);
       getTrips(1, false);
+    } else {
+      setInitialLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userid]);
 
+  useEffect(() => {
+    const onScroll = () => {
+      if (window.scrollY > 0) {
+        setHasUserScrolled(true);
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+
   // ── Infinite scroll observer ────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!observerTarget.current) return;
+    if (!observerTarget.current || initialLoading || !hasUserScrolled) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loading) {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
           setCurrentPage((prev) => prev + 1);
         }
       },
@@ -406,7 +432,7 @@ export default function TripsPage() {
         observer.unobserve(observerTarget.current);
       }
     };
-  }, [hasMore, loading]);
+  }, [hasMore, loadingMore, initialLoading, hasUserScrolled]);
 
   // Fetch next page when currentPage changes
   useEffect(() => {
@@ -632,7 +658,7 @@ export default function TripsPage() {
       {/* Content */}
       <div className="max-w-6xl mx-auto px-4 py-6 md:py-8 mt-32 md:mt-0">
         {/* Loading state — spinner-based, no skeleton */}
-        {loading && trips.length === 0 ? (
+        {initialLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {Array(6)
               .fill(null)
@@ -657,11 +683,15 @@ export default function TripsPage() {
 
             {/* Infinite scroll trigger */}
             {hasMore && (
-              <div
-                ref={observerTarget}
-                className="h-10 flex items-center justify-center mt-8"
-              >
-                {loading && <Spinner size="default" />}
+              <div ref={observerTarget} className="mt-8 flex justify-center">
+                {loadingMore ? (
+                  <div className="flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-sm text-muted-foreground shadow-sm">
+                    <Spinner size="small" />
+                    <span>Loading more trips...</span>
+                  </div>
+                ) : (
+                  <div className="h-1 w-full" aria-hidden="true" />
+                )}
               </div>
             )}
           </>
