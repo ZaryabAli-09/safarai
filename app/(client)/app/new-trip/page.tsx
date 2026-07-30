@@ -1,4 +1,4 @@
-"use client";
+there is syntax error in nre trip ic it "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
@@ -257,14 +257,16 @@ function TripSoFarPanel({
     <div className="hidden lg:flex flex-col gap-4 w-72 flex-shrink-0">
       {/* Trip so far card */}
       <div className="bg-white rounded-2xl border border-border p-5 shadow-sm">
-        <h2 className="text-sm font-semibold text-foreground mb-4">
-          Trip so far
-        </h2>
-        <div className="space-y-3">
-          {rows.map((row) => {
-            const Icon = row.icon;
-            const isDone = row.value !== null && row.value !== "In progress";
-            const isInProgress = row.value === "In progress";
+      {
+        icon: DollarSign,
+        label: "Budget",
+        value:
+          formData.budget && formData.budget !== 2000 && completedSteps >= 3
+            ? `${(
+                CURRENCIES.find((c) => c.code === formData.currency)?.symbol || ""
+              )}${formData.budget.toLocaleString()} ${formData.currency}`
+            : null,
+      },
             return (
               <div key={row.label} className="flex items-start gap-3">
                 {/* Check icon when done, muted icon otherwise */}
@@ -273,7 +275,7 @@ function TripSoFarPanel({
                     <Check className="w-3.5 h-3.5 text-[color:var(--success)]" />
                   </div>
                 ) : (
-                  <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
+      <div className="flex flex-col gap-4 w-full sm:w-72 flex-shrink-0">
                     <Icon className="w-3.5 h-3.5 text-muted-foreground" />
                   </div>
                 )}
@@ -363,6 +365,7 @@ export default function NewTripPage() {
     key: "selection",
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [monthsToShow, setMonthsToShow] = useState(1);
 
   // Budget
   const [budgetSlider, setBudgetSlider] = useState([2000]);
@@ -380,6 +383,16 @@ export default function NewTripPage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isTyping, scrollToBottom]);
+
+  useEffect(() => {
+    const setMonths = () => {
+      if (window.innerWidth >= 1024) setMonthsToShow(2);
+      else setMonthsToShow(1);
+    };
+    setMonths();
+    window.addEventListener("resize", setMonths);
+    return () => window.removeEventListener("resize", setMonths);
+  }, []);
 
   // ── Add message helper ─────────────────────────────────────────────────────
 
@@ -884,7 +897,7 @@ export default function NewTripPage() {
               }}
               minDate={new Date()}
               maxDate={addDays(new Date(), 365)}
-              months={1}
+              months={monthsToShow}
               direction="horizontal"
               showMonthAndYearPickers
               rangeColors={["#2563eb"]}

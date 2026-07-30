@@ -84,8 +84,8 @@ const TRIP_TYPE_EMOJI: Record<string, string> = {
   solo: "🎒",
 };
 
-// Get random activity image from trip
-function getRandomActivityImage(trip: Trip): string | null {
+// Get first available activity image from trip (use first, not random)
+function getFirstActivityImage(trip: Trip): string | null {
   if (!trip.itinerary || trip.itinerary.length === 0) return null;
 
   const allActivities = trip.itinerary.flatMap((day) => day.activities || []);
@@ -93,11 +93,8 @@ function getRandomActivityImage(trip: Trip): string | null {
 
   if (activitiesWithImages.length === 0) return null;
 
-  const randomActivity =
-    activitiesWithImages[
-      Math.floor(Math.random() * activitiesWithImages.length)
-    ];
-  return randomActivity.image?.url || null;
+  const firstActivity = activitiesWithImages[0];
+  return firstActivity.image?.url || null;
 }
 
 // ─── Skeleton card ───────────────────────────────────────────────────────────
@@ -131,7 +128,7 @@ function TripCard({
   onDelete: (id: string) => void;
 }) {
   const [deleting, setDeleting] = useState(false);
-  const activityImage = getRandomActivityImage(trip);
+  const activityImage = getFirstActivityImage(trip);
   const isReady = trip.status === "completed";
 
   const handleDelete = async () => {

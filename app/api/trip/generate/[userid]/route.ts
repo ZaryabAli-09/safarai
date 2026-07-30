@@ -206,7 +206,7 @@ async function generateItineraryWithAI(tripData: any): Promise<any> {
           "venue": "Specific place name (e.g., Faisal Mosque)",
           "city": "City name (e.g., Islamabad)",
           "country": "Country name (e.g., Pakistan)",
-          "estimatedCost": "$20-30",
+          "estimatedCost": "20-30 ${tripData.currency}",
           "duration": "2 hours",
           "category": "sightseeing"
         }
@@ -216,7 +216,7 @@ async function generateItineraryWithAI(tripData: any): Promise<any> {
   "summary": {
     "totalDays": 0,
     "destinations": [],
-    "estimatedBudget": "$X",
+    "estimatedBudget": "X ${tripData.currency}",
     "bestSeason": "string",
     "travelStyle": "string",
     "familyFriendly": true
@@ -228,14 +228,14 @@ async function generateItineraryWithAI(tripData: any): Promise<any> {
     "activities": 0,
     "miscellaneous": 0,
     "total": 0,
-    "currency": "USD"
+    "currency": "${tripData.currency}"
   },
   "packingList": ["item1", "item2"],
   "travelTips": ["tip1", "tip2"],
   "aiNotes": "Brief notes"
 }
 
-RULES: 3 activities/day (morning, afternoon, evening). venue=specific real place. city=destination city. country=destination country. packingList=8-10 items. travelTips=4-6 items. All costs USD.`,
+RULES: 3 activities/day (morning, afternoon, evening). venue=specific real place. city=destination city. country=destination country. packingList=8-10 items. travelTips=4-6 items. All costs in ${tripData.currency}.`,
   };
 
   const userMessage: OpenRouterMessage = {
@@ -243,7 +243,7 @@ RULES: 3 activities/day (morning, afternoon, evening). venue=specific real place
     content: `Plan a ${tripData.duration}-day ${tripData.tripType} trip:
 - Destinations: ${tripData.destinations.join(", ")}
 - Start: ${startStr}
-- Budget: $${tripData.budget} for ${tripData.travelers} traveler(s)
+- Budget: ${tripData.budget} ${tripData.currency} for ${tripData.travelers} traveler(s)
 - Pace: ${tripData.tripPace}
 - Accommodation: ${tripData.accommodation}
 - Transportation: ${tripData.transportation}
@@ -511,7 +511,7 @@ export async function POST(
       trip.summary = aiResult.summary || {
         totalDays: tripData.duration,
         destinations: tripData.destinations,
-        estimatedBudget: `$${tripData.budget}`,
+        estimatedBudget: `${tripData.budget} ${tripData.currency}`,
         bestSeason: "Year-round",
         travelStyle: tripData.tripType,
         familyFriendly: true,
@@ -523,7 +523,7 @@ export async function POST(
         activities: Math.round(tripData.budget * 0.15),
         miscellaneous: Math.round(tripData.budget * 0.1),
         total: tripData.budget,
-        currency: "USD",
+        currency: tripData.currency,
       };
       trip.packingList = aiResult.packingList || [];
       trip.travelTips = aiResult.travelTips || [];
