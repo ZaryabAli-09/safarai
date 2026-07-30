@@ -209,18 +209,33 @@ function TripSoFarPanel({
   const stepIndex = STEP_ORDER.indexOf(currentStep);
   const totalSteps = 8; // destination→summary = 8 steps
   const completedSteps = Math.max(0, stepIndex - 1);
-  const progressPct = Math.min(100, Math.round((completedSteps / totalSteps) * 100));
+  const progressPct = Math.min(
+    100,
+    Math.round((completedSteps / totalSteps) * 100),
+  );
 
-  const rows: { icon: React.ElementType; label: string; value: string | null }[] = [
+  const rows: {
+    icon: React.ElementType;
+    label: string;
+    value: string | null;
+  }[] = [
     {
       icon: MapPin,
       label: "Destination",
-      value: formData.destinations.length > 0 ? formData.destinations.join(", ") : null,
+      value:
+        formData.destinations.length > 0
+          ? formData.destinations.join(", ")
+          : null,
     },
     {
       icon: Calendar,
       label: "Dates",
-      value: formData.startDate && formData.endDate ? `${formData.duration} days` : currentStep === "dates" ? "In progress" : null,
+      value:
+        formData.startDate && formData.endDate
+          ? `${formData.duration} days`
+          : currentStep === "dates"
+            ? "In progress"
+            : null,
     },
     {
       icon: DollarSign,
@@ -240,7 +255,9 @@ function TripSoFarPanel({
   return (
     <div className="flex flex-col gap-4 w-full sm:w-72 flex-shrink-0">
       <div className="bg-white rounded-2xl border border-border p-5 shadow-sm">
-        <h2 className="text-sm font-semibold text-foreground mb-4">Trip so far</h2>
+        <h2 className="text-sm font-semibold text-foreground mb-4">
+          Trip so far
+        </h2>
         <div className="space-y-3">
           {rows.map((row) => {
             const Icon = row.icon;
@@ -258,9 +275,17 @@ function TripSoFarPanel({
                   </div>
                 )}
                 <div>
-                  <p className={`text-xs ${isDone || isInProgress ? "text-muted-foreground" : "text-muted-foreground/50"}`}>{row.label}</p>
+                  <p
+                    className={`text-xs ${isDone || isInProgress ? "text-muted-foreground" : "text-muted-foreground/50"}`}
+                  >
+                    {row.label}
+                  </p>
                   {row.value ? (
-                    <p className={`text-sm font-semibold ${isInProgress ? "text-muted-foreground" : "text-foreground"}`}>{row.value}</p>
+                    <p
+                      className={`text-sm font-semibold ${isInProgress ? "text-muted-foreground" : "text-foreground"}`}
+                    >
+                      {row.value}
+                    </p>
                   ) : (
                     <p className="text-sm text-muted-foreground/40">—</p>
                   )}
@@ -274,9 +299,16 @@ function TripSoFarPanel({
       <div className="bg-white rounded-2xl border border-border p-4 shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <div className="h-1.5 flex-1 bg-muted rounded-full overflow-hidden mr-3">
-            <motion.div className="h-full bg-primary rounded-full" initial={{ width: 0 }} animate={{ width: `${progressPct}%` }} transition={{ duration: 0.5, ease: "easeOut" }} />
+            <motion.div
+              className="h-full bg-primary rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPct}%` }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            />
           </div>
-          <span className="text-xs text-muted-foreground whitespace-nowrap">Step {Math.min(completedSteps + 1, totalSteps)} of {totalSteps}</span>
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
+            Step {Math.min(completedSteps + 1, totalSteps)} of {totalSteps}
+          </span>
         </div>
       </div>
     </div>
