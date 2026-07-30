@@ -198,52 +198,36 @@ function ChatBubble({
   );
 }
 
-/** "Trip so far" side panel — desktop only */
+/** "Trip so far" side panel */
 function TripSoFarPanel({
   formData,
   currentStep,
 }: {
-  /** "Trip so far" side panel */
+  formData: TripFormData;
   currentStep: ChatStep;
 }) {
   const stepIndex = STEP_ORDER.indexOf(currentStep);
-  // Steps that count toward progress (exclude welcome/generating)
   const totalSteps = 8; // destination→summary = 8 steps
-  const completedSteps = Math.max(0, stepIndex - 1); // -1 for welcome
-  const progressPct = Math.min(
-    100,
-    Math.round((completedSteps / totalSteps) * 100),
-  );
+  const completedSteps = Math.max(0, stepIndex - 1);
+  const progressPct = Math.min(100, Math.round((completedSteps / totalSteps) * 100));
 
-  const rows: {
-    icon: React.ElementType;
-    label: string;
-    value: string | null;
-  }[] = [
+  const rows: { icon: React.ElementType; label: string; value: string | null }[] = [
     {
       icon: MapPin,
       label: "Destination",
-      value:
-        formData.destinations.length > 0
-          ? formData.destinations.join(", ")
-          : null,
+      value: formData.destinations.length > 0 ? formData.destinations.join(", ") : null,
     },
     {
       icon: Calendar,
       label: "Dates",
-      value:
-        formData.startDate && formData.endDate
-          ? `${formData.duration} days`
-          : currentStep === "dates"
-            ? "In progress"
-            : null,
+      value: formData.startDate && formData.endDate ? `${formData.duration} days` : currentStep === "dates" ? "In progress" : null,
     },
     {
       icon: DollarSign,
       label: "Budget",
       value:
         formData.budget && formData.budget !== 2000 && completedSteps >= 3
-          ? `$${formData.budget.toLocaleString()}`
+          ? `${CURRENCIES.find((c) => c.code === formData.currency)?.symbol || ""}${formData.budget.toLocaleString()} ${formData.currency}`
           : null,
     },
     {
@@ -254,43 +238,29 @@ function TripSoFarPanel({
   ];
 
   return (
-    <div className="hidden lg:flex flex-col gap-4 w-72 flex-shrink-0">
-      {/* Trip so far card */}
+    <div className="flex flex-col gap-4 w-full sm:w-72 flex-shrink-0">
       <div className="bg-white rounded-2xl border border-border p-5 shadow-sm">
-      {
-        icon: DollarSign,
-        label: "Budget",
-        value:
-          formData.budget && formData.budget !== 2000 && completedSteps >= 3
-            ? `${(
-                CURRENCIES.find((c) => c.code === formData.currency)?.symbol || ""
-              )}${formData.budget.toLocaleString()} ${formData.currency}`
-            : null,
-      },
+        <h2 className="text-sm font-semibold text-foreground mb-4">Trip so far</h2>
+        <div className="space-y-3">
+          {rows.map((row) => {
+            const Icon = row.icon;
+            const isDone = row.value !== null && row.value !== "In progress";
+            const isInProgress = row.value === "In progress";
             return (
               <div key={row.label} className="flex items-start gap-3">
-                {/* Check icon when done, muted icon otherwise */}
                 {isDone ? (
                   <div className="w-6 h-6 rounded-full bg-[#dcfce7] flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Check className="w-3.5 h-3.5 text-[color:var(--success)]" />
                   </div>
                 ) : (
-      <div className="flex flex-col gap-4 w-full sm:w-72 flex-shrink-0">
+                  <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Icon className="w-3.5 h-3.5 text-muted-foreground" />
                   </div>
                 )}
                 <div>
-                  <p
-                    className={`text-xs ${isDone || isInProgress ? "text-muted-foreground" : "text-muted-foreground/50"}`}
-                  >
-                    {row.label}
-                  </p>
+                  <p className={`text-xs ${isDone || isInProgress ? "text-muted-foreground" : "text-muted-foreground/50"}`}>{row.label}</p>
                   {row.value ? (
-                    <p
-                      className={`text-sm font-semibold ${isInProgress ? "text-muted-foreground" : "text-foreground"}`}
-                    >
-                      {row.value}
-                    </p>
+                    <p className={`text-sm font-semibold ${isInProgress ? "text-muted-foreground" : "text-foreground"}`}>{row.value}</p>
                   ) : (
                     <p className="text-sm text-muted-foreground/40">—</p>
                   )}
@@ -301,20 +271,12 @@ function TripSoFarPanel({
         </div>
       </div>
 
-      {/* Step progress */}
       <div className="bg-white rounded-2xl border border-border p-4 shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <div className="h-1.5 flex-1 bg-muted rounded-full overflow-hidden mr-3">
-            <motion.div
-              className="h-full bg-primary rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${progressPct}%` }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-            />
+            <motion.div className="h-full bg-primary rounded-full" initial={{ width: 0 }} animate={{ width: `${progressPct}%` }} transition={{ duration: 0.5, ease: "easeOut" }} />
           </div>
-          <span className="text-xs text-muted-foreground whitespace-nowrap">
-            Step {Math.min(completedSteps + 1, totalSteps)} of {totalSteps}
-          </span>
+          <span className="text-xs text-muted-foreground whitespace-nowrap">Step {Math.min(completedSteps + 1, totalSteps)} of {totalSteps}</span>
         </div>
       </div>
     </div>
