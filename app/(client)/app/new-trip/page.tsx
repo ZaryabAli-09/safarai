@@ -1,4 +1,4 @@
-there is syntax error in nre trip ic it "use client";
+"use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
@@ -203,7 +203,7 @@ function TripSoFarPanel({
   formData,
   currentStep,
 }: {
-  formData: TripFormData;
+  /** "Trip so far" side panel */
   currentStep: ChatStep;
 }) {
   const stepIndex = STEP_ORDER.indexOf(currentStep);
