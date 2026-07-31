@@ -35,7 +35,7 @@ type TripType =
   | "relaxation"
   | "family"
   | "honeymoon"
-  | "solo";
+  | "vlogging";
 type TripPace = "slow" | "moderate" | "fast";
 type Accommodation = "budget" | "mid-range" | "luxury";
 type Transportation = "flight" | "road" | "train" | "mix";
@@ -84,7 +84,7 @@ const TRIP_TYPES: { value: TripType; label: string; emoji: string }[] = [
   { value: "relaxation", label: "Relaxation", emoji: "🏖️" },
   { value: "family", label: "Family", emoji: "👨‍👩‍👧‍👦" },
   { value: "honeymoon", label: "Honeymoon", emoji: "💑" },
-  { value: "solo", label: "Solo", emoji: "🎒" },
+  { value: "vlogging", label: "Vlogging", emoji: "📹" },
 ];
 
 const INTERESTS = [
