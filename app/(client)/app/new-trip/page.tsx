@@ -4,26 +4,40 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { DateRange, Range, RangeKeyDict } from "react-date-range";
 import { format, differenceInDays, addDays } from "date-fns";
 import { Slider } from "@/components/ui/slider";
 import { Spinner } from "@/components/ui/loader";
+import { Progress } from "@/components/ui/progress";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import type { DateRange as RDPDateRange } from "react-day-picker";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import toast from "react-hot-toast";
 import {
   Plane,
   MapPin,
-  Calendar,
+  Calendar as CalendarIcon,
   DollarSign,
   Users,
   Zap,
   ChevronRight,
+  ChevronDown,
   Bot,
   User,
   CheckCircle2,
   Plus,
   X,
   Wallet,
-  Globe,
   Check,
 } from "lucide-react";
 
@@ -48,7 +62,6 @@ interface TripFormData {
   duration: number;
   budget: number;
   currency: string;
-  customCurrencyAmount: string;
   tripType: TripType;
   tripPace: TripPace;
   accommodation: Accommodation;
@@ -113,8 +126,17 @@ const CURRENCIES = [
   { code: "TRY", symbol: "₺", name: "Turkish Lira" },
 ];
 
+const BUDGET_PRESETS = [500, 1000, 2500, 5000, 10000, 20000];
 const BUDGET_MIN = 500;
 const BUDGET_MAX = 20000;
+
+const GENERATION_STEPS = [
+  "Analyzing your preferences",
+  "Matching destinations to your interests",
+  "Building your day-by-day itinerary",
+  "Estimating costs & logistics",
+  "Finalizing your personalized plan",
+];
 
 // Step order for progress tracking
 const STEP_ORDER: ChatStep[] = [
@@ -159,7 +181,7 @@ function TypingIndicator() {
   );
 }
 
-/** Single chat bubble — matches new_trip_wizard_redesign mockup */
+/** Single chat bubble */
 function ChatBubble({
   message,
   isNew,
@@ -198,16 +220,10 @@ function ChatBubble({
   );
 }
 
-/** "Trip so far" side panel */
-function TripSoFarPanel({
-  formData,
-  currentStep,
-}: {
-  formData: TripFormData;
-  currentStep: ChatStep;
-}) {
+/** Progress + "trip so far" summary — shared shape, rendered differently on mobile vs desktop */
+function useTripProgress(formData: TripFormData, currentStep: ChatStep) {
   const stepIndex = STEP_ORDER.indexOf(currentStep);
-  const totalSteps = 8; // destination→summary = 8 steps
+  const totalSteps = 8; // destination → summary
   const completedSteps = Math.max(0, stepIndex - 1);
   const progressPct = Math.min(
     100,
@@ -228,7 +244,7 @@ function TripSoFarPanel({
           : null,
     },
     {
-      icon: Calendar,
+      icon: CalendarIcon,
       label: "Dates",
       value:
         formData.startDate && formData.endDate
@@ -241,7 +257,7 @@ function TripSoFarPanel({
       icon: DollarSign,
       label: "Budget",
       value:
-        formData.budget && formData.budget !== 2000 && completedSteps >= 3
+        completedSteps >= 3
           ? `${CURRENCIES.find((c) => c.code === formData.currency)?.symbol || ""}${formData.budget.toLocaleString()} ${formData.currency}`
           : null,
     },
@@ -252,8 +268,28 @@ function TripSoFarPanel({
     },
   ];
 
+  return {
+    rows,
+    progressPct,
+    stepLabel: `Step ${Math.min(completedSteps + 1, totalSteps)} of ${totalSteps}`,
+  };
+}
+
+/** Desktop "Trip so far" side panel — fixed width, never contributes to page overflow */
+function TripSoFarPanel({
+  formData,
+  currentStep,
+}: {
+  formData: TripFormData;
+  currentStep: ChatStep;
+}) {
+  const { rows, progressPct, stepLabel } = useTripProgress(
+    formData,
+    currentStep,
+  );
+
   return (
-    <div className="flex flex-col gap-4 w-full sm:w-72 flex-shrink-0">
+    <div className="flex flex-col gap-4">
       <div className="bg-white rounded-2xl border border-border p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-foreground mb-4">
           Trip so far
@@ -274,7 +310,7 @@ function TripSoFarPanel({
                     <Icon className="w-3.5 h-3.5 text-muted-foreground" />
                   </div>
                 )}
-                <div>
+                <div className="min-w-0">
                   <p
                     className={`text-xs ${isDone || isInProgress ? "text-muted-foreground" : "text-muted-foreground/50"}`}
                   >
@@ -282,7 +318,7 @@ function TripSoFarPanel({
                   </p>
                   {row.value ? (
                     <p
-                      className={`text-sm font-semibold ${isInProgress ? "text-muted-foreground" : "text-foreground"}`}
+                      className={`text-sm font-semibold truncate ${isInProgress ? "text-muted-foreground" : "text-foreground"}`}
                     >
                       {row.value}
                     </p>
@@ -297,18 +333,91 @@ function TripSoFarPanel({
       </div>
 
       <div className="bg-white rounded-2xl border border-border p-4 shadow-sm">
-        <div className="flex items-center justify-between mb-2">
-          <div className="h-1.5 flex-1 bg-muted rounded-full overflow-hidden mr-3">
-            <motion.div
-              className="h-full bg-primary rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${progressPct}%` }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-            />
-          </div>
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <Progress value={progressPct} className="h-1.5 flex-1" />
           <span className="text-xs text-muted-foreground whitespace-nowrap">
-            Step {Math.min(completedSteps + 1, totalSteps)} of {totalSteps}
+            {stepLabel}
           </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Compact progress strip for mobile/tablet — replaces the desktop-only sidebar there */
+function MobileProgressBar({
+  formData,
+  currentStep,
+}: {
+  formData: TripFormData;
+  currentStep: ChatStep;
+}) {
+  const { progressPct, stepLabel } = useTripProgress(formData, currentStep);
+  return (
+    <div className="lg:hidden bg-white border-b border-border px-4 py-2.5 flex items-center gap-3 flex-shrink-0">
+      <Progress value={progressPct} className="h-1.5 flex-1" />
+      <span className="text-xs text-muted-foreground whitespace-nowrap">
+        {stepLabel}
+      </span>
+    </div>
+  );
+}
+
+/** Full-screen overlay shown while the itinerary is being generated */
+function GeneratingOverlay({
+  visible,
+  destinations,
+  duration,
+  activeStep,
+}: {
+  visible: boolean;
+  destinations: string[];
+  duration: number;
+  activeStep: number;
+}) {
+  if (!visible) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/95 backdrop-blur-sm px-6">
+      <div className="w-full max-w-sm flex flex-col items-center text-center gap-5">
+        <div className="relative w-16 h-16">
+          <span className="absolute inset-0 rounded-full border-4 border-accent" />
+          <span className="absolute inset-0 rounded-full border-4 border-transparent border-t-primary animate-spin" />
+          <Plane className="w-6 h-6 text-primary absolute inset-0 m-auto" />
+        </div>
+
+        <div className="space-y-1.5">
+          <h2 className="text-lg font-semibold text-foreground">
+            Crafting your itinerary…
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Building a personalized {duration || ""}-day plan
+            {destinations.length > 0 ? ` for ${destinations.join(", ")}` : ""}.
+            This can take up to a minute.
+          </p>
+        </div>
+
+        <div className="w-full flex flex-col gap-2.5 text-left mt-1">
+          {GENERATION_STEPS.map((step, i) => (
+            <div key={step} className="flex items-center gap-2.5 text-sm">
+              {i < activeStep ? (
+                <CheckCircle2 className="w-4 h-4 text-[color:var(--success)] flex-shrink-0" />
+              ) : i === activeStep ? (
+                <Spinner size="small" className="flex-shrink-0" />
+              ) : (
+                <span className="w-4 h-4 rounded-full border-2 border-border flex-shrink-0" />
+              )}
+              <span
+                className={
+                  i <= activeStep
+                    ? "text-foreground font-medium"
+                    : "text-muted-foreground/50"
+                }
+              >
+                {step}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -340,7 +449,6 @@ export default function NewTripPage() {
     duration: 0,
     budget: 2000,
     currency: "USD",
-    customCurrencyAmount: "",
     tripType: "adventure",
     tripPace: "moderate",
     accommodation: "mid-range",
@@ -352,19 +460,20 @@ export default function NewTripPage() {
   // Destination input
   const [destInput, setDestInput] = useState("");
 
-  // Date range picker
-  const [dateRange, setDateRange] = useState<Range>({
-    startDate: new Date(),
-    endDate: addDays(new Date(), 6),
-    key: "selection",
+  // Date range — popover-based, never affects page layout/width
+  const [dateRange, setDateRange] = useState<RDPDateRange>({
+    from: new Date(),
+    to: addDays(new Date(), 6),
   });
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [monthsToShow, setMonthsToShow] = useState(1);
+  const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
+  const [calendarMonths, setCalendarMonths] = useState(1);
 
-  // Budget
-  const [budgetSlider, setBudgetSlider] = useState([2000]);
-  const [showCurrencyInput, setShowCurrencyInput] = useState(false);
-  const [selectedCurrency, setSelectedCurrency] = useState("USD");
+  // Budget — single unified control (amount + currency, driven by one source of truth)
+  const [budgetAmount, setBudgetAmount] = useState(2000);
+  const [budgetCurrency, setBudgetCurrency] = useState("USD");
+
+  // Trip generation progress (cosmetic — reflects a single API call)
+  const [genStepIndex, setGenStepIndex] = useState(0);
 
   // ── Scroll to bottom ───────────────────────────────────────────────────────
 
@@ -380,13 +489,38 @@ export default function NewTripPage() {
 
   useEffect(() => {
     const setMonths = () => {
-      if (window.innerWidth >= 1024) setMonthsToShow(2);
-      else setMonthsToShow(1);
+      if (window.innerWidth >= 1024) setCalendarMonths(2);
+      else setCalendarMonths(1);
     };
     setMonths();
     window.addEventListener("resize", setMonths);
     return () => window.removeEventListener("resize", setMonths);
   }, []);
+
+  // Auto-open the date popover when the user reaches that step
+  useEffect(() => {
+    if (currentStep === "dates") setIsDatePopoverOpen(true);
+  }, [currentStep]);
+
+  // Cosmetic step-through animation for the full-screen generating overlay
+  useEffect(() => {
+    if (!isGenerating) {
+      setGenStepIndex(0);
+      return;
+    }
+    const id = setInterval(() => {
+      setGenStepIndex((i) => (i < GENERATION_STEPS.length - 1 ? i + 1 : i));
+    }, 2200);
+    return () => clearInterval(id);
+  }, [isGenerating]);
+
+  // Lock background scroll while the full-screen loader is up
+  useEffect(() => {
+    document.body.style.overflow = isGenerating ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isGenerating]);
 
   // ── Add message helper ─────────────────────────────────────────────────────
 
@@ -487,26 +621,25 @@ export default function NewTripPage() {
       700,
     );
     setCurrentStep("dates");
-    setShowDatePicker(true);
   };
 
   const handleDateConfirm = async () => {
-    if (!dateRange.startDate || !dateRange.endDate) {
+    if (!dateRange.from || !dateRange.to) {
       toast.error("Please select travel dates");
       return;
     }
-    const start = format(dateRange.startDate, "MMM d, yyyy");
-    const end = format(dateRange.endDate, "MMM d, yyyy");
-    const days = differenceInDays(dateRange.endDate, dateRange.startDate) + 1;
+    const start = format(dateRange.from, "MMM d, yyyy");
+    const end = format(dateRange.to, "MMM d, yyyy");
+    const days = differenceInDays(dateRange.to, dateRange.from) + 1;
 
     setFormData((prev) => ({
       ...prev,
-      startDate: format(dateRange.startDate!, "yyyy-MM-dd"),
-      endDate: format(dateRange.endDate!, "yyyy-MM-dd"),
+      startDate: format(dateRange.from!, "yyyy-MM-dd"),
+      endDate: format(dateRange.to!, "yyyy-MM-dd"),
       duration: days,
     }));
 
-    setShowDatePicker(false);
+    setIsDatePopoverOpen(false);
     addMessage("user", `${start} → ${end} (${days} days)`);
 
     await botSay(
@@ -518,47 +651,27 @@ export default function NewTripPage() {
     );
     await botSay(
       <span>
-        What&apos;s your <strong>total budget</strong> for this trip? Use the
-        slider to set your budget in USD, or add an optional amount in another
-        currency.
+        What&apos;s your <strong>total budget</strong> for this trip?
       </span>,
       900,
     );
     setCurrentStep("budget");
   };
 
-  // ── FIX: custom currency amount takes priority over slider ─────────────────
   const handleBudgetConfirm = async () => {
-    // If the user typed a custom currency amount, use that value as the budget
-    // and the selected currency. Otherwise fall back to the slider value in USD.
-    let finalBudget: number;
-    let finalCurrency: string;
-
-    if (showCurrencyInput && formData.customCurrencyAmount) {
-      const parsed = parseFloat(formData.customCurrencyAmount);
-      if (!isNaN(parsed) && parsed > 0) {
-        finalBudget = parsed;
-        finalCurrency = selectedCurrency;
-      } else {
-        toast.error("Please enter a valid custom amount");
-        return;
-      }
-    } else {
-      finalBudget = budgetSlider[0];
-      finalCurrency = "USD";
+    if (!budgetAmount || budgetAmount <= 0) {
+      toast.error("Please enter a valid budget");
+      return;
     }
 
     setFormData((prev) => ({
       ...prev,
-      budget: finalBudget,
-      currency: finalCurrency,
+      budget: budgetAmount,
+      currency: budgetCurrency,
     }));
 
-    const currencyInfo = CURRENCIES.find((c) => c.code === finalCurrency);
-    const displayStr =
-      finalCurrency === "USD"
-        ? `$${finalBudget.toLocaleString()} USD`
-        : `${currencyInfo?.symbol}${finalBudget.toLocaleString()} ${finalCurrency}`;
+    const currencyInfo = CURRENCIES.find((c) => c.code === budgetCurrency);
+    const displayStr = `${currencyInfo?.symbol || ""}${budgetAmount.toLocaleString()} ${budgetCurrency}`;
 
     addMessage("user", displayStr);
 
@@ -684,16 +797,6 @@ export default function NewTripPage() {
     setCurrentStep("generating");
     addMessage("user", "Yes! Generate my trip itinerary!");
 
-    await botSay(
-      <span>
-        Excellent! I&apos;m now crafting your personalized{" "}
-        <strong>{formData.duration}-day</strong> itinerary for{" "}
-        <strong>{formData.destinations.join(", ")}</strong>. This may take up to
-        a minute...
-      </span>,
-      500,
-    );
-
     try {
       const payload = {
         name: formData.name,
@@ -732,19 +835,8 @@ export default function NewTripPage() {
         );
       }
 
-      await botSay(
-        <span>
-          ✅ Your trip itinerary is ready! Redirecting you to your personalized
-          plan...
-        </span>,
-        500,
-      );
-
       toast.success("Trip generated successfully! 🎉");
-
-      setTimeout(() => {
-        router.push(`/app/trips/${tripId}`);
-      }, 1500);
+      router.push(`/app/trips/${tripId}`);
     } catch (error) {
       setIsGenerating(false);
       setCurrentStep("summary");
@@ -764,18 +856,7 @@ export default function NewTripPage() {
   // ── Render input area based on step ───────────────────────────────────────
 
   const renderInputArea = () => {
-    if (currentStep === "generating") {
-      return (
-        <div className="flex items-center justify-center gap-3 py-4 text-muted-foreground">
-          <Spinner size="small" />
-          <span className="text-sm font-medium">
-            Generating your trip itinerary...
-          </span>
-        </div>
-      );
-    }
-
-    if (currentStep === "welcome") {
+    if (currentStep === "generating" || currentStep === "welcome") {
       return null;
     }
 
@@ -852,8 +933,8 @@ export default function NewTripPage() {
 
     if (currentStep === "dates") {
       const days =
-        dateRange.startDate && dateRange.endDate
-          ? differenceInDays(dateRange.endDate, dateRange.startDate) + 1
+        dateRange.from && dateRange.to
+          ? differenceInDays(dateRange.to, dateRange.from) + 1
           : 0;
 
       return (
@@ -862,46 +943,54 @@ export default function NewTripPage() {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-3"
         >
-          {/* Date range display */}
-          <div className="flex items-center gap-3 p-3 bg-accent rounded-xl border border-primary/20">
-            <Calendar className="w-4 h-4 text-primary flex-shrink-0" />
-            <div className="flex-1 text-sm">
-              {dateRange.startDate && dateRange.endDate ? (
-                <span className="font-medium text-primary">
-                  {format(dateRange.startDate, "MMM d, yyyy")} →{" "}
-                  {format(dateRange.endDate, "MMM d, yyyy")}
-                  <span className="ml-2 text-primary/70 font-normal">
-                    ({days} {days === 1 ? "day" : "days"})
-                  </span>
+          {/* Date range trigger — opens a popover calendar that floats above
+             the page instead of an inline block, so it can never widen or
+             overflow the layout */}
+          <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="w-full flex items-center gap-3 p-3.5 bg-white border border-border rounded-xl hover:border-primary/40 transition-colors text-left"
+              >
+                <CalendarIcon className="w-4 h-4 text-primary flex-shrink-0" />
+                <span className="flex-1 min-w-0 text-sm">
+                  {dateRange.from && dateRange.to ? (
+                    <span className="font-medium text-foreground">
+                      {format(dateRange.from, "MMM d, yyyy")} →{" "}
+                      {format(dateRange.to, "MMM d, yyyy")}
+                      <span className="ml-2 text-muted-foreground font-normal">
+                        ({days} {days === 1 ? "day" : "days"})
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      Select your travel dates
+                    </span>
+                  )}
                 </span>
-              ) : (
-                <span className="text-muted-foreground">
-                  Select your travel dates
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Date range picker */}
-          <div className="overflow-x-auto rounded-xl border border-border bg-white">
-            <DateRange
-              ranges={[dateRange]}
-              onChange={(item: RangeKeyDict) => {
-                setDateRange(item.selection);
-              }}
-              minDate={new Date()}
-              maxDate={addDays(new Date(), 365)}
-              months={monthsToShow}
-              direction="horizontal"
-              showMonthAndYearPickers
-              rangeColors={["#2563eb"]}
-              className="!font-sans"
-            />
-          </div>
+                <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="start"
+              sideOffset={8}
+              className="w-auto max-w-[95vw] p-3"
+            >
+              <CalendarPicker
+                mode="range"
+                selected={dateRange}
+                onSelect={(range) =>
+                  setDateRange(range ?? { from: undefined, to: undefined })
+                }
+                numberOfMonths={calendarMonths}
+                disabled={{ before: new Date() }}
+              />
+            </PopoverContent>
+          </Popover>
 
           <button
             onClick={handleDateConfirm}
-            disabled={!dateRange.startDate || !dateRange.endDate}
+            disabled={!dateRange.from || !dateRange.to}
             className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
           >
             Confirm Dates
@@ -912,53 +1001,69 @@ export default function NewTripPage() {
     }
 
     if (currentStep === "budget") {
-      const budget = budgetSlider[0];
       return (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           className="space-y-4"
         >
-          {/* Budget display */}
-          <div className="flex items-center justify-between p-3 bg-muted rounded-xl border border-border">
-            <div className="flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                Total Budget (USD)
-              </span>
+          {/* Unified budget control: currency + amount live in one place,
+             the slider and presets just drive the same number. */}
+          <div className="flex items-stretch gap-2">
+            <Select value={budgetCurrency} onValueChange={setBudgetCurrency}>
+              <SelectTrigger className="w-[92px] h-auto bg-white border-border">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CURRENCIES.map((c) => (
+                  <SelectItem key={c.code} value={c.code}>
+                    {c.symbol} {c.code}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="relative flex-1">
+              <input
+                type="number"
+                min={0}
+                value={budgetAmount}
+                onChange={(e) => setBudgetAmount(Number(e.target.value) || 0)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleBudgetConfirm();
+                  }
+                }}
+                className="w-full h-full px-4 py-2.5 border border-border rounded-xl text-lg font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-transparent bg-white"
+              />
             </div>
-            <span className="text-xl font-bold text-foreground">
-              ${budget.toLocaleString()}
-            </span>
           </div>
 
-          {/* Slider */}
+          {/* Slider — bound to the same budgetAmount value */}
           <div className="px-1 space-y-2">
             <Slider
               min={BUDGET_MIN}
               max={BUDGET_MAX}
               step={100}
-              value={budgetSlider}
-              onValueChange={setBudgetSlider}
+              value={[Math.min(Math.max(budgetAmount, BUDGET_MIN), BUDGET_MAX)]}
+              onValueChange={([v]) => setBudgetAmount(v)}
               className="w-full"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>{formatBudget(BUDGET_MIN)}</span>
-              <span className="text-primary font-medium">
-                {formatBudget(budget)}
-              </span>
               <span>{formatBudget(BUDGET_MAX)}</span>
             </div>
           </div>
 
-          {/* Quick budget presets */}
+          {/* Quick presets */}
           <div className="flex gap-2 flex-wrap">
-            {[500, 1000, 2500, 5000, 10000, 20000].map((preset) => (
+            {BUDGET_PRESETS.map((preset) => (
               <button
                 key={preset}
-                onClick={() => setBudgetSlider([preset])}
+                onClick={() => setBudgetAmount(preset)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                  budgetSlider[0] === preset
+                  budgetAmount === preset
                     ? "bg-primary text-white border-primary"
                     : "bg-white text-muted-foreground border-border hover:border-primary/40"
                 }`}
@@ -966,57 +1071,6 @@ export default function NewTripPage() {
                 {formatBudget(preset)}
               </button>
             ))}
-          </div>
-
-          {/* Optional currency input */}
-          <div className="border border-dashed border-border rounded-xl p-3 space-y-2">
-            <button
-              onClick={() => setShowCurrencyInput(!showCurrencyInput)}
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              <Globe className="w-4 h-4" />
-              {showCurrencyInput
-                ? "Hide"
-                : "Add amount in another currency (optional)"}
-            </button>
-
-            {showCurrencyInput && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                className="flex gap-2"
-              >
-                <select
-                  value={selectedCurrency}
-                  onChange={(e) => setSelectedCurrency(e.target.value)}
-                  className="px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
-                >
-                  {CURRENCIES.filter((c) => c.code !== "USD").map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.symbol} {c.code} — {c.name}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="number"
-                  value={formData.customCurrencyAmount}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      customCurrencyAmount: e.target.value,
-                    }))
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleBudgetConfirm();
-                    }
-                  }}
-                  placeholder={`Amount in ${selectedCurrency}`}
-                  className="flex-1 px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
-                />
-              </motion.div>
-            )}
           </div>
 
           <button
@@ -1075,7 +1129,9 @@ export default function NewTripPage() {
             {[1, 2, 3, 4, 5, 6].map((n) => (
               <button
                 key={n}
-                onClick={() => handleTravelersConfirm(n)}
+                onClick={() =>
+                  setFormData((prev) => ({ ...prev, travelers: n }))
+                }
                 className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
                   formData.travelers === n
                     ? "bg-primary text-white border-primary"
@@ -1271,30 +1327,34 @@ export default function NewTripPage() {
               Trip Summary
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <MapPin className="w-3.5 h-3.5 text-primary" />
-                <span className="font-medium">
+              <div className="flex items-center gap-1.5 text-muted-foreground min-w-0">
+                <MapPin className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                <span className="font-medium truncate">
                   {formData.destinations.join(", ")}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Calendar className="w-3.5 h-3.5 text-primary" />
+                <CalendarIcon className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                 <span>{formData.duration} days</span>
               </div>
               <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Wallet className="w-3.5 h-3.5 text-primary" />
-                <span>${formData.budget.toLocaleString()}</span>
+                <Wallet className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                <span>
+                  {CURRENCIES.find((c) => c.code === formData.currency)
+                    ?.symbol || ""}
+                  {formData.budget.toLocaleString()} {formData.currency}
+                </span>
               </div>
               <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Users className="w-3.5 h-3.5 text-primary" />
+                <Users className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                 <span>{formData.travelers} travelers</span>
               </div>
               <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Zap className="w-3.5 h-3.5 text-primary" />
+                <Zap className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                 <span className="capitalize">{formData.tripType}</span>
               </div>
               <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Plane className="w-3.5 h-3.5 text-primary" />
+                <Plane className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                 <span className="capitalize">{formData.tripPace} pace</span>
               </div>
             </div>
@@ -1317,20 +1377,8 @@ export default function NewTripPage() {
             disabled={isGenerating}
             className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition-all text-sm"
           >
-            {isGenerating ? (
-              <>
-                <Spinner
-                  size="small"
-                  className="border-white/30 border-t-white"
-                />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Zap className="w-4 h-4" />
-                Generate My Trip Itinerary
-              </>
-            )}
+            <Zap className="w-4 h-4" />
+            Generate My Trip Itinerary
           </button>
         </motion.div>
       );
@@ -1342,15 +1390,15 @@ export default function NewTripPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-secondary overflow-hidden">
+    <div className="flex h-[calc(100dvh-4rem)] bg-secondary overflow-hidden">
       {/* ── Chat column ── */}
       <div className="flex flex-col flex-1 min-w-0 bg-secondary">
         {/* Header */}
         <div className="bg-white border-b border-border px-4 py-3 flex items-center gap-3 flex-shrink-0">
-          <div className="w-9 h-9 rounded-full bg-accent border border-primary/20 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-full bg-accent border border-primary/20 flex items-center justify-center flex-shrink-0">
             <Bot className="w-5 h-5 text-primary" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h1 className="font-semibold text-foreground text-sm">
               SafarAI Planner
             </h1>
@@ -1361,10 +1409,13 @@ export default function NewTripPage() {
           </div>
         </div>
 
+        {/* Mobile/tablet progress — desktop gets the full sidebar instead */}
+        <MobileProgressBar formData={formData} currentStep={currentStep} />
+
         {/* Chat messages — scrollable */}
         <div
           ref={chatContainerRef}
-          className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scroll-smooth"
+          className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-4 scroll-smooth"
           style={{
             scrollbarWidth: "thin",
             scrollbarColor: "#cbd5e1 transparent",
@@ -1416,10 +1467,18 @@ export default function NewTripPage() {
         </div>
       </div>
 
-      {/* ── Right panel — desktop only ── */}
-      <div className="hidden lg:flex flex-col gap-4 w-72 flex-shrink-0 p-4 overflow-y-auto">
+      {/* ── Right panel — desktop only, fixed width, cannot overflow the page ── */}
+      <div className="hidden lg:block w-80 flex-shrink-0 border-l border-border overflow-y-auto overflow-x-hidden p-4">
         <TripSoFarPanel formData={formData} currentStep={currentStep} />
       </div>
+
+      {/* ── Full-screen generation overlay ── */}
+      <GeneratingOverlay
+        visible={isGenerating}
+        destinations={formData.destinations}
+        duration={formData.duration}
+        activeStep={genStepIndex}
+      />
     </div>
   );
 }
