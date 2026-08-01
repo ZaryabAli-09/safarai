@@ -32,7 +32,7 @@ export function AppNav() {
       await signOut({ redirect: false });
       toast.success("Signed out successfully!", { id: toastId });
       router.push("/");
-    } catch (error) {
+    } catch {
       toast.error("Failed to sign out", { id: toastId });
     } finally {
       setIsLoggingOut(false);

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -27,11 +27,9 @@ import {
   Star,
   CheckCircle2,
   AlertCircle,
-  Share2,
-  Download,
   MapIcon,
 } from "lucide-react";
-import { Spinner, OverlayLoader } from "@/components/ui/loader";
+import { Spinner } from "@/components/ui/loader";
 import toast from "react-hot-toast";
 import Link from "next/link";
 
@@ -435,7 +433,6 @@ function BudgetBar({
 export default function TripDetailPage() {
   const { tripid } = useParams<{ tripid: string }>();
   const { data: session } = useSession();
-  const router = useRouter();
 
   const [trip, setTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
@@ -681,7 +678,6 @@ export default function TripDetailPage() {
                   value: trip.tripType,
                 },
               ].map((stat) => {
-                const Icon = stat.icon;
                 return (
                   <div
                     key={stat.label}

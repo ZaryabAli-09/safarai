@@ -64,6 +64,13 @@ interface Trip {
   }>;
 }
 
+interface PaginationData {
+  total: number;
+  totalPages: number;
+  page: number;
+  limit: number;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDate(dateStr: string) {
@@ -337,7 +344,9 @@ export default function TripsPage() {
   );
   const [filterType, setFilterType] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [paginationData, setPaginationData] = useState<any>(null);
+  const [paginationData, setPaginationData] = useState<PaginationData | null>(
+    null,
+  );
   const [hasMore, setHasMore] = useState(true);
   const [hasUserScrolled, setHasUserScrolled] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -412,7 +421,8 @@ export default function TripsPage() {
   // ── Infinite scroll observer ────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!observerTarget.current || initialLoading || !hasUserScrolled) return;
+    const target = observerTarget.current;
+    if (!target || initialLoading || !hasUserScrolled) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -423,12 +433,10 @@ export default function TripsPage() {
       { threshold: 0.1 },
     );
 
-    observer.observe(observerTarget.current);
+    observer.observe(target);
 
     return () => {
-      if (observerTarget.current) {
-        observer.unobserve(observerTarget.current);
-      }
+      observer.unobserve(target);
     };
   }, [hasMore, loadingMore, initialLoading, hasUserScrolled]);
 
@@ -445,10 +453,14 @@ export default function TripsPage() {
   const handleDelete = (id: string) => {
     setTrips((prev) => prev.filter((t) => t._id !== id));
     if (paginationData) {
-      setPaginationData((prev: any) => ({
-        ...prev,
-        total: Math.max(0, prev.total - 1),
-      }));
+      setPaginationData((prev) =>
+        prev
+          ? {
+              ...prev,
+              total: Math.max(0, prev.total - 1),
+            }
+          : prev,
+      );
     }
   };
 
