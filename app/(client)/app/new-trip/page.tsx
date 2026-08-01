@@ -1070,7 +1070,8 @@ export default function NewTripPage() {
             <div className="flex items-stretch gap-2">
               <div className="relative flex-1">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">
-                  {CURRENCIES.find((c) => c.code === budgetCurrency)?.symbol || budgetCurrency}
+                  {CURRENCIES.find((c) => c.code === budgetCurrency)?.symbol ||
+                    budgetCurrency}
                 </span>
                 <input
                   type="number"
@@ -1100,8 +1101,12 @@ export default function NewTripPage() {
               className="w-full"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{formatBudgetWithCurrency(BUDGET_MIN, budgetCurrency)}</span>
-              <span>{formatBudgetWithCurrency(BUDGET_MAX, budgetCurrency)}</span>
+              <span>
+                {formatBudgetWithCurrency(BUDGET_MIN, budgetCurrency)}
+              </span>
+              <span>
+                {formatBudgetWithCurrency(BUDGET_MAX, budgetCurrency)}
+              </span>
             </div>
           </div>
 

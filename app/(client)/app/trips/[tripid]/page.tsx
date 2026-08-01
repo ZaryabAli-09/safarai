@@ -828,7 +828,10 @@ export default function TripDetailPage() {
                   const currencyCode = trip.budgetBreakdown?.currency || "USD";
                   return (
                     <div className="text-3xl font-bold text-foreground">
-                      {currencyCode} {(trip.budgetBreakdown?.total || trip.budget).toLocaleString()}
+                      {currencyCode}{" "}
+                      {(
+                        trip.budgetBreakdown?.total || trip.budget
+                      ).toLocaleString()}
                     </div>
                   );
                 })()}
