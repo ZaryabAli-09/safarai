@@ -341,6 +341,7 @@ export default function TripsPage() {
   const [hasMore, setHasMore] = useState(true);
   const [hasUserScrolled, setHasUserScrolled] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
+  const isLoadingTrips = initialLoading || loadingMore;
 
   // ── Fetch trips ────────────────────────────────────────────────────────────
 
@@ -505,8 +506,14 @@ export default function TripsPage() {
               placeholder="Search trips..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-muted border border-border rounded-lg text-sm placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full pl-10 pr-10 py-2 bg-muted border border-border rounded-lg text-sm placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
+            {isLoadingTrips && (
+              <Spinner
+                size="small"
+                className="absolute right-3 top-1/2 -translate-y-1/2"
+              />
+            )}
           </div>
 
           {/* Sort & Filter */}
@@ -596,8 +603,14 @@ export default function TripsPage() {
                 placeholder="Search trips or destinations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-border rounded-xl text-foreground placeholder-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+                className="w-full pl-10 pr-10 py-2.5 border border-border rounded-xl text-foreground placeholder-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
               />
+              {isLoadingTrips && (
+                <Spinner
+                  size="small"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2"
+                />
+              )}
             </div>
 
             {/* Desktop Sort & Filter */}
@@ -666,7 +679,11 @@ export default function TripsPage() {
         ) : filteredTrips.length > 0 ? (
           <>
             <AnimatePresence>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div
+                className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 ${
+                  isLoadingTrips ? "opacity-60 pointer-events-none" : ""
+                }`}
+              >
                 {filteredTrips.map((trip, idx) => (
                   <TripCard
                     key={trip._id}

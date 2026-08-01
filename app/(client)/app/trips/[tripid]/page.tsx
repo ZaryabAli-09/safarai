@@ -177,12 +177,13 @@ function ActivityCard({
     >
       {/* Image on top with rounded corners */}
       {activity.image?.url ? (
-        <div className="relative w-full h-44 overflow-hidden">
+        <div className="relative w-full overflow-hidden rounded-t-xl bg-muted">
           <img
             src={activity.image.url}
             alt={activity.location || activity.title}
-            className="w-full h-full object-cover"
+            className="w-full h-auto max-h-72 object-cover"
             loading="lazy"
+            style={{ display: "block" }}
           />
           {/* Attribution as subtle bottom-corner tag — never overlaps readable content */}
           {activity.image.attribution && (
@@ -306,12 +307,18 @@ function DayCard({
       initial={{ opacity: 0, y: 30 }}
       animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
       transition={{ duration: 0.5, delay: index * 0.08, ease: "easeOut" }}
-      className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden"
+      className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all ${
+        isOpen
+          ? "border-primary/40 shadow-[0_0_0_1px_rgba(37,99,235,0.15)]"
+          : "border-border"
+      }`}
     >
       {/* Day header — clickable */}
       <button
         onClick={onToggle}
-        className="w-full flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors text-left"
+        className={`w-full flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors text-left border-l-4 ${
+          isOpen ? "border-l-primary bg-accent/30" : "border-l-transparent"
+        }`}
       >
         {/* Small pill badge — primary-tinted */}
         <span className="flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent text-primary text-xs font-semibold border border-primary/20">
@@ -695,7 +702,7 @@ export default function TripDetailPage() {
       </div>
 
       {/* ── Underline tab navigation ── */}
-      <div className="bg-white border-b border-border sticky top-16 z-30">
+      <div className="bg-white border-b border-border sticky top-0 md:top-16 z-30">
         <div className="max-w-4xl mx-auto px-4">
           <div className="flex gap-0 overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => {

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/popover";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import type { DateRange as RDPDateRange } from "react-day-picker";
+import { MobileTopBar } from "@/app/_components/navigation/MobileTopBar";
 import {
   Select,
   SelectContent,
@@ -431,6 +432,9 @@ export default function NewTripPage() {
   const router = useRouter();
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const dateConfirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   // ── State ──────────────────────────────────────────────────────────────────
 
@@ -521,6 +525,14 @@ export default function NewTripPage() {
       document.body.style.overflow = "";
     };
   }, [isGenerating]);
+
+  useEffect(() => {
+    return () => {
+      if (dateConfirmTimerRef.current) {
+        clearTimeout(dateConfirmTimerRef.current);
+      }
+    };
+  }, []);
 
   // ── Add message helper ─────────────────────────────────────────────────────
 
@@ -623,19 +635,25 @@ export default function NewTripPage() {
     setCurrentStep("dates");
   };
 
-  const handleDateConfirm = async () => {
-    if (!dateRange.from || !dateRange.to) {
+  const handleDateConfirmWithRange = async (range: RDPDateRange) => {
+    if (dateConfirmTimerRef.current) {
+      clearTimeout(dateConfirmTimerRef.current);
+      dateConfirmTimerRef.current = null;
+    }
+
+    if (!range.from || !range.to) {
       toast.error("Please select travel dates");
       return;
     }
-    const start = format(dateRange.from, "MMM d, yyyy");
-    const end = format(dateRange.to, "MMM d, yyyy");
-    const days = differenceInDays(dateRange.to, dateRange.from) + 1;
+
+    const start = format(range.from, "MMM d, yyyy");
+    const end = format(range.to, "MMM d, yyyy");
+    const days = differenceInDays(range.to, range.from) + 1;
 
     setFormData((prev) => ({
       ...prev,
-      startDate: format(dateRange.from!, "yyyy-MM-dd"),
-      endDate: format(dateRange.to!, "yyyy-MM-dd"),
+      startDate: format(range.from!, "yyyy-MM-dd"),
+      endDate: format(range.to!, "yyyy-MM-dd"),
       duration: days,
     }));
 
@@ -656,6 +674,15 @@ export default function NewTripPage() {
       900,
     );
     setCurrentStep("budget");
+  };
+
+  const handleDateConfirm = async () => {
+    if (dateConfirmTimerRef.current) {
+      clearTimeout(dateConfirmTimerRef.current);
+      dateConfirmTimerRef.current = null;
+    }
+
+    await handleDateConfirmWithRange(dateRange);
   };
 
   const handleBudgetConfirm = async () => {
@@ -865,29 +892,8 @@ export default function NewTripPage() {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="space-y-3"
+          className="flex flex-col gap-3"
         >
-          {/* Added destinations */}
-          {formData.destinations.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {formData.destinations.map((dest) => (
-                <span
-                  key={dest}
-                  className="flex items-center gap-1.5 bg-accent border border-primary/20 text-primary text-sm px-3 py-1.5 rounded-full"
-                >
-                  <MapPin className="w-3 h-3" />
-                  {dest}
-                  <button
-                    onClick={() => handleRemoveDestination(dest)}
-                    className="ml-1 hover:text-destructive transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-
           {/* Input row — Enter key adds destination */}
           <div className="flex gap-2">
             <div className="relative flex-1">
@@ -918,6 +924,27 @@ export default function NewTripPage() {
               <Plus className="w-4 h-4 text-muted-foreground" />
             </button>
           </div>
+
+          {/* Added destinations */}
+          {formData.destinations.length > 0 && (
+            <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
+              {formData.destinations.map((dest) => (
+                <span
+                  key={dest}
+                  className="flex items-center gap-1.5 bg-accent border border-primary/20 text-primary text-sm px-3 py-1.5 rounded-full"
+                >
+                  <MapPin className="w-3 h-3" />
+                  {dest}
+                  <button
+                    onClick={() => handleRemoveDestination(dest)}
+                    className="ml-1 hover:text-destructive transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
 
           <button
             onClick={handleDestinationConfirm}
@@ -979,9 +1006,19 @@ export default function NewTripPage() {
               <CalendarPicker
                 mode="range"
                 selected={dateRange}
-                onSelect={(range) =>
-                  setDateRange(range ?? { from: undefined, to: undefined })
-                }
+                onSelect={(range) => {
+                  const newRange = range ?? { from: undefined, to: undefined };
+                  setDateRange(newRange);
+                  if (dateConfirmTimerRef.current) {
+                    clearTimeout(dateConfirmTimerRef.current);
+                  }
+                  if (newRange.from && newRange.to) {
+                    dateConfirmTimerRef.current = setTimeout(() => {
+                      dateConfirmTimerRef.current = null;
+                      void handleDateConfirmWithRange(newRange);
+                    }, 300);
+                  }
+                }}
                 numberOfMonths={calendarMonths}
                 disabled={{ before: new Date() }}
               />
@@ -993,7 +1030,7 @@ export default function NewTripPage() {
             disabled={!dateRange.from || !dateRange.to}
             className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
           >
-            Confirm Dates
+            Continue
             <ChevronRight className="w-4 h-4" />
           </button>
         </motion.div>
@@ -1077,7 +1114,7 @@ export default function NewTripPage() {
             onClick={handleBudgetConfirm}
             className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
           >
-            Confirm Budget
+            Continue
             <ChevronRight className="w-4 h-4" />
           </button>
         </motion.div>
@@ -1390,9 +1427,10 @@ export default function NewTripPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-[calc(100dvh-4rem)] bg-secondary overflow-hidden">
+    <div className="flex h-dvh bg-secondary overflow-hidden">
       {/* ── Chat column ── */}
-      <div className="flex flex-col flex-1 min-w-0 bg-secondary">
+      <div className="flex flex-col flex-1 min-w-0 bg-secondary pt-14 md:pt-0">
+        <MobileTopBar pageName="New Trip" />
         {/* Header */}
         <div className="bg-white border-b border-border px-4 py-3 flex items-center gap-3 flex-shrink-0">
           <div className="w-9 h-9 rounded-full bg-accent border border-primary/20 flex items-center justify-center flex-shrink-0">

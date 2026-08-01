@@ -74,13 +74,15 @@ export function AppNav() {
 
           {/* Actions */}
           <div className="flex items-center gap-3">
-            <Link
-              href="/app/new-trip"
-              className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              New Trip
-            </Link>
+            {pathname !== "/app/new-trip" && (
+              <Link
+                href="/app/new-trip"
+                className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                New Trip
+              </Link>
+            )}
             <button
               onClick={handleLogout}
               disabled={isLoggingOut}
@@ -126,12 +128,14 @@ export function AppNav() {
       </div>
 
       {/* Floating New Trip Button — Mobile */}
-      <Link
-        href="/app/new-trip"
-        className="md:hidden fixed bottom-20 right-4 z-50 w-14 h-14 bg-primary hover:bg-primary/90 text-white rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
-      >
-        <Plus className="w-6 h-6" />
-      </Link>
+      {pathname !== "/app/new-trip" && (
+        <Link
+          href="/app/new-trip"
+          className="md:hidden fixed bottom-20 right-4 z-50 w-14 h-14 bg-primary hover:bg-primary/90 text-white rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+        >
+          <Plus className="w-6 h-6" />
+        </Link>
+      )}
 
       {/* Spacers */}
       <div className="hidden md:block h-16" />

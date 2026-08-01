@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { Calendar } from "lucide-react";
 
 import { MobileTopBar } from "@/app/_components/navigation/MobileTopBar";
+import { Spinner } from "@/components/ui/loader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -291,7 +292,14 @@ export default function Profile() {
                   Cancel
                 </Button>
                 <Button type="submit" disabled={loading}>
-                  {loading ? "Saving..." : "Save Changes"}
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <Spinner size="small" />
+                      Saving...
+                    </span>
+                  ) : (
+                    "Save Changes"
+                  )}
                 </Button>
               </CardFooter>
             </form>
