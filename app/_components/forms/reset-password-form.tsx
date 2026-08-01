@@ -9,10 +9,7 @@ import { z } from "zod";
 // shadcn imports
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Field,
-  FieldGroup,
-} from "@/components/ui/field";
+import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
 const passwordScehma = z.string().min(6, "Password must be 6 characters");
@@ -55,7 +52,9 @@ export function ResetPasswordForm({
       router.push("/sign-in");
     } catch (error: unknown) {
       console.error("Error submitting form:", error);
-      toast.error(error instanceof Error ? error.message : "Something went wrong");
+      toast.error(
+        error instanceof Error ? error.message : "Something went wrong",
+      );
       setLoading(false);
     }
   }

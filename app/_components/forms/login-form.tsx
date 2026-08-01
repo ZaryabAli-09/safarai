@@ -65,7 +65,9 @@ export function LoginForm({
         router.push("/app/trips");
       }
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Something went wrong");
+      toast.error(
+        error instanceof Error ? error.message : "Something went wrong",
+      );
       setLoading(false);
     }
   }
