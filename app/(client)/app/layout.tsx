@@ -15,7 +15,7 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="relative">
+    <div className="relative pb-24 md:pb-0">
       <AppNav />
 
       <div>{children}</div>

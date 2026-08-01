@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   description: "An AI-powered travel planning app for northern Pakistan",
   manifest: "/manifest.json",
   icons: {
-    icon: "/favicon.png",
+    icon: "/favicon-v2.ico",
     apple: "/favicon.png",
   },
   appleWebApp: {

@@ -606,7 +606,7 @@ export default function TripDetailPage() {
   // ── Main render ────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-secondary">
+    <div className="min-h-screen bg-secondary pb-24 md:pb-0">
       {/* ── Plain white/surface header — no gradient ── */}
       <div className="bg-white border-b border-border">
         <div className="max-w-4xl mx-auto px-4 py-5">
@@ -824,19 +824,21 @@ export default function TripDetailPage() {
                     {trip.budgetBreakdown?.currency || "USD"}
                   </span>
                 </div>
-                <div className="text-3xl font-bold text-foreground">
-                  $
-                  {(
-                    trip.budgetBreakdown?.total || trip.budget
-                  ).toLocaleString()}
-                </div>
+                {(() => {
+                  const currencyCode = trip.budgetBreakdown?.currency || "USD";
+                  return (
+                    <div className="text-3xl font-bold text-foreground">
+                      {currencyCode} {(trip.budgetBreakdown?.total || trip.budget).toLocaleString()}
+                    </div>
+                  );
+                })()}
                 <div className="text-xs text-muted-foreground mt-1">
-                  ≈ $
+                  ≈ {trip.budgetBreakdown?.currency || "USD"}{" "}
                   {Math.round(
                     (trip.budgetBreakdown?.total || trip.budget) /
                       trip.duration,
                   ).toLocaleString()}{" "}
-                  per day · $
+                  per day · {trip.budgetBreakdown?.currency || "USD"}{" "}
                   {Math.round(
                     (trip.budgetBreakdown?.total || trip.budget) /
                       trip.travelers,

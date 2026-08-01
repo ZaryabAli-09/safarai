@@ -284,7 +284,7 @@ function TripCard({
             {
               icon: Wallet,
               label: "Budget",
-              value: `$${trip.budget.toLocaleString()}`,
+              value: `${trip.currency || "USD"} ${trip.budget.toLocaleString()}`,
             },
             {
               icon: Users,

@@ -159,9 +159,9 @@ function genId() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-function formatBudget(val: number) {
-  if (val >= 1000) return `$${(val / 1000).toFixed(val % 1000 === 0 ? 0 : 1)}k`;
-  return `$${val}`;
+function formatBudgetWithCurrency(amount: number, currencyCode: string) {
+  const currencyInfo = CURRENCIES.find((c) => c.code === currencyCode);
+  return `${currencyInfo?.symbol || currencyCode} ${amount.toLocaleString()}`;
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -1044,11 +1044,12 @@ export default function NewTripPage() {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-4"
         >
-          {/* Unified budget control: currency + amount live in one place,
-             the slider and presets just drive the same number. */}
-          <div className="flex items-stretch gap-2">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Currency
+            </p>
             <Select value={budgetCurrency} onValueChange={setBudgetCurrency}>
-              <SelectTrigger className="w-[92px] h-auto bg-white border-border">
+              <SelectTrigger className="w-full h-11 bg-white border-border">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -1059,21 +1060,32 @@ export default function NewTripPage() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
 
-            <div className="relative flex-1">
-              <input
-                type="number"
-                min={0}
-                value={budgetAmount}
-                onChange={(e) => setBudgetAmount(Number(e.target.value) || 0)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleBudgetConfirm();
-                  }
-                }}
-                className="w-full h-full px-4 py-2.5 border border-border rounded-xl text-lg font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-transparent bg-white"
-              />
+          {/* Unified budget control: the slider and manual input drive the same amount. */}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Budget amount
+            </p>
+            <div className="flex items-stretch gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">
+                  {CURRENCIES.find((c) => c.code === budgetCurrency)?.symbol || budgetCurrency}
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  value={budgetAmount}
+                  onChange={(e) => setBudgetAmount(Number(e.target.value) || 0)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleBudgetConfirm();
+                    }
+                  }}
+                  className="w-full h-full pl-10 pr-4 py-2.5 border border-border rounded-xl text-lg font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-transparent bg-white"
+                />
+              </div>
             </div>
           </div>
 
@@ -1088,8 +1100,8 @@ export default function NewTripPage() {
               className="w-full"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{formatBudget(BUDGET_MIN)}</span>
-              <span>{formatBudget(BUDGET_MAX)}</span>
+              <span>{formatBudgetWithCurrency(BUDGET_MIN, budgetCurrency)}</span>
+              <span>{formatBudgetWithCurrency(BUDGET_MAX, budgetCurrency)}</span>
             </div>
           </div>
 
@@ -1105,7 +1117,7 @@ export default function NewTripPage() {
                     : "bg-white text-muted-foreground border-border hover:border-primary/40"
                 }`}
               >
-                {formatBudget(preset)}
+                {formatBudgetWithCurrency(preset, budgetCurrency)}
               </button>
             ))}
           </div>
