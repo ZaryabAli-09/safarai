@@ -5,7 +5,7 @@ import { NextRequest } from "next/server";
 
 export async function GET(
   req: NextRequest,
-  params: { params: { userid: string } },
+  params: { params: Promise<{ userid: string }> },
 ) {
   try {
     const { userid } = await params.params;
@@ -47,7 +47,7 @@ export async function GET(
         hasMore: page < totalPages,
       },
     });
-  } catch (error) {
+  } catch {
     return response(false, 500, "Internal server error");
   }
 }

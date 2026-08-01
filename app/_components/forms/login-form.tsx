@@ -64,8 +64,8 @@ export function LoginForm({
         setLoading(false);
         router.push("/app/trips");
       }
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Something went wrong");
       setLoading(false);
     }
   }

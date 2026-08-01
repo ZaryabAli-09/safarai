@@ -2,6 +2,7 @@ import { dbConnect } from "@/config/db";
 import { response } from "@/lib/helperFunctions";
 import { User } from "@/models/User";
 import { NextRequest } from "next/server";
+import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
   try {
@@ -42,7 +43,6 @@ export async function POST(req: NextRequest) {
     }
 
     // Use timing-safe comparison to prevent timing attacks
-    const crypto = require("crypto");
     let isValid = false;
     try {
       isValid = crypto.timingSafeEqual(

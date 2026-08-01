@@ -11,10 +11,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Field,
-  FieldDescription,
   FieldGroup,
-  FieldLabel,
-  FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
@@ -56,9 +53,9 @@ export function ResetPasswordForm({
       setNewPassword("");
       setLoading(false);
       router.push("/sign-in");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error submitting form:", error);
-      toast.error(error.message);
+      toast.error(error instanceof Error ? error.message : "Something went wrong");
       setLoading(false);
     }
   }

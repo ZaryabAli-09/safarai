@@ -5,7 +5,7 @@ import { NextRequest } from "next/server";
 
 export async function PATCH(
   req: NextRequest,
-  params: { params: { userid: string } },
+  params: { params: Promise<{ userid: string }> },
 ) {
   try {
     const { userid } = await params.params;
@@ -45,7 +45,7 @@ export async function PATCH(
     }
 
     return response(true, 200, "User updated successfully", updatedUser);
-  } catch (error) {
+  } catch {
     return response(false, 500, "Something went wrong");
   }
 }

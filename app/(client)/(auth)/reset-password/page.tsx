@@ -1,5 +1,6 @@
 import Image from "next/image";
 import ResetPasswordBanner from "@/public/assets/reset-password-banner.jpg";
+import { Suspense } from "react";
 
 import Logo from "@/public/assets/logo.png";
 import { ResetPasswordForm } from "@/app/_components/forms/reset-password-form";
@@ -13,7 +14,9 @@ export default function ResetPassword() {
 
         <div className="flex flex-1 items-center justify-center ">
           <div className="w-full max-w-xs rounded-md shadow-inner border border-gray-200  py-10 px-5 ">
-            <ResetPasswordForm />
+            <Suspense fallback={null}>
+              <ResetPasswordForm />
+            </Suspense>
           </div>
         </div>
       </div>

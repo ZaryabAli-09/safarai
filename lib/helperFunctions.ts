@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { ITrip } from "@/models/Trip";
 
 // function to format response
 export function response(
   success: boolean,
   status: number,
   message: string,
-  data?: any,
+  data?: unknown,
 ) {
   return NextResponse.json(
     {

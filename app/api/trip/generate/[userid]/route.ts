@@ -1,13 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { response } from "@/lib/helperFunctions";
 import { NextRequest } from "next/server";
 import { Trip } from "@/models/Trip";
 import { IActivity } from "@/models/Trip";
 import { dbConnect } from "@/config/db";
 import { generateAICompletion, OpenRouterMessage } from "@/config/ai";
-import {
-  geocodeLocation,
-  geocodeMultipleLocations,
-} from "@/lib/services/location";
+import { geocodeMultipleLocations } from "@/lib/services/location";
 import { getWeatherForLocation } from "@/lib/services/weather";
 import { getLocationImages } from "@/lib/services/locationImage";
 
@@ -57,7 +55,7 @@ function buildDateForDay(startDate: Date, dayIndex: number): string {
  */
 function extractJSON(text: string): any {
   // Remove markdown code fences
-  let cleaned = text
+  const cleaned = text
     .replace(/^```(?:json)?\s*/im, "")
     .replace(/\s*```\s*$/im, "")
     .trim();
@@ -288,7 +286,7 @@ Generate the complete JSON itinerary now.`,
 
 export async function POST(
   req: NextRequest,
-  params: { params: { userid: string } },
+  params: { params: Promise<{ userid: string }> },
 ) {
   try {
     const { userid } = await params.params;
@@ -387,7 +385,7 @@ export async function POST(
         const geocodedMap = await geocodeMultipleLocations(uniqueQueries);
 
         // Attach coordinates to each activity with fallback logic
-        trip.itinerary = trip.itinerary.map((day: any, dayIdx: number) => ({
+        trip.itinerary = trip.itinerary.map((day: any) => ({
           ...day,
           activities: day.activities.map((activity: IActivity) => {
             // Try full query first (venue, city, country)

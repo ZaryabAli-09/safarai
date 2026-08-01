@@ -42,7 +42,7 @@ export async function geocodeLocation(
       country: place.address?.country || "",
       state: place.address?.state || "",
     };
-  } catch (error) {
+  } catch {
     console.warn(
       `Geocoding failed for "${placeName}", continuing without coordinates`,
     );

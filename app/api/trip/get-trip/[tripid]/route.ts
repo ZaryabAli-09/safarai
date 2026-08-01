@@ -10,7 +10,7 @@ import mongoose from "mongoose";
  */
 export async function GET(
   req: NextRequest,
-  params: { params: { tripid: string } },
+  params: { params: Promise<{ tripid: string }> },
 ) {
   try {
     const { tripid } = await params.params;

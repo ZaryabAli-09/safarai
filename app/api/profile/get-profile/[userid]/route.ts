@@ -5,7 +5,7 @@ import { NextRequest } from "next/server";
 
 export async function GET(
   req: NextRequest,
-  params: { params: { userid: string } },
+  params: { params: Promise<{ userid: string }> },
 ) {
   try {
     const { userid } = await params.params;

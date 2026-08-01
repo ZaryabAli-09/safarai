@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Input sanitization and validation utilities
  * Prevents injection attacks and XSS vulnerabilities

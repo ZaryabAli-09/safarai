@@ -33,7 +33,7 @@ async function searchWikipediaArticle(query: string): Promise<string | null> {
     }
 
     return null;
-  } catch (error) {
+  } catch {
     console.warn(
       `Wikipedia search failed for "${query}", continuing without article`,
     );
@@ -81,7 +81,7 @@ export async function getLocationImage(
     }
 
     return null;
-  } catch (error) {
+  } catch {
     console.warn(
       `Location image lookup failed for "${placeName}", continuing without image`,
     );

@@ -75,8 +75,8 @@ export function RegisterForm({
       setConfirmRegistration(false);
       setLoading(false);
       router.push("/sign-in");
-    } catch (error: any) {
-      toast.error(error);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Something went wrong");
       setLoading(false);
     }
   }
@@ -111,8 +111,8 @@ export function RegisterForm({
       setConfirmRegistration(true);
       setUserId(data.data);
       setLoading(false);
-    } catch (error: any) {
-      toast.error(error);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Something went wrong");
       setLoading(false);
     }
   }

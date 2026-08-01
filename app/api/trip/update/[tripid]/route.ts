@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { response } from "@/lib/helperFunctions";
 import { NextRequest } from "next/server";
 import { Trip } from "@/models/Trip";
@@ -8,7 +9,7 @@ import mongoose from "mongoose";
 // Replace a specific activity in the itinerary
 export async function PATCH(
   req: NextRequest,
-  params: { params: { userid: string } },
+  params: { params: Promise<{ userid: string }> },
 ) {
   try {
     const { userid } = await params.params;
@@ -195,7 +196,7 @@ export async function PATCH(
 // Get single trip details
 export async function GET(
   req: NextRequest,
-  params: { params: { userid: string } },
+  params: { params: Promise<{ userid: string }> },
 ) {
   try {
     const { userid } = await params.params;
