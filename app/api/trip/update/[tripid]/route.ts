@@ -9,25 +9,26 @@ import mongoose from "mongoose";
 // Replace a specific activity in the itinerary
 export async function PATCH(
   req: NextRequest,
-  params: { params: Promise<{ userid: string }> },
+  params: { params: Promise<{ tripid: string }> },
 ) {
   try {
-    const { userid } = await params.params;
+    const { tripid } = await params.params;
     const body = await req.json();
     const { tripId, dayIndex, activityId, action, replacement, customRequest } =
       body;
+    const activeTripId = tripId || tripid;
 
-    if (!userid) {
-      return response(false, 400, "User id not found");
+    if (!tripid) {
+      return response(false, 400, "Trip id not found");
     }
 
-    if (!tripId || !mongoose.Types.ObjectId.isValid(tripId)) {
+    if (!activeTripId || !mongoose.Types.ObjectId.isValid(activeTripId)) {
       return response(false, 400, "Valid trip ID is required");
     }
 
     await dbConnect();
 
-    const trip = await Trip.findOne({ _id: tripId, userId: userid });
+    const trip = await Trip.findById(activeTripId);
 
     if (!trip) {
       return response(false, 404, "Trip not found");
@@ -196,28 +197,24 @@ export async function PATCH(
 // Get single trip details
 export async function GET(
   req: NextRequest,
-  params: { params: Promise<{ userid: string }> },
+  params: { params: Promise<{ tripid: string }> },
 ) {
   try {
-    const { userid } = await params.params;
-    const { searchParams } = new URL(req.url);
-    const tripId = searchParams.get("tripId");
+    const { tripid } = await params.params;
 
-    if (!userid) {
-      return response(false, 400, "User id not found");
+    if (!tripid || !mongoose.Types.ObjectId.isValid(tripid)) {
+      return response(false, 400, "Valid trip ID is required");
     }
 
     await dbConnect();
 
-    if (tripId && mongoose.Types.ObjectId.isValid(tripId)) {
-      const trip = await Trip.findOne({ _id: tripId, userId: userid });
-      if (!trip) {
-        return response(false, 404, "Trip not found");
-      }
-      return response(true, 200, "Trip retrieved successfully", trip);
+    const trip = await Trip.findById(tripid);
+
+    if (!trip) {
+      return response(false, 404, "Trip not found");
     }
 
-    return response(false, 400, "Valid trip ID is required");
+    return response(true, 200, "Trip retrieved successfully", trip);
   } catch (error) {
     console.error("Get trip error:", error);
     return response(false, 500, "Internal server error");
