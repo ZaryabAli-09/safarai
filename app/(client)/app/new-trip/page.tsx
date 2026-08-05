@@ -398,7 +398,7 @@ function GeneratingOverlay({
           </p>
         </div>
 
-        <div className="w-full flex flex-col gap-2.5 text-center mt-1 border border-red-500">
+        <div className="w-full flex flex-col gap-2.5 text-center mt-1">
           {GENERATION_STEPS.map((step, i) => (
             <div key={step} className="flex items-center gap-2.5 text-sm">
               {i < activeStep ? (
