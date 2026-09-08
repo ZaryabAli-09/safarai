@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 
+// interface
 export interface IActivity {
   id: string;
   timeOfDay: string; // "morning" | "afternoon" | "evening"
