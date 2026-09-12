@@ -11,8 +11,31 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: process.env.APP_NAME ?? "SafarAI",
-  description: "An AI-powered travel planning app for northern Pakistan",
+  title: {
+    default: "SafarAI | Plan your next trip in under a minute",
+    template: "%s | SafarAI",
+  },
+  description:
+    "SafarAI turns a few travel preferences into a complete, editable itinerary in seconds.",
+  keywords: [
+    "AI trip planner",
+    "travel itinerary planner",
+    "vacation planning",
+    "travel planning app",
+  ],
+  authors: [{ name: "SafarAI" }],
+  creator: "SafarAI",
+  openGraph: {
+    type: "website",
+    title: "SafarAI | Plan your next trip in under a minute",
+    description: "Create a complete, editable travel itinerary with SafarAI.",
+    siteName: "SafarAI",
+  },
+  twitter: {
+    card: "summary",
+    title: "SafarAI | Plan your next trip in under a minute",
+    description: "Create a complete, editable travel itinerary with SafarAI.",
+  },
   manifest: "/manifest.json",
   icons: {
     icon: "/favicon-v2.ico",
