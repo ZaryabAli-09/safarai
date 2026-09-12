@@ -9,6 +9,7 @@ import {
   FaPlus,
   FaMinus,
   FaPlane,
+  FaHotel,
   FaRegClock,
   FaTwitter,
   FaLinkedin,
