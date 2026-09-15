@@ -880,7 +880,9 @@ export default function LandingPage() {
               >
                 <Link href="/app">Get started free</Link>
               </Button>
-              <p className="text-xs text-white/40">Start with your destination and travel dates.</p>
+              <p className="text-xs text-white/40">
+                Start with your destination and travel dates.
+              </p>
             </div>
           </FadeIn>
 
