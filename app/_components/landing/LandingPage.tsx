@@ -48,19 +48,19 @@ const destinationPills = ["Bali", "Lisbon", "Tokyo", "Marrakech"];
 const faqs = [
   {
     q: "How does SafarAI plan trips?",
-    a: "We ask a few simple questions about your pace, budget, and interests. SafarAI then drafts a full itinerary from your answers. You can reorder days, swap activities, or rewrite any section.",
+    a: "SafarAI guides you through your destination, dates, budget, travelers, transport, travel style, pace, accommodation, and interests. It then generates a day-by-day itinerary tailored to your answers.",
   },
   {
-    q: "Can I edit an AI-generated itinerary?",
-    a: "Yes. Every stop, time, and day can be moved, swapped, or removed. The rest of the trip adjusts automatically when you make a change.",
+    q: "What does a generated trip include?",
+    a: "Your trip includes daily activities with descriptions, locations, timing, duration, estimated costs, images, weather details, and map links, along with a budget breakdown, packing list, and travel tips.",
   },
   {
-    q: "Is there a free trial?",
-    a: "Yes. You can plan your first trip for free. No credit card required.",
+    q: "Can I plan more than one destination?",
+    a: "Yes. Add multiple destinations during trip setup and SafarAI will use them when building your itinerary.",
   },
   {
-    q: "Does SafarAI work offline?",
-    a: "Your itinerary is saved to your device, so you can open it even without a signal.",
+    q: "Does SafarAI show estimated trip costs?",
+    a: "Yes. Set your currency and budget during setup. The generated trip includes estimated costs for activities plus a breakdown for accommodation, food, transport, activities, and miscellaneous expenses.",
   },
   {
     q: "What devices does SafarAI support?",
@@ -135,7 +135,8 @@ export default function LandingPage() {
             className="mt-7 text-base sm:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed"
           >
             Answer a few quick questions about how you like to travel. SafarAI
-            drafts a complete, editable itinerary you can shape in seconds.
+            turns your destination, dates, budget, and travel preferences into a
+            structured day-by-day itinerary with practical trip details.
           </motion.p>
 
           {/* CTAs */}
@@ -174,8 +175,8 @@ export default function LandingPage() {
           >
             {[
               "Built around your pace",
-              "Editable day by day",
-              "Ready in seconds",
+              "Budget-aware planning",
+              "Useful trip details",
             ].map((value) => (
               <div
                 key={value}
@@ -257,8 +258,9 @@ export default function LandingPage() {
                   {[
                     { label: "Overview", active: false },
                     { label: "Itinerary", active: true },
-                    { label: "Notes", active: false },
-                    { label: "Bookings", active: false },
+                    { label: "Budget", active: false },
+                    { label: "Packing list", active: false },
+                    { label: "Travel tips", active: false },
                   ].map((item) => (
                     <div
                       key={item.label}
@@ -295,18 +297,18 @@ export default function LandingPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="text-base font-semibold text-foreground">
-                          Bali, Indonesia
+                          Bali, Indonesia itinerary
                         </h3>
                         <span className="text-[9px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-900">
                           Active
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        May 12 to 17 · 5 days · 12 places
+                        May 12 to 17 · 5 days · personalized plan
                       </p>
                     </div>
                     <span className="text-[10px] font-semibold text-white bg-blue-600 rounded-full px-3 py-1.5 shadow-sm shrink-0">
-                      20 days to go
+                      AI-generated plan
                     </span>
                   </div>
 
@@ -473,7 +475,7 @@ export default function LandingPage() {
                   {[
                     "Itinerary, AI-generated",
                     "Day by day plan, visual",
-                    "Notes, all in one place",
+                    "Budget, packing list, and tips",
                   ].map((line) => (
                     <p
                       key={line}
@@ -501,8 +503,8 @@ export default function LandingPage() {
               Everything you need to travel with clarity.
             </h2>
             <p className="mt-4 text-base text-muted-foreground max-w-lg mx-auto">
-              From your first idea to your last flight home, SafarAI keeps the
-              whole trip in one place.
+              SafarAI combines trip preferences, itinerary activities, costs,
+              weather, packing, and travel tips in one generated plan.
             </p>
           </FadeIn>
 
@@ -513,16 +515,17 @@ export default function LandingPage() {
                   Assist · Your AI trip companion
                 </span>
                 <h3 className="text-2xl font-semibold text-foreground mb-4">
-                  Your itinerary, always one tap away.
+                  A complete plan built around your trip.
                 </h3>
                 <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
-                  Every stop, time, and note lives in a single structured plan
-                  that stays current and works offline.
+                  SafarAI turns your answers into a day-by-day itinerary with
+                  useful details for each activity and a clear view of your
+                  estimated trip costs.
                 </p>
                 {[
-                  "Full itineraries generated in seconds",
-                  "Works with no signal, no panic",
-                  "Always one tap from what is next",
+                  "Personalized activities by day and time",
+                  "Estimated costs, weather, and locations",
+                  "Packing list and practical travel tips",
                 ].map((line) => (
                   <p
                     key={line}
@@ -537,10 +540,10 @@ export default function LandingPage() {
               <div className="bg-secondary/30 p-6 md:p-8">
                 <div className="flex flex-wrap items-center gap-2 mb-5">
                   <span className="text-[10px] font-semibold text-white bg-blue-600 rounded-full px-3 py-1.5">
-                    Next up, lunch in 30 min
+                    Personalized itinerary
                   </span>
                   <span className="text-[10px] font-semibold text-muted-foreground bg-card border border-border rounded-full px-3 py-1.5">
-                    5 stops today
+                    Budget included
                   </span>
                 </div>
                 <div className="space-y-3">
@@ -640,8 +643,8 @@ export default function LandingPage() {
               {
                 n: "02",
                 icon: FaCalendarAlt,
-                title: "A draft ready in 30 seconds.",
-                desc: "A complete itinerary with routes and stops, structured day by day.",
+                title: "SafarAI generates your plan.",
+                desc: "The AI builds a day-by-day itinerary with activities, costs, locations, and practical travel context.",
                 preview: (
                   <div className="mt-6 rounded-xl border border-border bg-background p-4 flex flex-col items-center justify-center h-[120px]">
                     <div className="w-12 h-12 rounded-full flex items-center justify-center animate-pulse bg-blue-50">
@@ -656,8 +659,8 @@ export default function LandingPage() {
               {
                 n: "03",
                 icon: FaPencilAlt,
-                title: "Everything in your pocket.",
-                desc: "Your full timeline, always one tap away, online or off.",
+                title: "Review the details before you go.",
+                desc: "Open each day to see activity descriptions, timing, estimated cost, weather, images, and map links.",
                 preview: (
                   <div className="mt-6 rounded-xl border border-border bg-background p-4 space-y-2">
                     {[
@@ -763,14 +766,13 @@ export default function LandingPage() {
               about the next click.
             </p>
             <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
-              We are building the calmer version we wished existed. One place,
-              structured by day, that respects the pace of how people actually
-              travel.
+              We are building the calmer version we wished existed: one place
+              for a day-by-day plan shaped by your budget, pace, and interests.
             </p>
             <p className="mt-4 text-sm font-medium text-foreground">
               SafarAI is a pure AI trip planner, not a booking aggregator. It
-              generates, structures, and rewrites your itinerary so you spend
-              less time planning and more time going.
+              generates and structures your itinerary with the practical details
+              you need before you go.
             </p>
             <div className="mt-8 flex items-center gap-3">
               <img
@@ -867,8 +869,8 @@ export default function LandingPage() {
               Travel planning, without the chaos.
             </h2>
             <p className="mt-5 text-white/60 text-sm max-w-md mx-auto md:mx-0 leading-relaxed">
-              SafarAI turns a few quick questions into a full itinerary you can
-              edit and share, all in one place.
+              SafarAI turns a few quick questions into a full itinerary with
+              activities, estimated costs, weather, maps, packing, and tips.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row items-center md:justify-start justify-center gap-4">
               <Button
@@ -878,7 +880,7 @@ export default function LandingPage() {
               >
                 <Link href="/app">Get started free</Link>
               </Button>
-              <p className="text-xs text-white/40">No credit card required.</p>
+              <p className="text-xs text-white/40">Start with your destination and travel dates.</p>
             </div>
           </FadeIn>
 
