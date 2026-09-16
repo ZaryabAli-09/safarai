@@ -117,7 +117,7 @@ export function LoginForm({
             type="submit"
             onClick={handleSubmit}
             disabled={loading || !formData.email || !formData.password}
-            className="cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed "
+            className="cursor-pointer"
           >
             {loading ? "Loading..." : "Sign In"}
           </Button>
@@ -132,7 +132,7 @@ export function LoginForm({
                 callbackUrl: `${window.location.origin}/app/trips`,
               })
             }
-            className="flex items-center justify-center gap-3 w-[80%] sm:w-[70%] lg:w-[80%] p-3 border border-gray-300 rounded-md bg-white text-gray-700 font-medium text-base shadow-sm cursor-pointer hover:bg-gray-200"
+            className="cursor-pointer"
           >
             <Image
               src="/assets/google.png"
@@ -140,11 +140,10 @@ export function LoginForm({
               width={20}
               height={20}
             />
-            Login with Google
           </Button>
           <FieldDescription className="text-center">
             Don&apos;t have an account?{" "}
-            <Link href="/register" className="underline underline-offset-4">
+            <Link href="/register" className="text-sm">
               Sign up
             </Link>
           </FieldDescription>

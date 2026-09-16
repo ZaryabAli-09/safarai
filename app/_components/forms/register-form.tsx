@@ -202,7 +202,6 @@ export function RegisterForm({
                 type="submit"
                 onClick={handleVerifyOtp}
                 disabled={loading || !otp}
-                className="disabled:opacity-50 disabled:cursor-not-allowed "
               >
                 {loading ? "Loading..." : "Verify OTP"}
               </Button>
@@ -216,7 +215,7 @@ export function RegisterForm({
             variant="outline"
             type="button"
             onClick={() => signIn("google")}
-            className="flex items-center justify-center gap-3 w-[80%] sm:w-[70%] lg:w-[80%] p-3 border border-gray-300 rounded-md bg-white text-gray-700 font-medium text-base shadow-sm cursor-pointer hover:bg-gray-200"
+            className="cursor-pointer"
           >
             <Image
               src="/assets/google.png"
@@ -224,7 +223,6 @@ export function RegisterForm({
               width={20}
               height={20}
             />
-            Continue with Google
           </Button>
           <FieldDescription className="text-center">
             Already have an account?{" "}

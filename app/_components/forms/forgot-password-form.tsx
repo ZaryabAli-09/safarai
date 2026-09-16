@@ -7,7 +7,7 @@ import { z } from "zod";
 // shadcn imports
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Field, FieldGroup } from "@/components/ui/field";
+import { Field, FieldDescription, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
 const emailSchema = z.string().email("Invalid email address");
@@ -78,19 +78,16 @@ export function ForgotPasswordForm({
             type="submit"
             onClick={handleSubmit}
             disabled={!email || loading}
-            className="cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed "
+            className="cursor-pointer"
           >
             {loading ? "Loading..." : " Reset Password"}
           </Button>
-          <p className="text-dark text-sm mt-4">
+          <FieldDescription className="text-center">
             Remembered your password?{" "}
-            <Link
-              className="text-submit cursor-pointer hover:underline"
-              href={"/sign-in"}
-            >
-              Login
+            <Link href={"/sign-in"} className="text-sm">
+              Sign in
             </Link>
-          </p>
+          </FieldDescription>
         </Field>
       </FieldGroup>
     </form>
