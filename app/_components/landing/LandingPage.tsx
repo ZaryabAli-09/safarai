@@ -93,9 +93,9 @@ export default function LandingPage() {
                 "radial-gradient(ellipse 70% 55% at 50% 0%, #000 55%, transparent 100%)",
             }}
           />
-          <div className="absolute -top-40 left-1/2 h-[700px] w-[1000px] -translate-x-1/2 rounded-full bg-primary-blue/10 blur-[130px]" />
-          <div className="absolute left-1/4 top-32 h-[420px] w-[420px] rounded-full bg-primary-blue-light/10 blur-[110px]" />
-          <div className="absolute right-1/4 top-32 h-[420px] w-[420px] rounded-full bg-primary-blue-light/10 blur-[110px]" />
+          <div className="absolute -top-40 left-1/2 h-[700px] w-[1000px] -translate-x-1/2 rounded-full bg-blue-600/10 blur-[130px]" />
+          <div className="absolute left-1/4 top-32 h-[420px] w-[420px] rounded-full bg-blue-400/10 blur-[110px]" />
+          <div className="absolute right-1/4 top-32 h-[420px] w-[420px] rounded-full bg-blue-400/10 blur-[110px]" />
         </div>
 
         <div className="mx-auto max-w-5xl px-6 pt-20 text-center md:pt-28">
@@ -108,8 +108,8 @@ export default function LandingPage() {
           >
             <div className="inline-flex items-center gap-2.5 rounded-full border border-border bg-card/70 px-3 py-1.5 text-xs shadow-sm backdrop-blur">
               <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-blue opacity-70" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary-blue" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-600 opacity-70" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-blue-600" />
               </span>
               <span className="font-medium text-muted-foreground">
                 Your AI trip planner companion is here.
@@ -125,7 +125,7 @@ export default function LandingPage() {
             className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.04] text-foreground"
           >
             <span className="block font-extrabold">Plan your next trip</span>
-            <span className="block bg-gradient-to-r from-primary-blue-light via-primary-blue to-primary-blue-dark bg-clip-text text-transparent pb-1 font-extrabold">
+            <span className="block  pb-1 font-extrabold">
               in under a minute.
             </span>
           </motion.h1>
@@ -183,7 +183,7 @@ export default function LandingPage() {
             ].map((value) => (
               <div
                 key={value}
-                className="flex items-center justify-center gap-2 rounded-xl border border-primary-blue/15 bg-accent/60 px-3 py-3 text-xs font-medium text-primary-blue-dark"
+                className="flex items-center justify-center gap-2 rounded-xl border border-primary-blue/15 bg-accent/60 px-3 py-3 text-xs font-medium "
               >
                 <FaCheck className="text-[10px] text-primary-blue" />
                 {value}
@@ -204,7 +204,7 @@ export default function LandingPage() {
                 key={d}
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium border transition-colors cursor-default ${
                   i === 0
-                    ? "bg-accent border-primary-blue/20 text-primary-blue-dark"
+                    ? "bg-accent border-primary-blue/20 "
                     : "bg-card border-border text-muted-foreground hover:border-foreground/20"
                 }`}
               >
@@ -541,21 +541,24 @@ export default function LandingPage() {
               {
                 name: "Ayesha Khan",
                 role: "Solo traveler",
-                avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=96&q=80",
+                avatar:
+                  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=96&q=80",
                 rating: 5,
                 text: "I used to spend hours researching itineraries. SafarAI gave me a complete Bali plan in minutes — activities, costs, timing, everything. It felt like magic.",
               },
               {
                 name: "Bilal Ahmed",
                 role: "Family traveler",
-                avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=96&q=80",
+                avatar:
+                  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=96&q=80",
                 rating: 5,
                 text: "Planning a family trip used to mean juggling five apps. Now the whole itinerary is in one place and my wife actually trusts it.",
               },
               {
                 name: "Sara Malik",
                 role: "Budget traveler",
-                avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=96&q=80",
+                avatar:
+                  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=96&q=80",
                 rating: 5,
                 text: "The budget breakdown was a game changer. I knew exactly how much I would spend before I even booked a flight. Highly recommend.",
               },
@@ -564,14 +567,11 @@ export default function LandingPage() {
                 <div className="h-full rounded-2xl border border-border bg-card p-6 hover:shadow-lg transition-shadow duration-300">
                   <div className="flex gap-1 mb-4">
                     {Array.from({ length: t.rating }).map((_, s) => (
-                      <FaStar
-                        key={s}
-                        className="w-4 h-4 text-yellow-400"
-                      />
+                      <FaStar key={s} className="w-4 h-4 text-yellow-400" />
                     ))}
                   </div>
                   <p className="text-sm text-foreground/80 leading-relaxed mb-6">
-                    "{t.text}"
+                    &ldquo;{t.text}&rdquo;
                   </p>
                   <div className="flex items-center gap-3">
                     <img
@@ -584,9 +584,7 @@ export default function LandingPage() {
                       <p className="text-sm font-semibold text-foreground">
                         {t.name}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {t.role}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{t.role}</p>
                     </div>
                   </div>
                 </div>
@@ -708,7 +706,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <FadeIn className="text-center mb-16">
             <span className="text-xs font-bold tracking-widest uppercase text-blue-600">
-              What's included
+              What&apos;s included
             </span>
             <h2 className="mt-3 text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
               Every trip comes with full details.
@@ -1039,7 +1037,7 @@ export default function LandingPage() {
               Still have a question?{" "}
               <a
                 href="mailto:zaryabkhan248@gmail.com"
-                className="font-semibold text-primary-blue underline underline-offset-2 hover:text-primary-blue-dark"
+                className="font-semibold text-primary-blue underline underline-offset-2 hover:"
               >
                 Reach out
               </a>{" "}
