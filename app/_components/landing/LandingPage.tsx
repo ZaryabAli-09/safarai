@@ -16,6 +16,11 @@ import {
   FaCalendarAlt,
   FaGlobe,
   FaPencilAlt,
+  FaStar,
+  FaUsers,
+  FaMap,
+  FaBolt,
+  FaQuoteLeft,
 } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import Logo from "@/public/assets/logo.png";
@@ -397,6 +402,32 @@ export default function LandingPage() {
         {/* Extra spacing so the fade blends before next section */}
         <div className="h-16 md:h-20" />
       </section>
+
+      {/* ===== STATS BAR ===== */}
+      <section className="py-14 border-y border-border bg-card/50">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <FadeIn>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+              {[
+                { value: "10K+", label: "Trips planned" },
+                { value: "120+", label: "Destinations" },
+                { value: "4.9/5", label: "User rating" },
+                { value: "<1 min", label: "Plan generation" },
+              ].map((stat) => (
+                <div key={stat.label}>
+                  <p className="text-2xl md:text-3xl font-extrabold text-foreground">
+                    {stat.value}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1 font-medium">
+                    {stat.label}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
       {/* ===== WHY SAFARAI ===== */}
       <section className="py-20 md:py-28 bg-card">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -488,6 +519,81 @@ export default function LandingPage() {
                 </div>
               </div>
             </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== TESTIMONIALS ===== */}
+      <section className="py-20 md:py-28 bg-background">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <FadeIn className="text-center mb-16">
+            <span className="text-xs font-bold tracking-widest uppercase text-blue-600">
+              Testimonials
+            </span>
+            <h2 className="mt-3 text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
+              Loved by travelers.
+            </h2>
+            <p className="mt-4 text-base text-muted-foreground max-w-lg mx-auto">
+              See how people are using SafarAI to plan better trips.
+            </p>
+          </FadeIn>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                name: "Ayesha Khan",
+                role: "Solo traveler",
+                avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=96&q=80",
+                rating: 5,
+                text: "I used to spend hours researching itineraries. SafarAI gave me a complete Bali plan in minutes — activities, costs, timing, everything. It felt like magic.",
+              },
+              {
+                name: "Bilal Ahmed",
+                role: "Family traveler",
+                avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=96&q=80",
+                rating: 5,
+                text: "Planning a family trip used to mean juggling five apps. Now the whole itinerary is in one place and my wife actually trusts it.",
+              },
+              {
+                name: "Sara Malik",
+                role: "Budget traveler",
+                avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=96&q=80",
+                rating: 5,
+                text: "The budget breakdown was a game changer. I knew exactly how much I would spend before I even booked a flight. Highly recommend.",
+              },
+            ].map((t, i) => (
+              <FadeIn key={t.name} delay={i * 0.1}>
+                <div className="h-full rounded-2xl border border-border bg-card p-6 hover:shadow-lg transition-shadow duration-300">
+                  <div className="flex gap-1 mb-4">
+                    {Array.from({ length: t.rating }).map((_, s) => (
+                      <FaStar
+                        key={s}
+                        className="w-4 h-4 text-yellow-400"
+                      />
+                    ))}
+                  </div>
+                  <p className="text-sm text-foreground/80 leading-relaxed mb-6">
+                    "{t.text}"
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={t.avatar}
+                      alt={t.name}
+                      className="w-10 h-10 rounded-full object-cover"
+                      loading="lazy"
+                    />
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">
+                        {t.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t.role}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </FadeIn>
+            ))}
           </div>
         </div>
       </section>
