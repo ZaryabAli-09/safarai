@@ -17,10 +17,8 @@ import {
   FaGlobe,
   FaPencilAlt,
   FaStar,
-  FaUsers,
   FaMap,
   FaBolt,
-  FaQuoteLeft,
 } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import Logo from "@/public/assets/logo.png";
@@ -705,6 +703,95 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ===== WHAT'S INCLUDED ===== */}
+      <section className="py-20 md:py-28 bg-card">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <FadeIn className="text-center mb-16">
+            <span className="text-xs font-bold tracking-widest uppercase text-blue-600">
+              What's included
+            </span>
+            <h2 className="mt-3 text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
+              Every trip comes with full details.
+            </h2>
+            <p className="mt-4 text-base text-muted-foreground max-w-lg mx-auto">
+              No guessing. Each generated plan includes everything you need
+              before you go.
+            </p>
+          </FadeIn>
+
+          <FadeIn delay={0.1}>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                {
+                  icon: FaMapMarkerAlt,
+                  title: "Activities with descriptions",
+                  desc: "Each stop includes what to expect, opening hours, and tips from locals.",
+                },
+                {
+                  icon: FaRegClock,
+                  title: "Day-by-day timing",
+                  desc: "Activities are scheduled with realistic travel time between locations.",
+                },
+                {
+                  icon: FaCheck,
+                  title: "Estimated costs",
+                  desc: "Per-activity and per-day cost estimates in your chosen currency.",
+                },
+                {
+                  icon: FaHotel,
+                  title: "Accommodation options",
+                  desc: "Recommended stays matched to your budget and travel style.",
+                },
+                {
+                  icon: FaPlane,
+                  title: "Transport guidance",
+                  desc: "Best ways to get between destinations with time and cost estimates.",
+                },
+                {
+                  icon: FaBolt,
+                  title: "Packing list",
+                  desc: "A tailored checklist based on destination, season, and activities.",
+                },
+                {
+                  icon: FaGlobe,
+                  title: "Weather outlook",
+                  desc: "Expected conditions during your travel dates for each destination.",
+                },
+                {
+                  icon: FaMap,
+                  title: "Map links",
+                  desc: "Every location includes a direct link to view it on the map.",
+                },
+                {
+                  icon: FaStar,
+                  title: "Travel tips",
+                  desc: "Practical advice for your destination — visa, currency, and more.",
+                },
+              ].map((item, i) => {
+                const Icon = item.icon;
+                return (
+                  <FadeIn key={item.title} delay={i * 0.04}>
+                    <div className="flex items-start gap-4 p-5 rounded-xl border border-border bg-background hover:border-blue-200 hover:shadow-sm transition-all duration-300 h-full">
+                      <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0">
+                        <Icon className="text-sm text-primary-blue" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-foreground mb-1">
+                          {item.title}
+                        </h4>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {item.desc}
+                        </p>
+                      </div>
+                    </div>
+                  </FadeIn>
+                );
+              })}
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
       {/* ===== HOW IT WORKS ===== */}
       <section id="how-it-works" className="py-20 md:py-28 bg-card">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -990,6 +1077,20 @@ export default function LandingPage() {
                 Start with your destination and travel dates.
               </p>
             </div>
+            <div className="mt-6 flex flex-wrap items-center justify-center md:justify-start gap-3">
+              <span className="inline-flex items-center gap-1.5 text-[11px] text-white/40">
+                <FaCheck className="text-[9px] text-green-400" />
+                Free to start
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-[11px] text-white/40">
+                <FaCheck className="text-[9px] text-green-400" />
+                No credit card
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-[11px] text-white/40">
+                <FaCheck className="text-[9px] text-green-400" />
+                Cancel anytime
+              </span>
+            </div>
           </FadeIn>
 
           <FadeIn delay={0.1} className="hidden md:flex justify-center">
@@ -1065,23 +1166,87 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ===== FOOTER: radically simple ===== */}
-      <footer className="border-t border-border bg-background">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 flex flex-col items-center text-center">
-          <Image
-            src={Logo}
-            alt="SafarAI"
-            width={220}
-            height={56}
-            className="h-14 w-auto"
-          />
-          <p className="mt-4 text-base text-muted-foreground max-w-xs">
-            Travel planning, without the chaos.
-          </p>
-          <div className="mt-10 w-12 h-px bg-border" />
-          <p className="mt-10 text-xs text-muted-foreground">
-            Engineered by Zaryab Ali
-          </p>
+      {/* ===== FOOTER ===== */}
+      <footer className="border-t border-border bg-card/30">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16">
+          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-10">
+            <div className="sm:col-span-2 md:col-span-1">
+              <Image
+                src={Logo}
+                alt="SafarAI"
+                width={180}
+                height={46}
+                className="h-12 w-auto"
+              />
+              <p className="mt-4 text-sm text-muted-foreground max-w-xs">
+                Travel planning, without the chaos.
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-bold tracking-widest uppercase text-muted-foreground mb-4">
+                Product
+              </p>
+              <div className="space-y-2.5">
+                {[
+                  { label: "Features", href: "#features" },
+                  { label: "How it works", href: "#how-it-works" },
+                  { label: "Pricing", href: "#" },
+                ].map((link) => (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-bold tracking-widest uppercase text-muted-foreground mb-4">
+                Company
+              </p>
+              <div className="space-y-2.5">
+                {[
+                  { label: "About", href: "#" },
+                  { label: "Blog", href: "#" },
+                  { label: "Contact", href: "mailto:zaryabkhan248@gmail.com" },
+                ].map((link) => (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-bold tracking-widest uppercase text-muted-foreground mb-4">
+                Legal
+              </p>
+              <div className="space-y-2.5">
+                {["Privacy", "Terms"].map((label) => (
+                  <Link
+                    key={label}
+                    href="#"
+                    className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-xs text-muted-foreground">
+              &copy; {new Date().getFullYear()} SafarAI. All rights reserved.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Engineered by Zaryab Ali
+            </p>
+          </div>
         </div>
       </footer>
     </>
