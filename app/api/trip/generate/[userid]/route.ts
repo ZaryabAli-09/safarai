@@ -117,7 +117,10 @@ function extractJSON(text: string): any {
     if (end !== -1) {
       try {
         const jsonStr = cleaned.slice(start, end + 1);
-        return JSON.parse(jsonStr);
+        const parsed = JSON.parse(jsonStr);
+        if (Array.isArray(parsed?.itinerary)) {
+          return parsed;
+        }
       } catch (e) {
         console.warn("Failed to parse JSON object with brace matching:", e);
       }
