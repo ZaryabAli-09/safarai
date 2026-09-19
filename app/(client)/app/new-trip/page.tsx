@@ -50,13 +50,15 @@ type TripType =
   | "relaxation"
   | "family"
   | "honeymoon"
-  | "vlogging";
+  | "vlogging"
+  | "spiritual";
 type TripPace = "slow" | "moderate" | "fast";
 type Accommodation = "budget" | "mid-range" | "luxury";
 type Transportation = "flight" | "road" | "train" | "mix";
 
 interface TripFormData {
   name: string;
+  currentLocation: string;
   destinations: string[];
   startDate: string;
   endDate: string;
@@ -69,17 +71,20 @@ interface TripFormData {
   transportation: Transportation;
   travelers: number;
   interests: string[];
+  tripDescription: string;
 }
 
 type ChatStep =
   | "welcome"
   | "destination"
+  | "currentLocation"
   | "dates"
   | "budget"
   | "travelers"
   | "transportation"
   | "tripType"
   | "preferences"
+  | "details"
   | "summary"
   | "generating";
 
@@ -99,6 +104,7 @@ const TRIP_TYPES: { value: TripType; label: string; emoji: string }[] = [
   { value: "family", label: "Family", emoji: "👨‍👩‍👧‍👦" },
   { value: "honeymoon", label: "Honeymoon", emoji: "💑" },
   { value: "vlogging", label: "Vlogging", emoji: "📹" },
+  { value: "spiritual", label: "Spiritual", emoji: "🕌" },
 ];
 
 const INTERESTS = [
@@ -114,6 +120,7 @@ const INTERESTS = [
   "Architecture",
   "Wildlife",
   "Beaches",
+  "Spiritual",
 ];
 
 const CURRENCIES = [
@@ -143,12 +150,14 @@ const GENERATION_STEPS = [
 const STEP_ORDER: ChatStep[] = [
   "welcome",
   "destination",
+  "currentLocation",
   "dates",
   "budget",
   "travelers",
   "transportation",
   "tripType",
   "preferences",
+  "details",
   "summary",
   "generating",
 ];
@@ -224,7 +233,7 @@ function ChatBubble({
 /** Progress + "trip so far" summary — shared shape, rendered differently on mobile vs desktop */
 function useTripProgress(formData: TripFormData, currentStep: ChatStep) {
   const stepIndex = STEP_ORDER.indexOf(currentStep);
-  const totalSteps = 8; // destination → summary
+  const totalSteps = 9; // destination → details
   const completedSteps = Math.max(0, stepIndex - 1);
   const progressPct = Math.min(
     100,
@@ -236,6 +245,11 @@ function useTripProgress(formData: TripFormData, currentStep: ChatStep) {
     label: string;
     value: string | null;
   }[] = [
+    {
+      icon: Plane,
+      label: "Starting from",
+      value: formData.currentLocation || null,
+    },
     {
       icon: MapPin,
       label: "Destination",
@@ -258,14 +272,14 @@ function useTripProgress(formData: TripFormData, currentStep: ChatStep) {
       icon: DollarSign,
       label: "Budget",
       value:
-        completedSteps >= 3
+        completedSteps >= 4
           ? `${CURRENCIES.find((c) => c.code === formData.currency)?.symbol || ""}${formData.budget.toLocaleString()} ${formData.currency}`
           : null,
     },
     {
       icon: Users,
       label: "Travelers",
-      value: completedSteps >= 4 ? `${formData.travelers}` : null,
+      value: completedSteps >= 5 ? `${formData.travelers}` : null,
     },
   ];
 
@@ -447,6 +461,7 @@ export default function NewTripPage() {
   // Form data
   const [formData, setFormData] = useState<TripFormData>({
     name: "",
+    currentLocation: "",
     destinations: [],
     startDate: "",
     endDate: "",
@@ -459,6 +474,7 @@ export default function NewTripPage() {
     transportation: "mix",
     travelers: 2,
     interests: [],
+    tripDescription: "",
   });
 
   // Destination input
@@ -629,9 +645,22 @@ export default function NewTripPage() {
     setFormData((prev) => ({ ...prev, name: tripName }));
 
     await botSay(
-      <span>Great choice. Now pick your travel dates below.</span>,
+      <span>Great choice. Where will you be starting this journey from?</span>,
       700,
     );
+    setCurrentStep("currentLocation");
+  };
+
+  const handleCurrentLocationConfirm = async () => {
+    const currentLocation = formData.currentLocation.trim();
+    if (!currentLocation) {
+      toast.error("Please enter your current location");
+      return;
+    }
+
+    setFormData((prev) => ({ ...prev, currentLocation }));
+    addMessage("user", currentLocation);
+    await botSay(<span>Got it. Now pick your travel dates below.</span>, 700);
     setCurrentStep("dates");
   };
 
@@ -806,10 +835,27 @@ export default function NewTripPage() {
 
     await botSay(
       <span>
-        Perfect! Here&apos;s a summary of your trip. Ready to generate your
-        personalized itinerary?
+        Perfect! Your preferences are saved. I have one final question before
+        showing your trip summary.
       </span>,
       700,
+    );
+    await botSay(
+      <span>
+        Before we finish, share any specific route, transport, or activity
+        details you want me to consider.
+      </span>,
+      800,
+    );
+    setCurrentStep("details");
+  };
+
+  const handleDetailsConfirm = async () => {
+    const details = formData.tripDescription.trim();
+    addMessage("user", details || "No additional details");
+    await botSay(
+      <span>Thanks. I have everything I need to prepare your itinerary.</span>,
+      500,
     );
     setCurrentStep("summary");
   };
@@ -828,6 +874,7 @@ export default function NewTripPage() {
       const payload = {
         name: formData.name,
         destinations: formData.destinations,
+        currentLocation: formData.currentLocation,
         startDate: formData.startDate,
         endDate: formData.endDate,
         duration: formData.duration,
@@ -839,6 +886,7 @@ export default function NewTripPage() {
         transportation: formData.transportation,
         travelers: formData.travelers,
         interests: formData.interests,
+        tripDescription: formData.tripDescription,
       };
 
       const res = await fetch(`/api/trip/generate/${session.user._id}`, {
@@ -1029,6 +1077,45 @@ export default function NewTripPage() {
             onClick={handleDateConfirm}
             disabled={!dateRange.from || !dateRange.to}
             className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
+          >
+            Continue
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </motion.div>
+      );
+    }
+
+    if (currentStep === "currentLocation") {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-3"
+        >
+          <div className="relative">
+            <Plane className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              value={formData.currentLocation}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  currentLocation: e.target.value,
+                }))
+              }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void handleCurrentLocationConfirm();
+                }
+              }}
+              placeholder="e.g. Islamabad, Pakistan"
+              className="w-full pl-9 pr-4 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-transparent bg-white"
+            />
+          </div>
+          <button
+            onClick={handleCurrentLocationConfirm}
+            className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
           >
             Continue
             <ChevronRight className="w-4 h-4" />
@@ -1433,6 +1520,40 @@ export default function NewTripPage() {
           >
             <Zap className="w-4 h-4" />
             Generate My Trip Itinerary
+          </button>
+        </motion.div>
+      );
+    }
+
+    if (currentStep === "details") {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-3"
+        >
+          <textarea
+            value={formData.tripDescription}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                tripDescription: e.target.value,
+              }))
+            }
+            placeholder="e.g. I will fly from Islamabad to Saudi Arabia, then use local transport between Makkah, Medina, and Al-Ula. I want time for prayer and specific historical sites."
+            rows={5}
+            maxLength={2000}
+            className="w-full resize-y rounded-xl border border-border bg-white px-3 py-2.5 text-sm leading-relaxed focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          <p className="text-xs text-muted-foreground">
+            Optional, but useful for route and transport preferences.
+          </p>
+          <button
+            onClick={handleDetailsConfirm}
+            className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
+          >
+            Continue
+            <ChevronRight className="w-4 h-4" />
           </button>
         </motion.div>
       );

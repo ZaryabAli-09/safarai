@@ -82,6 +82,7 @@ interface TripSummary {
 interface Trip {
   _id: string;
   name: string;
+  currentLocation?: string;
   destinations: string[];
   startDate: string;
   endDate: string;
@@ -92,6 +93,7 @@ interface Trip {
   tripPace: string;
   accommodation: string;
   travelers: number;
+  tripDescription?: string;
   itinerary: DayItinerary[];
   summary: TripSummary;
   budgetBreakdown: BudgetBreakdown;
@@ -644,6 +646,12 @@ export default function TripDetailPage() {
 
             {/* Destination + date in muted text */}
             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-5">
+              {trip.currentLocation && (
+                <span className="flex items-center gap-1.5">
+                  <Plane className="w-3.5 h-3.5" />
+                  From {trip.currentLocation}
+                </span>
+              )}
               <span className="flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5" />
                 {trip.destinations.join(" · ")}

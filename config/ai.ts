@@ -55,8 +55,9 @@ async function callOpenRouter(
         messages,
         temperature: 0.4, // Lower temp = more consistent JSON output
         max_tokens: maxTokens,
-        // Request JSON output where supported
-        response_format: { type: "text" },
+        // Ask compatible models for an object so itinerary responses cannot
+        // degrade into a valid but unrelated JSON array.
+        response_format: { type: "json_object" },
       }),
       signal: controller.signal,
     });

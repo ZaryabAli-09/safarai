@@ -107,6 +107,7 @@ export function validateEmail(email: any): string | null {
 export function sanitizeAiPrompt(tripDetails: any): any {
   return {
     name: sanitizeString(tripDetails.name, 200),
+    currentLocation: sanitizeString(tripDetails.currentLocation, 200),
     destinations: sanitizeStringArray(tripDetails.destinations, 100, 10),
     startDate: validateDate(tripDetails.startDate),
     endDate: validateDate(tripDetails.endDate),
@@ -118,6 +119,7 @@ export function sanitizeAiPrompt(tripDetails: any): any {
     tripPace: sanitizeString(tripDetails.tripPace, 100),
     specialOccasion: sanitizeString(tripDetails.specialOccasion, 200),
     interests: sanitizeStringArray(tripDetails.interests, 50, 20),
+    tripDescription: sanitizeString(tripDetails.tripDescription, 2000),
     diningPreferences: sanitizeStringArray(
       tripDetails.diningPreferences,
       50,

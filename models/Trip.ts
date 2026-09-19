@@ -57,6 +57,7 @@ export interface ITrip {
   _id?: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   name: string;
+  currentLocation: string;
   destinations: string[];
   startDate: Date;
   endDate: Date;
@@ -69,6 +70,7 @@ export interface ITrip {
   tripPace: string;
   interests: string[];
   travelers: number;
+  tripDescription: string;
   itinerary: IDayItinerary[];
   summary: ITripSummary;
   budgetBreakdown: IBudgetBreakdown;
@@ -156,6 +158,7 @@ const TripSchema = new mongoose.Schema<ITrip>(
       index: true,
     },
     name: { type: String, required: true, trim: true },
+    currentLocation: { type: String, default: "", trim: true },
     destinations: { type: [String], default: [] },
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
@@ -168,6 +171,7 @@ const TripSchema = new mongoose.Schema<ITrip>(
     tripPace: { type: String, default: "moderate" },
     interests: { type: [String], default: [] },
     travelers: { type: Number, default: 1 },
+    tripDescription: { type: String, default: "", maxlength: 2000 },
     itinerary: [DayItinerarySchema],
     summary: TripSummarySchema,
     budgetBreakdown: BudgetBreakdownSchema,

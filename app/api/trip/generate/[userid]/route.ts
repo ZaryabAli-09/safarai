@@ -25,6 +25,9 @@ function sanitizeTripInput(input: any) {
 
   return {
     name: String(input.name || "My Trip").slice(0, 200),
+    currentLocation: String(input.currentLocation || "")
+      .trim()
+      .slice(0, 200),
     destinations,
     startDate: input.startDate ? new Date(input.startDate) : new Date(),
     endDate: input.endDate
@@ -41,6 +44,9 @@ function sanitizeTripInput(input: any) {
       ? input.interests.filter((i: any) => typeof i === "string").slice(0, 20)
       : [],
     travelers: Math.max(1, Math.min(20, parseInt(input.travelers) || 1)),
+    tripDescription: String(input.tripDescription || "")
+      .trim()
+      .slice(0, 2000),
   };
 }
 
@@ -60,9 +66,13 @@ function extractJSON(text: string): any {
     .replace(/\s*```\s*$/im, "")
     .trim();
 
-  // Try direct parse
+  // Try direct parse, but only accept JSON objects. A model may return a
+  // valid-looking destination array even though the itinerary object is missing.
   try {
-    return JSON.parse(cleaned);
+    const parsed = JSON.parse(cleaned);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed;
+    }
   } catch {}
 
   // Find the outermost JSON object - look for { followed by "itinerary"
@@ -110,54 +120,6 @@ function extractJSON(text: string): any {
         return JSON.parse(jsonStr);
       } catch (e) {
         console.warn("Failed to parse JSON object with brace matching:", e);
-      }
-    }
-  }
-
-  // Try to find JSON array
-  const arrStart = cleaned.indexOf("[");
-  if (arrStart !== -1) {
-    let bracketCount = 0;
-    let arrEnd = -1;
-    let inString = false;
-    let escapeNext = false;
-
-    for (let i = arrStart; i < cleaned.length; i++) {
-      const char = cleaned[i];
-
-      if (escapeNext) {
-        escapeNext = false;
-        continue;
-      }
-
-      if (char === "\\") {
-        escapeNext = true;
-        continue;
-      }
-
-      if (char === '"') {
-        inString = !inString;
-        continue;
-      }
-
-      if (!inString) {
-        if (char === "[") bracketCount++;
-        if (char === "]") {
-          bracketCount--;
-          if (bracketCount === 0) {
-            arrEnd = i;
-            break;
-          }
-        }
-      }
-    }
-
-    if (arrEnd !== -1) {
-      try {
-        const jsonStr = cleaned.slice(arrStart, arrEnd + 1);
-        return JSON.parse(jsonStr);
-      } catch (e) {
-        console.warn("Failed to parse JSON array with bracket matching:", e);
       }
     }
   }
@@ -239,6 +201,7 @@ RULES: 3 activities/day (morning, afternoon, evening). venue=specific real place
   const userMessage: OpenRouterMessage = {
     role: "user",
     content: `Plan a ${tripData.duration}-day ${tripData.tripType} trip:
+  - Starting location: ${tripData.currentLocation}
 - Destinations: ${tripData.destinations.join(", ")}
 - Start: ${startStr}
 - Budget: ${tripData.budget} ${tripData.currency} for ${tripData.travelers} traveler(s)
@@ -246,6 +209,7 @@ RULES: 3 activities/day (morning, afternoon, evening). venue=specific real place
 - Accommodation: ${tripData.accommodation}
 - Transportation: ${tripData.transportation}
 - Interests: ${interestStr}
+- Traveler's additional instructions: ${tripData.tripDescription || "None provided"}
 
 IMPORTANT: 
 - Create a realistic, practical itinerary with SPECIFIC location names
@@ -253,6 +217,7 @@ IMPORTANT:
 - Every activity location must be a real, specific place that can be found on a map
 - Consider the transportation method (${tripData.transportation}) when planning activities
 - Make activities relevant to the traveler's interests and trip pace
+- Use the starting location and additional instructions to plan realistic outbound travel and local transport
 
 Generate the complete JSON itinerary now.`,
   };
@@ -301,6 +266,9 @@ export async function POST(
 
     if (!tripData.destinations || tripData.destinations.length === 0) {
       return response(false, 400, "Please enter at least one destination");
+    }
+    if (!tripData.currentLocation) {
+      return response(false, 400, "Please enter your current location");
     }
     if (tripData.duration < 1 || tripData.duration > 30) {
       return response(false, 400, "Duration must be between 1 and 30 days");
