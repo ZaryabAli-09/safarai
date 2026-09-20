@@ -71,6 +71,26 @@ export interface ITrip {
   interests: string[];
   travelers: number;
   tripDescription: string;
+
+  // ── Extended input (all optional so older trips still load) ──
+  origin?: { name: string; lat?: number; lng?: number; country?: string };
+  outbound?: string; // flight | road | train | bus
+  arrivalTime?: string; // morning | afternoon | evening | night
+  departureTime?: string;
+  adults?: number;
+  children?: number;
+  companions?: string; // solo | couple | family | friends
+  styles?: string[];
+  customTags?: string[]; // labels typed by the user (styles/interests/food)
+  localTransport?: string; // taxi | rental | public | walking
+  destinationDays?: { name: string; days: number }[]; // [] = AI decides
+  budgetUSD?: number; // computed server-side from budget + currency
+  includesFlights?: boolean;
+  prebooked?: { type: "flight" | "hotel"; amount?: number }[];
+  food?: string[];
+  mustInclude?: string[];
+  avoid?: string[];
+
   itinerary: IDayItinerary[];
   summary: ITripSummary;
   budgetBreakdown: IBudgetBreakdown;
@@ -172,6 +192,43 @@ const TripSchema = new mongoose.Schema<ITrip>(
     interests: { type: [String], default: [] },
     travelers: { type: Number, default: 1 },
     tripDescription: { type: String, default: "", maxlength: 2000 },
+
+    // ── Extended input ──
+    origin: {
+      name: { type: String, default: "" },
+      lat: { type: Number },
+      lng: { type: Number },
+      country: { type: String },
+    },
+    outbound: { type: String, default: "flight" },
+    arrivalTime: { type: String, default: "afternoon" },
+    departureTime: { type: String, default: "evening" },
+    adults: { type: Number, default: 1 },
+    children: { type: Number, default: 0 },
+    companions: { type: String, default: "solo" },
+    styles: { type: [String], default: [] },
+    customTags: { type: [String], default: [] },
+    localTransport: { type: String, default: "taxi" },
+    destinationDays: {
+      type: [{ _id: false, name: String, days: Number }],
+      default: [],
+    },
+    budgetUSD: { type: Number },
+    includesFlights: { type: Boolean, default: true },
+    prebooked: {
+      type: [
+        {
+          _id: false,
+          type: { type: String, enum: ["flight", "hotel"] },
+          amount: { type: Number },
+        },
+      ],
+      default: [],
+    },
+    food: { type: [String], default: [] },
+    mustInclude: { type: [String], default: [] },
+    avoid: { type: [String], default: [] },
+
     itinerary: [DayItinerarySchema],
     summary: TripSummarySchema,
     budgetBreakdown: BudgetBreakdownSchema,

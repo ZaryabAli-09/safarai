@@ -673,7 +673,7 @@ export default function TripDetailPage() {
                 {
                   icon: DollarSign,
                   label: "Budget",
-                  value: `$${trip.budget.toLocaleString()}`,
+                  value: `${trip.currency || "USD"} ${trip.budget.toLocaleString()}`,
                 },
                 {
                   icon: Users,

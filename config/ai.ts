@@ -25,10 +25,11 @@ interface OpenRouterResponse {
  * Ordered by quality/reliability for JSON generation tasks.
  */
 const FREE_MODELS = [
-  "nvidia/nemotron-3-super-120b-a12b:free", // Best: 120B, 1M ctx, great JSON
+  "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "z-ai/glm-5.2:free", // Instruction-tuned fallback with clean JSON output
+  "nvidia/nemotron-3-super-120b-a12b:free", // 120B, 1M ctx, reasoning model
   "nvidia/nemotron-3-ultra-550b-a55b:free", // Largest: 550B, 1M ctx
   "nvidia/nemotron-3-nano-30b-a3b:free", // Fallback: 30B, 256K ctx
-  "google/gemma-4-31b-it:free", // Google fallback
   "qwen/qwen3-next-80b-a3b-instruct:free", // Qwen fallback
 ];
 
@@ -55,6 +56,9 @@ async function callOpenRouter(
         messages,
         temperature: 0.4, // Lower temp = more consistent JSON output
         max_tokens: maxTokens,
+        // Nemotron is a reasoning model. Keep its chain-of-thought out of the
+        // returned content so the route receives only the requested JSON.
+        reasoning: { exclude: true },
         // Ask compatible models for an object so itinerary responses cannot
         // degrade into a valid but unrelated JSON array.
         response_format: { type: "json_object" },

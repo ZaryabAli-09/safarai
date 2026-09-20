@@ -8,46 +8,13 @@ import { generateAICompletion, OpenRouterMessage } from "@/config/ai";
 import { geocodeMultipleLocations } from "@/lib/services/location";
 import { getWeatherForLocation } from "@/lib/services/weather";
 import { getLocationImages } from "@/lib/services/locationImage";
+import { sanitizeTripInput, LIMITS } from "@/lib/tripInput";
+import { toUSD } from "@/lib/services/fx";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 15);
-}
-
-function sanitizeTripInput(input: any) {
-  const destinations = Array.isArray(input.destinations)
-    ? input.destinations.filter((d: any) => typeof d === "string").slice(0, 10)
-    : [];
-
-  const duration = parseInt(input.duration) || 0;
-  const budget = parseFloat(input.budget) || 0;
-
-  return {
-    name: String(input.name || "My Trip").slice(0, 200),
-    currentLocation: String(input.currentLocation || "")
-      .trim()
-      .slice(0, 200),
-    destinations,
-    startDate: input.startDate ? new Date(input.startDate) : new Date(),
-    endDate: input.endDate
-      ? new Date(input.endDate)
-      : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    duration: Math.max(1, Math.min(30, duration)),
-    budget: Math.max(1, Math.min(10000000, budget)),
-    currency: String(input.currency || "USD").slice(0, 10),
-    tripType: String(input.tripType || "adventure").slice(0, 50),
-    transportation: String(input.transportation || "mix").slice(0, 50),
-    accommodation: String(input.accommodation || "mid-range").slice(0, 50),
-    tripPace: String(input.tripPace || "moderate").slice(0, 50),
-    interests: Array.isArray(input.interests)
-      ? input.interests.filter((i: any) => typeof i === "string").slice(0, 20)
-      : [],
-    travelers: Math.max(1, Math.min(20, parseInt(input.travelers) || 1)),
-    tripDescription: String(input.tripDescription || "")
-      .trim()
-      .slice(0, 2000),
-  };
 }
 
 function buildDateForDay(startDate: Date, dayIndex: number): string {
@@ -75,10 +42,9 @@ function extractJSON(text: string): any {
     }
   } catch {}
 
-  // Find the outermost JSON object - look for { followed by "itinerary"
-  const start = cleaned.indexOf("{");
-  if (start !== -1) {
-    // Find the matching closing brace by counting braces and quotes
+  // Try every object start so malformed wrapper characters (for example "{{
+  // ... }") do not hide a valid itinerary object that follows them.
+  for (let start = cleaned.indexOf("{"); start !== -1; ) {
     let braceCount = 0;
     let end = -1;
     let inString = false;
@@ -116,8 +82,7 @@ function extractJSON(text: string): any {
 
     if (end !== -1) {
       try {
-        const jsonStr = cleaned.slice(start, end + 1);
-        const parsed = JSON.parse(jsonStr);
+        const parsed = JSON.parse(cleaned.slice(start, end + 1));
         if (Array.isArray(parsed?.itinerary)) {
           return parsed;
         }
@@ -125,6 +90,10 @@ function extractJSON(text: string): any {
         console.warn("Failed to parse JSON object with brace matching:", e);
       }
     }
+
+    const nextStart = cleaned.indexOf("{", start + 1);
+    if (nextStart === -1) break;
+    start = nextStart;
   }
 
   // Log the problematic text for debugging
@@ -137,13 +106,72 @@ function extractJSON(text: string): any {
 
 // ─── AI Itinerary Generation ──────────────────────────────────────────────────
 
-async function generateItineraryWithAI(tripData: any): Promise<any> {
-  const startStr = tripData.startDate.toISOString().split("T")[0];
-  const interestStr =
-    tripData.interests.length > 0
-      ? tripData.interests.join(", ")
-      : "general sightseeing";
+const SLOT_HINT: Record<string, string> = {
+  morning: "morning (6am-11am)",
+  afternoon: "afternoon (12pm-4pm)",
+  evening: "evening (5pm-9pm)",
+  night: "night (after 10pm)",
+};
 
+/** Turns the structured input into the plain-language brief the model sees. */
+function buildTripBrief(t: any): string {
+  const startStr = t.startDate.toISOString().split("T")[0];
+  const endStr = t.endDate.toISOString().split("T")[0];
+  const lines: string[] = [];
+
+  lines.push(
+    `- Starting from: ${t.origin.name}${t.origin.country ? ` (${t.origin.country})` : ""}, getting to the destination by ${t.outbound}`,
+  );
+  lines.push(`- Destinations: ${t.destinations.join(", ")}`);
+  if (t.destinationDays.length > 0) {
+    lines.push(
+      `- Days per destination (follow exactly): ${t.destinationDays.map((d: any) => `${d.name} ${d.days}d`).join(", ")}`,
+    );
+  }
+  lines.push(`- Dates: ${startStr} to ${endStr} (${t.duration} days)`);
+  lines.push(
+    `- Arrival at first destination: ${SLOT_HINT[t.arrivalTime]}. Day 1 must only contain activities AFTER arrival.`,
+  );
+  lines.push(
+    `- Departure from last destination: ${SLOT_HINT[t.departureTime]}. The last day must finish before departure.`,
+  );
+  lines.push(
+    `- Travelers: ${t.adults} adult(s)${t.children ? `, ${t.children} child(ren)` : ""} (${t.companions})`,
+  );
+  lines.push(
+    `- Trip style: ${t.styles.length ? t.styles.join(", ") : "general sightseeing"}`,
+  );
+  lines.push(
+    `- Interests: ${t.interests.length ? t.interests.join(", ") : "general sightseeing"}`,
+  );
+  lines.push(
+    `- Pace: ${t.pace}; stay level: ${t.stayLevel}; local transport: ${t.localTransport}`,
+  );
+
+  const booked = t.prebooked
+    .map(
+      (p: any) =>
+        `${p.type} already booked${p.amount ? ` (${p.amount} ${t.currency})` : ""}`,
+    )
+    .join(", ");
+  lines.push(
+    `- Budget: ${t.budget} ${t.currency} (~${Math.round(t.budgetUSD)} USD) for the whole group. ` +
+      (t.includesFlights
+        ? "This INCLUDES getting to the destination and back."
+        : "This does NOT include flights/long-distance travel to the destination.") +
+      (booked ? ` ${booked}.` : ""),
+  );
+  if (t.food.length) lines.push(`- Food requirements: ${t.food.join(", ")}`);
+  if (t.mustInclude.length)
+    lines.push(`- MUST include: ${t.mustInclude.join("; ")}`);
+  if (t.avoid.length) lines.push(`- AVOID: ${t.avoid.join("; ")}`);
+  lines.push(`- Traveler's additional notes: ${t.comment || "None provided"}`);
+
+  return lines.join("\n");
+}
+
+
+async function generateItineraryWithAI(tripData: any): Promise<any> {
   /**
    * IMPORTANT: Keep the prompt concise and the JSON schema minimal.
    * Large/complex prompts cause free models to fail or truncate output.
@@ -203,24 +231,16 @@ RULES: 3 activities/day (morning, afternoon, evening). venue=specific real place
 
   const userMessage: OpenRouterMessage = {
     role: "user",
-    content: `Plan a ${tripData.duration}-day ${tripData.tripType} trip:
-  - Starting location: ${tripData.currentLocation}
-- Destinations: ${tripData.destinations.join(", ")}
-- Start: ${startStr}
-- Budget: ${tripData.budget} ${tripData.currency} for ${tripData.travelers} traveler(s)
-- Pace: ${tripData.tripPace}
-- Accommodation: ${tripData.accommodation}
-- Transportation: ${tripData.transportation}
-- Interests: ${interestStr}
-- Traveler's additional instructions: ${tripData.tripDescription || "None provided"}
+    content: `Plan a ${tripData.duration}-day trip:
+${buildTripBrief(tripData)}
 
-IMPORTANT: 
-- Create a realistic, practical itinerary with SPECIFIC location names
-- Avoid generic activities like "Airport Transfer" or "Hotel Check-in" unless necessary
-- Every activity location must be a real, specific place that can be found on a map
-- Consider the transportation method (${tripData.transportation}) when planning activities
-- Make activities relevant to the traveler's interests and trip pace
-- Use the starting location and additional instructions to plan realistic outbound travel and local transport
+IMPORTANT:
+- Create a realistic, practical itinerary with SPECIFIC, real place names
+- Respect arrival/departure times: fewer activities on Day 1 if arrival is late, and none after departure on the last day
+- Honor the food requirements, MUST include and AVOID items
+- Give every estimatedCost as a numeric range in ${tripData.currency} (e.g. "20-30 ${tripData.currency}"); use "0 ${tripData.currency}" only for genuinely free places
+- Make budgetBreakdown add up to roughly the budget, and reflect anything already booked or excluded (flights)
+- Avoid generic activities like "Hotel Check-in" unless necessary
 
 Generate the complete JSON itinerary now.`,
   };
@@ -264,21 +284,17 @@ export async function POST(
       return response(false, 400, "User id not found");
     }
 
-    // Sanitize and validate input
-    const tripData = sanitizeTripInput(tripDetails);
-
-    if (!tripData.destinations || tripData.destinations.length === 0) {
-      return response(false, 400, "Please enter at least one destination");
+    // Sanitize and validate input (shared with the form; duration is derived
+    // from the dates, budgetUSD from a server-side FX lookup)
+    const parsed = sanitizeTripInput(tripDetails);
+    if (!parsed.ok) {
+      return response(false, 400, parsed.error);
     }
-    if (!tripData.currentLocation) {
-      return response(false, 400, "Please enter your current location");
+    const budgetUSD = await toUSD(parsed.data.budget, parsed.data.currency);
+    if (budgetUSD > LIMITS.maxBudgetUSD) {
+      return response(false, 400, "That budget looks too large. Please check the amount.");
     }
-    if (tripData.duration < 1 || tripData.duration > 30) {
-      return response(false, 400, "Duration must be between 1 and 30 days");
-    }
-    if (tripData.budget <= 0) {
-      return response(false, 400, "Budget must be a positive number");
-    }
+    const tripData = { ...parsed.data, budgetUSD };
 
     await dbConnect();
 
