@@ -65,7 +65,7 @@ import {
 interface TripFormData {
   name: string;
   destinations: string[];
-  destinationDays: { name: string; days: number }[]; // [] = AI decides
+  destinationDays: { name: string; days: number }[];
   origin: Origin;
   outbound: Outbound;
   startDate: string;
@@ -85,10 +85,7 @@ interface TripFormData {
   currency: string;
   includesFlights?: boolean;
   flightBudget?: number;
-  prebooked: { type: "flight" | "hotel"; amount?: number }[];
-  food: string[];
-  mustInclude: string[];
-  avoid: string[];
+  prebooked: { type: "flight"; amount?: number }[];
   comment: string;
 }
 
@@ -684,9 +681,6 @@ export default function NewTripPage() {
     includesFlights: undefined,
     flightBudget: undefined,
     prebooked: [],
-    food: [],
-    mustInclude: [],
-    avoid: [],
     comment: "",
   });
 
@@ -853,7 +847,7 @@ export default function NewTripPage() {
 
   // ── Generic list helpers ───────────────────────────────────────────────────
 
-  type ListField = "styles" | "interests" | "food" | "mustInclude" | "avoid";
+  type ListField = "styles" | "interests";
 
   const toggleInList = (field: ListField, value: string, max: number) => {
     setFormData((prev) => {
@@ -1200,14 +1194,7 @@ export default function NewTripPage() {
   };
 
   const handleExtrasConfirm = async () => {
-    const bits = [
-      formData.food.length ? `Food: ${formData.food.join(", ")}` : "",
-      formData.mustInclude.length
-        ? `Must see: ${formData.mustInclude.join(", ")}`
-        : "",
-      formData.avoid.length ? `Avoid: ${formData.avoid.join(", ")}` : "",
-      formData.comment.trim(),
-    ].filter(Boolean);
+    const bits = [formData.comment.trim()].filter(Boolean);
     await advance(
       bits.length ? bits.join(" | ") : "Nothing else",
       [
@@ -1254,9 +1241,6 @@ export default function NewTripPage() {
         includesFlights: formData.includesFlights,
         flightBudget: formData.flightBudget,
         prebooked: formData.prebooked,
-        food: formData.food,
-        mustInclude: formData.mustInclude,
-        avoid: formData.avoid,
         comment: formData.comment,
       };
 
@@ -1960,11 +1944,7 @@ export default function NewTripPage() {
           <span className="min-w-0 break-words">{text}</span>
         </div>
       );
-      const tags = [
-        ...formData.styles,
-        ...formData.interests,
-        ...formData.food,
-      ];
+      const tags = [...formData.styles, ...formData.interests];
       return (
         <div className="space-y-3">
           <div className="bg-muted border border-border rounded-xl p-4 space-y-3">
