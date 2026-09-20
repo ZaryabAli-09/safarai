@@ -170,7 +170,6 @@ function buildTripBrief(t: any): string {
   return lines.join("\n");
 }
 
-
 async function generateItineraryWithAI(tripData: any): Promise<any> {
   /**
    * IMPORTANT: Keep the prompt concise and the JSON schema minimal.
@@ -292,7 +291,11 @@ export async function POST(
     }
     const budgetUSD = await toUSD(parsed.data.budget, parsed.data.currency);
     if (budgetUSD > LIMITS.maxBudgetUSD) {
-      return response(false, 400, "That budget looks too large. Please check the amount.");
+      return response(
+        false,
+        400,
+        "That budget looks too large. Please check the amount.",
+      );
     }
     const tripData = { ...parsed.data, budgetUSD };
 
