@@ -23,7 +23,6 @@ export interface IActivity {
     url: string;
     attribution?: string;
   };
-  rating?: number;
 }
 
 export interface IDayItinerary {
@@ -71,8 +70,6 @@ export interface ITrip {
   interests: string[];
   travelers: number;
   tripDescription: string;
-
-  // ── Extended input (all optional so older trips still load) ──
   origin?: { name: string; lat?: number; lng?: number; country?: string };
   outbound?: string; // flight | road | train | bus
   arrivalTime?: string; // morning | afternoon | evening | night
@@ -88,11 +85,7 @@ export interface ITrip {
   budgetUSD?: number; // computed server-side from budget + currency
   includesFlights?: boolean;
   flightBudget?: number;
-  prebooked?: { type: "flight" | "hotel"; amount?: number }[];
-  food?: string[];
-  mustInclude?: string[];
-  avoid?: string[];
-
+  prebooked?: { type: "flight"; amount?: number }[];
   itinerary: IDayItinerary[];
   summary: ITripSummary;
   budgetBreakdown: IBudgetBreakdown;
@@ -130,7 +123,6 @@ const ActivitySchema = new mongoose.Schema(
       url: { type: String },
       attribution: { type: String },
     },
-    rating: { type: Number },
   },
   { _id: false },
 );
@@ -194,8 +186,6 @@ const TripSchema = new mongoose.Schema<ITrip>(
     interests: { type: [String], default: [] },
     travelers: { type: Number, default: 1 },
     tripDescription: { type: String, default: "", maxlength: 2000 },
-
-    // ── Extended input ──
     origin: {
       name: { type: String, default: "" },
       lat: { type: Number },
@@ -223,16 +213,12 @@ const TripSchema = new mongoose.Schema<ITrip>(
       type: [
         {
           _id: false,
-          type: { type: String, enum: ["flight", "hotel"] },
+          type: { type: String, enum: ["flight"] },
           amount: { type: Number },
         },
       ],
       default: [],
     },
-    food: { type: [String], default: [] },
-    mustInclude: { type: [String], default: [] },
-    avoid: { type: [String], default: [] },
-
     itinerary: [DayItinerarySchema],
     summary: TripSummarySchema,
     budgetBreakdown: BudgetBreakdownSchema,
