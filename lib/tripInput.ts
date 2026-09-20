@@ -143,7 +143,7 @@ export interface Origin {
 }
 
 export interface Prebooked {
-  type: "flight" | "hotel";
+  type: "flight";
   amount?: number; // in the trip currency; optional = "booked, amount unknown"
 }
 
@@ -177,12 +177,7 @@ export interface SanitizedTrip {
   includesFlights: boolean;
   flightBudget?: number;
   prebooked: Prebooked[];
-  food: string[];
-  mustInclude: string[];
-  avoid: string[];
   comment: string;
-
-  // Legacy fields — kept so existing screens and the current prompt keep working.
   currentLocation: string;
   tripType: string;
   transportation: string;
@@ -498,12 +493,7 @@ export function sanitizeTripInput(input: any): SanitizeResult {
       includesFlights,
       flightBudget,
       prebooked,
-      food,
-      mustInclude: cleanStrings(input.mustInclude, LIMITS.maxMust, 100),
-      avoid: cleanStrings(input.avoid, LIMITS.maxAvoid, 100),
       comment,
-
-      // legacy mirrors
       currentLocation: origin.name,
       tripType: styles[0] || legacyType || "adventure",
       transportation: outbound,
