@@ -151,6 +151,18 @@ function formatShortDate(dateStr: string) {
   });
 }
 
+function formatCurrency(amount: number, currency: string) {
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  } catch {
+    return `${currency} ${Math.round(amount).toLocaleString()}`;
+  }
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 /** Single activity card — matches trip_detail_redesign mockup */
@@ -397,12 +409,14 @@ function BudgetBar({
   label,
   amount,
   total,
+  currency,
   color,
   icon: Icon,
 }: {
   label: string;
   amount: number;
   total: number;
+  currency: string;
   color: string;
   icon: React.ElementType;
 }) {
@@ -415,7 +429,7 @@ function BudgetBar({
           {label}
         </span>
         <span className="text-foreground font-semibold">
-          ${amount.toLocaleString()} ({pct}%)
+          {formatCurrency(amount, currency)} ({pct}%)
         </span>
       </div>
       <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -673,7 +687,7 @@ export default function TripDetailPage() {
                 {
                   icon: DollarSign,
                   label: "Budget",
-                  value: `${trip.currency || "USD"} ${trip.budget.toLocaleString()}`,
+                  value: formatCurrency(trip.budget, trip.currency || "USD"),
                 },
                 {
                   icon: Users,
@@ -829,31 +843,32 @@ export default function TripDetailPage() {
                     Total Budget
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {trip.budgetBreakdown?.currency || "USD"}
+                    {trip.currency || "USD"}
                   </span>
                 </div>
                 {(() => {
-                  const currencyCode = trip.budgetBreakdown?.currency || "USD";
+                  const currencyCode = trip.currency || "USD";
                   return (
                     <div className="text-3xl font-bold text-foreground">
-                      {currencyCode}{" "}
-                      {(
-                        trip.budgetBreakdown?.total || trip.budget
-                      ).toLocaleString()}
+                      {formatCurrency(
+                        trip.budgetBreakdown?.total || trip.budget,
+                        currencyCode,
+                      )}
                     </div>
                   );
                 })()}
                 <div className="text-xs text-muted-foreground mt-1">
-                  ≈ {trip.budgetBreakdown?.currency || "USD"}{" "}
-                  {Math.round(
+                  {formatCurrency(
                     (trip.budgetBreakdown?.total || trip.budget) /
                       trip.duration,
-                  ).toLocaleString()}{" "}
-                  per day · {trip.budgetBreakdown?.currency || "USD"}{" "}
-                  {Math.round(
+                    trip.currency || "USD",
+                  )}{" "}
+                  per day ·{" "}
+                  {formatCurrency(
                     (trip.budgetBreakdown?.total || trip.budget) /
                       trip.travelers,
-                  ).toLocaleString()}{" "}
+                    trip.currency || "USD",
+                  )}{" "}
                   per person
                 </div>
               </div>
@@ -868,6 +883,7 @@ export default function TripDetailPage() {
                     label="Accommodation"
                     amount={trip.budgetBreakdown.accommodation}
                     total={trip.budgetBreakdown.total}
+                    currency={trip.currency || "USD"}
                     color="bg-primary"
                     icon={Home}
                   />
@@ -875,6 +891,7 @@ export default function TripDetailPage() {
                     label="Food & Dining"
                     amount={trip.budgetBreakdown.food}
                     total={trip.budgetBreakdown.total}
+                    currency={trip.currency || "USD"}
                     color="bg-warning"
                     icon={Utensils}
                   />
@@ -882,6 +899,7 @@ export default function TripDetailPage() {
                     label="Transport"
                     amount={trip.budgetBreakdown.transport}
                     total={trip.budgetBreakdown.total}
+                    currency={trip.currency || "USD"}
                     color="bg-accent-foreground"
                     icon={Car}
                   />
@@ -889,6 +907,7 @@ export default function TripDetailPage() {
                     label="Activities"
                     amount={trip.budgetBreakdown.activities}
                     total={trip.budgetBreakdown.total}
+                    currency={trip.currency || "USD"}
                     color="bg-success"
                     icon={Camera}
                   />
@@ -896,6 +915,7 @@ export default function TripDetailPage() {
                     label="Miscellaneous"
                     amount={trip.budgetBreakdown.miscellaneous}
                     total={trip.budgetBreakdown.total}
+                    currency={trip.currency || "USD"}
                     color="bg-muted-foreground"
                     icon={Package}
                   />
@@ -944,7 +964,7 @@ export default function TripDetailPage() {
                         Estimated Budget
                       </p>
                       <p className="font-medium text-foreground">
-                        {trip.summary.estimatedBudget}
+                        {formatCurrency(trip.budget, trip.currency || "USD")}
                       </p>
                     </div>
                   </div>

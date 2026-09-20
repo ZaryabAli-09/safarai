@@ -20,18 +20,27 @@ export const CURRENCY_CODES: string[] = CURRENCIES.map((c) => c.code);
 export type TripPace = "slow" | "moderate" | "fast";
 export type Accommodation = "budget" | "mid-range" | "luxury";
 export type Outbound = "flight" | "road" | "train" | "bus";
-export type LocalTransport = "taxi" | "rental" | "public" | "walking";
+export type LocalTransport =
+  | "taxi"
+  | "rental"
+  | "own-car"
+  | "public"
+  | "walking";
 export type TimeSlot = "morning" | "afternoon" | "evening" | "night";
-export type Companions = "solo" | "couple" | "family" | "friends";
 
 const PACES: TripPace[] = ["slow", "moderate", "fast"];
 const STAYS: Accommodation[] = ["budget", "mid-range", "luxury"];
 const OUTBOUNDS: Outbound[] = ["flight", "road", "train", "bus"];
-const LOCALS: LocalTransport[] = ["taxi", "rental", "public", "walking"];
+const LOCALS: LocalTransport[] = [
+  "taxi",
+  "rental",
+  "own-car",
+  "public",
+  "walking",
+];
 const SLOTS: TimeSlot[] = ["morning", "afternoon", "evening", "night"];
-const COMPANIONS: Companions[] = ["solo", "couple", "family", "friends"];
 
-// Trip *vibe*. "Family" and "Honeymoon" moved to Companions (who is going).
+// Trip vibe options.
 export const STYLE_OPTIONS = [
   { value: "Adventure", emoji: "🏔️" },
   { value: "Cultural & Heritage", emoji: "🏛️" },
@@ -65,13 +74,16 @@ export const INTEREST_OPTIONS = [
 
 export const FOOD_OPTIONS = ["Halal", "Vegetarian", "Vegan", "Gluten-free"];
 
-export const OUTBOUND_OPTIONS: { value: Outbound; label: string; emoji: string }[] =
-  [
-    { value: "flight", label: "Flight", emoji: "✈️" },
-    { value: "road", label: "Car / Road", emoji: "🚗" },
-    { value: "train", label: "Train", emoji: "🚂" },
-    { value: "bus", label: "Bus", emoji: "🚌" },
-  ];
+export const OUTBOUND_OPTIONS: {
+  value: Outbound;
+  label: string;
+  emoji: string;
+}[] = [
+  { value: "flight", label: "Flight", emoji: "✈️" },
+  { value: "road", label: "Car / Road", emoji: "🚗" },
+  { value: "train", label: "Train", emoji: "🚂" },
+  { value: "bus", label: "Bus", emoji: "🚌" },
+];
 
 export const LOCAL_TRANSPORT_OPTIONS: {
   value: LocalTransport;
@@ -80,6 +92,7 @@ export const LOCAL_TRANSPORT_OPTIONS: {
 }[] = [
   { value: "taxi", label: "Taxi / Ride-hailing", emoji: "🚕" },
   { value: "rental", label: "Rental car", emoji: "🚙" },
+  { value: "own-car", label: "Own car", emoji: "🚘" },
   { value: "public", label: "Public transport", emoji: "🚇" },
   { value: "walking", label: "Mostly walking", emoji: "🚶" },
 ];
@@ -89,17 +102,6 @@ export const TIME_SLOTS: { value: TimeSlot; label: string; hint: string }[] = [
   { value: "afternoon", label: "Afternoon", hint: "12pm – 4pm" },
   { value: "evening", label: "Evening", hint: "5pm – 9pm" },
   { value: "night", label: "Night", hint: "after 10pm" },
-];
-
-export const COMPANION_OPTIONS: {
-  value: Companions;
-  label: string;
-  emoji: string;
-}[] = [
-  { value: "solo", label: "Solo", emoji: "🧍" },
-  { value: "couple", label: "Couple", emoji: "💑" },
-  { value: "family", label: "Family", emoji: "👨‍👩‍👧‍👦" },
-  { value: "friends", label: "Friends", emoji: "🧑‍🤝‍🧑" },
 ];
 
 // Approximate units per 1 USD, used only when the live FX API is unreachable.
@@ -126,6 +128,7 @@ export const LIMITS = {
   maxAvoid: 5,
   maxAdults: 20,
   maxChildren: 10,
+  maxPets: 10,
   maxTravelers: 20,
   maxBudgetUSD: 1_000_000,
 } as const;
@@ -162,7 +165,7 @@ export interface SanitizedTrip {
   departureTime: TimeSlot;
   adults: number;
   children: number;
-  companions: Companions;
+  pets: number;
   styles: string[];
   interests: string[];
   customTags: string[]; // labels the user typed themselves (subset of styles/interests/food)
@@ -172,6 +175,7 @@ export interface SanitizedTrip {
   budget: number;
   currency: string;
   includesFlights: boolean;
+  flightBudget?: number;
   prebooked: Prebooked[];
   food: string[];
   mustInclude: string[];
@@ -193,13 +197,6 @@ export type SanitizeResult =
   | { ok: false; error: string };
 
 // ─── Small helpers (safe on client and server) ────────────────────────────────
-
-export function defaultCompanions(adults: number, children: number): Companions {
-  if (children > 0) return "family";
-  if (adults <= 1) return "solo";
-  if (adults === 2) return "couple";
-  return "friends";
-}
 
 /** Round to a "nice" number: 83,295 → 85,000 ; 1,441 → 1,500 */
 export function niceRound(n: number): number {
@@ -294,9 +291,7 @@ export function sanitizeTripInput(input: any): SanitizeResult {
   // Origin (object from the new form, or legacy string)
   const rawOrigin =
     input.origin && typeof input.origin === "object" ? input.origin : {};
-  const originName = String(
-    rawOrigin.name || input.currentLocation || "",
-  )
+  const originName = String(rawOrigin.name || input.currentLocation || "")
     .trim()
     .slice(0, 200);
   if (!originName) {
@@ -330,7 +325,8 @@ export function sanitizeTripInput(input: any): SanitizeResult {
   if (start.getTime() < todayUTC.getTime() - 86_400_000) {
     return { ok: false, error: "Start date is in the past" };
   }
-  const duration = Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1;
+  const duration =
+    Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1;
   if (duration > LIMITS.maxDays) {
     return {
       ok: false,
@@ -344,7 +340,11 @@ export function sanitizeTripInput(input: any): SanitizeResult {
     const candidate: DestinationDays[] = [];
     for (const d of input.destinationDays) {
       const name = destinations.find(
-        (x) => x.toLowerCase() === String(d?.name || "").trim().toLowerCase(),
+        (x) =>
+          x.toLowerCase() ===
+          String(d?.name || "")
+            .trim()
+            .toLowerCase(),
       );
       const days = toInt(d?.days, 0);
       if (name && days >= 1) candidate.push({ name, days });
@@ -356,24 +356,30 @@ export function sanitizeTripInput(input: any): SanitizeResult {
   }
 
   // Travelers
-  const adults = Math.max(1, Math.min(LIMITS.maxAdults, toInt(input.adults, 0) || toInt(input.travelers, 1)));
-  const children = Math.max(0, Math.min(LIMITS.maxChildren, toInt(input.children, 0)));
+  const adults = Math.max(
+    1,
+    Math.min(
+      LIMITS.maxAdults,
+      toInt(input.adults, 0) || toInt(input.travelers, 1),
+    ),
+  );
+  const children = Math.max(
+    0,
+    Math.min(LIMITS.maxChildren, toInt(input.children, 0)),
+  );
+  const pets = Math.max(0, Math.min(LIMITS.maxPets, toInt(input.pets, 0)));
   if (adults + children > LIMITS.maxTravelers) {
     return {
       ok: false,
       error: `Groups are limited to ${LIMITS.maxTravelers} travelers`,
     };
   }
-  const companions = pick(
-    input.companions,
-    COMPANIONS,
-    defaultCompanions(adults, children),
-  );
-
   // Vibe / interests / food (+ which labels the user typed themselves)
   const styles = cleanStrings(input.styles, LIMITS.maxStyles);
   const legacyType =
-    typeof input.tripType === "string" ? input.tripType.trim().slice(0, 50) : "";
+    typeof input.tripType === "string"
+      ? input.tripType.trim().slice(0, 50)
+      : "";
   const interests = cleanStrings(input.interests, LIMITS.maxInterests);
   const food = cleanStrings(input.food, LIMITS.maxFood);
   const known = new Set(
@@ -387,15 +393,46 @@ export function sanitizeTripInput(input: any): SanitizeResult {
     (t) => !known.has(t.toLowerCase()),
   );
 
+  const outbound = pick(
+    input.outbound ?? input.transportation,
+    OUTBOUNDS,
+    "flight",
+  );
+
   // Budget
-  const budget = typeof input.budget === "number" ? input.budget : parseFloat(input.budget);
+  const budget =
+    typeof input.budget === "number" ? input.budget : parseFloat(input.budget);
   if (!Number.isFinite(budget) || budget <= 0) {
     return { ok: false, error: "Budget must be a positive number" };
   }
   const currency = CURRENCY_CODES.includes(String(input.currency))
     ? String(input.currency)
     : "USD";
-  const includesFlights = input.includesFlights === false ? false : true;
+  if (outbound === "flight" && typeof input.includesFlights !== "boolean") {
+    return {
+      ok: false,
+      error: "Please choose whether your budget includes flights",
+    };
+  }
+  const includesFlights = outbound === "flight" ? input.includesFlights : false;
+  const flightBudget =
+    includesFlights && input.flightBudget !== undefined
+      ? Number(input.flightBudget)
+      : undefined;
+  if (
+    includesFlights &&
+    (flightBudget === undefined ||
+      !Number.isFinite(flightBudget) ||
+      flightBudget < 0)
+  ) {
+    return { ok: false, error: "Please enter a valid flight expense" };
+  }
+  if (flightBudget !== undefined && flightBudget > budget) {
+    return {
+      ok: false,
+      error: "Flight expense can't be more than your budget",
+    };
+  }
 
   const prebooked: Prebooked[] = [];
   if (Array.isArray(input.prebooked)) {
@@ -420,11 +457,6 @@ export function sanitizeTripInput(input: any): SanitizeResult {
   }
 
   // Preferences
-  const outbound = pick(
-    input.outbound ?? input.transportation,
-    OUTBOUNDS,
-    "flight",
-  );
   const pace = pick(input.pace ?? input.tripPace, PACES, "moderate");
   const stayLevel = pick(
     input.stayLevel ?? input.accommodation,
@@ -454,7 +486,7 @@ export function sanitizeTripInput(input: any): SanitizeResult {
       departureTime,
       adults,
       children,
-      companions,
+      pets,
       styles,
       interests,
       customTags,
@@ -464,6 +496,7 @@ export function sanitizeTripInput(input: any): SanitizeResult {
       budget,
       currency,
       includesFlights,
+      flightBudget,
       prebooked,
       food,
       mustInclude: cleanStrings(input.mustInclude, LIMITS.maxMust, 100),

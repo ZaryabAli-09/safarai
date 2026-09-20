@@ -45,22 +45,18 @@ import {
   CURRENCIES,
   STYLE_OPTIONS,
   INTEREST_OPTIONS,
-  FOOD_OPTIONS,
   OUTBOUND_OPTIONS,
   LOCAL_TRANSPORT_OPTIONS,
   TIME_SLOTS,
-  COMPANION_OPTIONS,
   LIMITS,
   FALLBACK_RATES,
   budgetScale,
   niceRound,
-  defaultCompanions,
   type TripPace,
   type Accommodation,
   type Outbound,
   type LocalTransport,
   type TimeSlot,
-  type Companions,
   type Origin,
 } from "@/lib/tripInput";
 
@@ -79,7 +75,7 @@ interface TripFormData {
   departureTime: TimeSlot;
   adults: number;
   children: number;
-  companions: Companions;
+  pets: number;
   styles: string[];
   interests: string[];
   pace: TripPace;
@@ -87,7 +83,8 @@ interface TripFormData {
   localTransport: LocalTransport;
   budget: number;
   currency: string;
-  includesFlights: boolean;
+  includesFlights?: boolean;
+  flightBudget?: number;
   prebooked: { type: "flight" | "hotel"; amount?: number }[];
   food: string[];
   mustInclude: string[];
@@ -366,7 +363,6 @@ function RemovableChips({
 
 // ─── Chat sub-components ──────────────────────────────────────────────────────
 
-
 /** Animated typing dots for bot "thinking" */
 function TypingIndicator() {
   return (
@@ -422,7 +418,6 @@ function ChatBubble({
   );
 }
 
-
 /** Progress + "trip so far" summary — shared shape, rendered differently on mobile vs desktop */
 function useTripProgress(formData: TripFormData, currentStep: ChatStep) {
   const splitApplies =
@@ -444,6 +439,9 @@ function useTripProgress(formData: TripFormData, currentStep: ChatStep) {
     `${formData.adults} adult${formData.adults === 1 ? "" : "s"}` +
     (formData.children > 0
       ? `, ${formData.children} child${formData.children === 1 ? "" : "ren"}`
+      : "") +
+    (formData.pets > 0
+      ? `, ${formData.pets} pet${formData.pets === 1 ? "" : "s"}`
       : "");
 
   const rows: {
@@ -646,7 +644,6 @@ function GeneratingOverlay({
   );
 }
 
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function NewTripPage() {
@@ -654,7 +651,6 @@ export default function NewTripPage() {
   const router = useRouter();
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const companionsTouched = useRef(false);
 
   // ── State ──────────────────────────────────────────────────────────────────
 
@@ -677,7 +673,7 @@ export default function NewTripPage() {
     departureTime: "evening",
     adults: 2,
     children: 0,
-    companions: "couple",
+    pets: 0,
     styles: [],
     interests: [],
     pace: "moderate",
@@ -685,7 +681,8 @@ export default function NewTripPage() {
     localTransport: "taxi",
     budget: 0,
     currency: "USD",
-    includesFlights: true,
+    includesFlights: undefined,
+    flightBudget: undefined,
     prebooked: [],
     food: [],
     mustInclude: [],
@@ -721,10 +718,7 @@ export default function NewTripPage() {
     rates: Record<string, number>;
     live: boolean;
   } | null>(null);
-  const [flightBooked, setFlightBooked] = useState(false);
   const [flightAmount, setFlightAmount] = useState("");
-  const [hotelBooked, setHotelBooked] = useState(false);
-  const [hotelAmount, setHotelAmount] = useState("");
 
   const [genStepIndex, setGenStepIndex] = useState(0);
 
@@ -746,7 +740,8 @@ export default function NewTripPage() {
   }, [messages, isTyping, scrollToBottom]);
 
   useEffect(() => {
-    const setMonths = () => setCalendarMonths(window.innerWidth >= 1024 ? 2 : 1);
+    const setMonths = () =>
+      setCalendarMonths(window.innerWidth >= 1024 ? 2 : 1);
     setMonths();
     window.addEventListener("resize", setMonths);
     return () => window.removeEventListener("resize", setMonths);
@@ -858,12 +853,7 @@ export default function NewTripPage() {
 
   // ── Generic list helpers ───────────────────────────────────────────────────
 
-  type ListField =
-    | "styles"
-    | "interests"
-    | "food"
-    | "mustInclude"
-    | "avoid";
+  type ListField = "styles" | "interests" | "food" | "mustInclude" | "avoid";
 
   const toggleInList = (field: ListField, value: string, max: number) => {
     setFormData((prev) => {
@@ -906,7 +896,9 @@ export default function NewTripPage() {
     const trimmed = destInput.trim();
     if (!trimmed) return;
     if (
-      formData.destinations.some((d) => d.toLowerCase() === trimmed.toLowerCase())
+      formData.destinations.some(
+        (d) => d.toLowerCase() === trimmed.toLowerCase(),
+      )
     ) {
       toast.error("Destination already added");
       return;
@@ -1032,8 +1024,11 @@ export default function NewTripPage() {
 
     const confirmMsg = (
       <span key="c">
-        Perfect! <strong>{days} {days === 1 ? "day" : "days"}</strong> from{" "}
-        <strong>{start}</strong> to <strong>{end}</strong>.
+        Perfect!{" "}
+        <strong>
+          {days} {days === 1 ? "day" : "days"}
+        </strong>{" "}
+        from <strong>{start}</strong> to <strong>{end}</strong>.
       </span>
     );
 
@@ -1068,7 +1063,9 @@ export default function NewTripPage() {
 
   const handleTimingConfirm = async () => {
     const arr = TIME_SLOTS.find((s) => s.value === formData.arrivalTime)?.label;
-    const dep = TIME_SLOTS.find((s) => s.value === formData.departureTime)?.label;
+    const dep = TIME_SLOTS.find(
+      (s) => s.value === formData.departureTime,
+    )?.label;
     await advance(
       `Arrive ${arr?.toLowerCase()}, leave ${dep?.toLowerCase()}`,
       [
@@ -1080,22 +1077,14 @@ export default function NewTripPage() {
     );
   };
 
-  const setPartyCount = (adults: number, children: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      adults,
-      children,
-      companions: companionsTouched.current
-        ? prev.companions
-        : defaultCompanions(adults, children),
-    }));
+  const setPartyCount = (adults: number, children: number, pets: number) => {
+    setFormData((prev) => ({ ...prev, adults, children, pets }));
   };
 
   const handleTravelersConfirm = async () => {
-    const { adults, children, companions } = formData;
-    const label = COMPANION_OPTIONS.find((c) => c.value === companions)?.label;
+    const { adults, children, pets } = formData;
     await advance(
-      `${adults} adult${adults === 1 ? "" : "s"}${children ? `, ${children} child${children === 1 ? "" : "ren"}` : ""} · ${label}`,
+      `${adults} adult${adults === 1 ? "" : "s"}${children ? `, ${children} child${children === 1 ? "" : "ren"}` : ""}${pets ? `, ${pets} pet${pets === 1 ? "" : "s"}` : ""}`,
       [
         <span key="q">
           What <strong>kind of trip</strong> do you want? Pick up to{" "}
@@ -1145,7 +1134,6 @@ export default function NewTripPage() {
     setBudgetCurrency(next);
     setBudgetAmount(niceRound(usd * unitsPerUSD(next)));
     setFlightAmount("");
-    setHotelAmount("");
   };
 
   const handleBudgetConfirm = async () => {
@@ -1153,29 +1141,38 @@ export default function NewTripPage() {
       toast.error("Please enter a valid budget");
       return;
     }
-    const prebooked: TripFormData["prebooked"] = [];
-    for (const [on, raw, type] of [
-      [flightBooked, flightAmount, "flight"],
-      [hotelBooked, hotelAmount, "hotel"],
-    ] as const) {
-      if (!on) continue;
-      const amount = raw.trim() === "" ? undefined : Number(raw);
-      if (amount !== undefined && (!isFinite(amount) || amount < 0)) {
-        toast.error("Booked amounts must be positive numbers");
-        return;
-      }
-      if (amount !== undefined && amount > budgetAmount) {
-        toast.error("A booked amount can't be more than your budget");
-        return;
-      }
-      prebooked.push({ type, amount });
+    const includesFlights =
+      formData.outbound === "flight" ? formData.includesFlights : false;
+    const flightBudget = includesFlights ? Number(flightAmount) : undefined;
+    if (
+      formData.outbound === "flight" &&
+      typeof includesFlights !== "boolean"
+    ) {
+      toast.error("Please choose whether your budget includes flights");
+      return;
+    }
+    if (
+      includesFlights &&
+      (!flightAmount.trim() ||
+        flightBudget === undefined ||
+        !isFinite(flightBudget) ||
+        flightBudget < 0)
+    ) {
+      toast.error("Please enter the flight expense");
+      return;
+    }
+    if (flightBudget !== undefined && flightBudget > budgetAmount) {
+      toast.error("The flight expense can't be more than your budget");
+      return;
     }
 
     setFormData((prev) => ({
       ...prev,
       budget: budgetAmount,
       currency: budgetCurrency,
-      prebooked,
+      includesFlights,
+      flightBudget,
+      prebooked: [],
     }));
 
     const usd = budgetAmount / unitsPerUSD(budgetCurrency);
@@ -1194,9 +1191,8 @@ export default function NewTripPage() {
           , {flightsNote}.
         </span>,
         <span key="q">
-          Last thing, all optional: food needs, places you{" "}
-          <strong>must</strong> see, things to <strong>avoid</strong>, or any
-          other notes.
+          Last thing, all optional: food needs, places you <strong>must</strong>{" "}
+          see, things to <strong>avoid</strong>, or any other notes.
         </span>,
       ],
       "extras",
@@ -1247,7 +1243,7 @@ export default function NewTripPage() {
         departureTime: formData.departureTime,
         adults: formData.adults,
         children: formData.children,
-        companions: formData.companions,
+        pets: formData.pets,
         styles: formData.styles,
         interests: formData.interests,
         pace: formData.pace,
@@ -1256,6 +1252,7 @@ export default function NewTripPage() {
         budget: formData.budget,
         currency: formData.currency,
         includesFlights: formData.includesFlights,
+        flightBudget: formData.flightBudget,
         prebooked: formData.prebooked,
         food: formData.food,
         mustInclude: formData.mustInclude,
@@ -1376,7 +1373,9 @@ export default function NewTripPage() {
               <div className="flex items-start gap-2.5 p-3 bg-accent border border-primary/20 rounded-xl">
                 <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-muted-foreground">Is this right?</p>
+                  <p className="text-xs text-muted-foreground">
+                    Is this right?
+                  </p>
                   <p className="text-sm font-medium text-foreground break-words">
                     {originCandidate.displayName}
                   </p>
@@ -1419,7 +1418,9 @@ export default function NewTripPage() {
           </div>
 
           <div>
-            <SectionLabel>How will you get to {formData.destinations[0]}?</SectionLabel>
+            <SectionLabel>
+              How will you get to {formData.destinations[0]}?
+            </SectionLabel>
             <div className="grid grid-cols-4 gap-2">
               {OUTBOUND_OPTIONS.map((o) => (
                 <button
@@ -1438,7 +1439,9 @@ export default function NewTripPage() {
           </div>
 
           {originCandidate ? (
-            <ContinueButton onClick={() => handleOriginConfirm(originCandidate)}>
+            <ContinueButton
+              onClick={() => handleOriginConfirm(originCandidate)}
+            >
               Yes, continue
             </ContinueButton>
           ) : originNotFound ? (
@@ -1575,10 +1578,7 @@ export default function NewTripPage() {
 
     // 4 — Arrival / departure timing
     if (currentStep === "timing") {
-      const group = (
-        label: string,
-        field: "arrivalTime" | "departureTime",
-      ) => (
+      const group = (label: string, field: "arrivalTime" | "departureTime") => (
         <div>
           <SectionLabel>{label}</SectionLabel>
           <div className="grid grid-cols-4 gap-2">
@@ -1616,34 +1616,24 @@ export default function NewTripPage() {
             value={formData.adults}
             min={1}
             max={LIMITS.maxAdults}
-            onChange={(v) => setPartyCount(v, formData.children)}
+            onChange={(v) => setPartyCount(v, formData.children, formData.pets)}
           />
           <Stepper
             label="Children"
             value={formData.children}
             min={0}
             max={LIMITS.maxChildren}
-            onChange={(v) => setPartyCount(formData.adults, v)}
+            onChange={(v) => setPartyCount(formData.adults, v, formData.pets)}
           />
-          <div>
-            <SectionLabel>Who&apos;s going</SectionLabel>
-            <div className="grid grid-cols-4 gap-2">
-              {COMPANION_OPTIONS.map((c) => (
-                <button
-                  key={c.value}
-                  type="button"
-                  onClick={() => {
-                    companionsTouched.current = true;
-                    setFormData((prev) => ({ ...prev, companions: c.value }));
-                  }}
-                  className={cardCls(formData.companions === c.value)}
-                >
-                  <span className="text-xl">{c.emoji}</span>
-                  <span className="text-xs font-medium">{c.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+          <Stepper
+            label="Pets"
+            value={formData.pets}
+            min={0}
+            max={LIMITS.maxPets}
+            onChange={(v) =>
+              setPartyCount(formData.adults, formData.children, v)
+            }
+          />
           <ContinueButton onClick={handleTravelersConfirm} />
         </div>
       );
@@ -1808,35 +1798,6 @@ export default function NewTripPage() {
       const perPersonPerDay = usd / (people * Math.max(1, formData.duration));
       const tooLow = budgetAmount > 0 && perPersonPerDay < 25;
 
-      const bookedRow = (
-        label: string,
-        on: boolean,
-        setOn: (v: boolean) => void,
-        amount: string,
-        setAmount: (v: string) => void,
-      ) => (
-        <div className="space-y-2">
-          <button
-            type="button"
-            onClick={() => setOn(!on)}
-            className={`w-full text-left ${chipCls(on)} rounded-xl`}
-          >
-            {on ? "✓ " : ""}
-            {label}
-          </button>
-          {on && (
-            <input
-              type="number"
-              min={0}
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder={`Amount in ${budgetCurrency} (optional)`}
-              className={inputCls}
-            />
-          )}
-        </div>
-      );
-
       return (
         <div className="space-y-4">
           <div>
@@ -1921,49 +1882,45 @@ export default function NewTripPage() {
             ))}
           </div>
 
-          <div>
-            <SectionLabel>Does this budget include flights?</SectionLabel>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() =>
-                  setFormData((p) => ({ ...p, includesFlights: true }))
-                }
-                className={segCls(formData.includesFlights)}
-              >
-                Yes, everything
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setFormData((p) => ({ ...p, includesFlights: false }))
-                }
-                className={segCls(!formData.includesFlights)}
-              >
-                No, flights are separate
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <SectionLabel>Already booked?</SectionLabel>
-            <div className="space-y-2">
-              {bookedRow(
-                "✈️ Flight is already booked",
-                flightBooked,
-                setFlightBooked,
-                flightAmount,
-                setFlightAmount,
-              )}
-              {bookedRow(
-                "🏨 Hotel is already booked",
-                hotelBooked,
-                setHotelBooked,
-                hotelAmount,
-                setHotelAmount,
+          {formData.outbound === "flight" && (
+            <div>
+              <SectionLabel>Does this budget include flights?</SectionLabel>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData((p) => ({ ...p, includesFlights: true }))
+                  }
+                  className={segCls(formData.includesFlights === true)}
+                >
+                  Yes, include flights
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData((p) => ({
+                      ...p,
+                      includesFlights: false,
+                      flightBudget: undefined,
+                    }))
+                  }
+                  className={segCls(formData.includesFlights === false)}
+                >
+                  No, already paid
+                </button>
+              </div>
+              {formData.includesFlights === true && (
+                <input
+                  type="number"
+                  min={0}
+                  value={flightAmount}
+                  onChange={(e) => setFlightAmount(e.target.value)}
+                  placeholder={`Flight expense in ${budgetCurrency}`}
+                  className={`${inputCls} mt-2`}
+                />
               )}
             </div>
-          </div>
+          )}
 
           <ContinueButton onClick={handleBudgetConfirm} />
         </div>
@@ -1972,68 +1929,10 @@ export default function NewTripPage() {
 
     // 9 — Optional extras
     if (currentStep === "extras") {
-      const customFood = formData.food.filter((f) => !FOOD_OPTIONS.includes(f));
       return (
         <div className="space-y-4">
           <div>
-            <SectionLabel>Food needs (optional)</SectionLabel>
-            <div className="flex flex-wrap gap-2">
-              {FOOD_OPTIONS.map((f) => (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => toggleInList("food", f, LIMITS.maxFood)}
-                  className={chipCls(formData.food.includes(f))}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-            <div className="mt-2 space-y-2">
-              <RemovableChips
-                items={customFood}
-                onRemove={(v) => removeFromList("food", v)}
-              />
-              <ChipAdder
-                placeholder="Other, e.g. nut allergy"
-                onAdd={(v) => addToList("food", v, LIMITS.maxFood)}
-                disabled={formData.food.length >= LIMITS.maxFood}
-              />
-            </div>
-          </div>
-
-          <div>
-            <SectionLabel>Must include (optional, up to {LIMITS.maxMust})</SectionLabel>
-            <RemovableChips
-              items={formData.mustInclude}
-              onRemove={(v) => removeFromList("mustInclude", v)}
-            />
-            <div className={formData.mustInclude.length ? "mt-2" : ""}>
-              <ChipAdder
-                placeholder="A place or activity you don't want to miss"
-                onAdd={(v) => addToList("mustInclude", v, LIMITS.maxMust)}
-                disabled={formData.mustInclude.length >= LIMITS.maxMust}
-              />
-            </div>
-          </div>
-
-          <div>
-            <SectionLabel>Avoid (optional, up to {LIMITS.maxAvoid})</SectionLabel>
-            <RemovableChips
-              items={formData.avoid}
-              onRemove={(v) => removeFromList("avoid", v)}
-            />
-            <div className={formData.avoid.length ? "mt-2" : ""}>
-              <ChipAdder
-                placeholder="e.g. crowded malls, long hikes"
-                onAdd={(v) => addToList("avoid", v, LIMITS.maxAvoid)}
-                disabled={formData.avoid.length >= LIMITS.maxAvoid}
-              />
-            </div>
-          </div>
-
-          <div>
-            <SectionLabel>Anything else? (optional)</SectionLabel>
+            <SectionLabel>Anything else?</SectionLabel>
             <textarea
               value={formData.comment}
               onChange={(e) =>
@@ -2090,16 +1989,13 @@ export default function NewTripPage() {
               )}
               {row(
                 Users,
-                `${formData.adults} adult${formData.adults === 1 ? "" : "s"}${formData.children ? `, ${formData.children} child${formData.children === 1 ? "" : "ren"}` : ""} · ${formData.companions}`,
+                `${formData.adults} adult${formData.adults === 1 ? "" : "s"}${formData.children ? `, ${formData.children} child${formData.children === 1 ? "" : "ren"}` : ""}${formData.pets ? `, ${formData.pets} pet${formData.pets === 1 ? "" : "s"}` : ""}`,
               )}
               {row(
                 Wallet,
                 `${formatMoney(formData.budget, formData.currency)} ${formData.currency}${formData.includesFlights ? "" : " (excl. flights)"}`,
               )}
-              {row(
-                Zap,
-                `${formData.pace} pace · ${formData.stayLevel} stay`,
-              )}
+              {row(Zap, `${formData.pace} pace · ${formData.stayLevel} stay`)}
             </div>
             {formData.destinationDays.length > 0 && (
               <p className="text-xs text-muted-foreground">

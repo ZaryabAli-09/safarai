@@ -79,6 +79,7 @@ export interface ITrip {
   departureTime?: string;
   adults?: number;
   children?: number;
+  pets?: number;
   companions?: string; // solo | couple | family | friends
   styles?: string[];
   customTags?: string[]; // labels typed by the user (styles/interests/food)
@@ -86,6 +87,7 @@ export interface ITrip {
   destinationDays?: { name: string; days: number }[]; // [] = AI decides
   budgetUSD?: number; // computed server-side from budget + currency
   includesFlights?: boolean;
+  flightBudget?: number;
   prebooked?: { type: "flight" | "hotel"; amount?: number }[];
   food?: string[];
   mustInclude?: string[];
@@ -205,6 +207,7 @@ const TripSchema = new mongoose.Schema<ITrip>(
     departureTime: { type: String, default: "evening" },
     adults: { type: Number, default: 1 },
     children: { type: Number, default: 0 },
+    pets: { type: Number, default: 0 },
     companions: { type: String, default: "solo" },
     styles: { type: [String], default: [] },
     customTags: { type: [String], default: [] },
@@ -215,6 +218,7 @@ const TripSchema = new mongoose.Schema<ITrip>(
     },
     budgetUSD: { type: Number },
     includesFlights: { type: Boolean, default: true },
+    flightBudget: { type: Number },
     prebooked: {
       type: [
         {

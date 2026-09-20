@@ -136,7 +136,7 @@ function buildTripBrief(t: any): string {
     `- Departure from last destination: ${SLOT_HINT[t.departureTime]}. The last day must finish before departure.`,
   );
   lines.push(
-    `- Travelers: ${t.adults} adult(s)${t.children ? `, ${t.children} child(ren)` : ""} (${t.companions})`,
+    `- Travelers: ${t.adults} adult(s)${t.children ? `, ${t.children} child(ren)` : ""}${t.pets ? `, ${t.pets} pet(s)` : ""}`,
   );
   lines.push(
     `- Trip style: ${t.styles.length ? t.styles.join(", ") : "general sightseeing"}`,
@@ -161,6 +161,9 @@ function buildTripBrief(t: any): string {
         : "This does NOT include flights/long-distance travel to the destination.") +
       (booked ? ` ${booked}.` : ""),
   );
+  if (t.flightBudget !== undefined) {
+    lines.push(`- Included flight expense: ${t.flightBudget} ${t.currency}`);
+  }
   if (t.food.length) lines.push(`- Food requirements: ${t.food.join(", ")}`);
   if (t.mustInclude.length)
     lines.push(`- MUST include: ${t.mustInclude.join("; ")}`);
@@ -504,13 +507,23 @@ export async function POST(
         travelStyle: tripData.tripType,
         familyFriendly: true,
       };
-      trip.budgetBreakdown = aiResult.budgetBreakdown || {
-        accommodation: Math.round(tripData.budget * 0.35),
-        food: Math.round(tripData.budget * 0.25),
-        transport: Math.round(tripData.budget * 0.15),
-        activities: Math.round(tripData.budget * 0.15),
-        miscellaneous: Math.round(tripData.budget * 0.1),
-        total: tripData.budget,
+      const aiBudgetBreakdown = aiResult.budgetBreakdown || {};
+      trip.budgetBreakdown = {
+        accommodation:
+          Number(aiBudgetBreakdown.accommodation) ||
+          Math.round(tripData.budget * 0.35),
+        food:
+          Number(aiBudgetBreakdown.food) || Math.round(tripData.budget * 0.25),
+        transport:
+          Number(aiBudgetBreakdown.transport) ||
+          Math.round(tripData.budget * 0.15),
+        activities:
+          Number(aiBudgetBreakdown.activities) ||
+          Math.round(tripData.budget * 0.15),
+        miscellaneous:
+          Number(aiBudgetBreakdown.miscellaneous) ||
+          Math.round(tripData.budget * 0.1),
+        total: Number(aiBudgetBreakdown.total) || tripData.budget,
         currency: tripData.currency,
       };
       trip.packingList = aiResult.packingList || [];
