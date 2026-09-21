@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/config/authOptions";
 import { response } from "@/lib/helperFunctions";
-import { geocodeLocation } from "@/lib/services/location";
+import { geocodeLocation } from "@/config/location";
 
 // Resolve ONE place name (used to confirm the traveler's starting location).
 // Login required so this can't be used as an open proxy to Nominatim.

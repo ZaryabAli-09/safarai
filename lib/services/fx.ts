@@ -3,7 +3,7 @@
 // static fallback so budgets never break if the API is down.
 // TODO: check open.er-api.com's current terms/attribution before launch.
 
-import { CURRENCY_CODES, FALLBACK_RATES } from "@/lib/tripInput";
+import { CURRENCY_CODES, FALLBACK_RATES } from "@/lib/trip-creation-input";
 
 const FALLBACK = FALLBACK_RATES;
 

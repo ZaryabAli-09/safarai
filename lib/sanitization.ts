@@ -105,26 +105,37 @@ export function validateEmail(email: any): string | null {
  * Sanitize AI prompt input
  */
 export function sanitizeAiPrompt(tripDetails: any): any {
+  const origin =
+    tripDetails.origin && typeof tripDetails.origin === "object"
+      ? tripDetails.origin
+      : {};
+
   return {
     name: sanitizeString(tripDetails.name, 200),
-    currentLocation: sanitizeString(tripDetails.currentLocation, 200),
+    origin: {
+      name: sanitizeString(origin.name, 200),
+      country: sanitizeString(origin.country, 80),
+    },
     destinations: sanitizeStringArray(tripDetails.destinations, 100, 10),
     startDate: validateDate(tripDetails.startDate),
     endDate: validateDate(tripDetails.endDate),
     duration: validateDuration(tripDetails.duration),
     budget: validateBudget(tripDetails.budget),
-    tripType: sanitizeString(tripDetails.tripType, 100),
-    transportation: sanitizeString(tripDetails.transportation, 100),
-    accommodation: sanitizeString(tripDetails.accommodation, 100),
-    tripPace: sanitizeString(tripDetails.tripPace, 100),
-    specialOccasion: sanitizeString(tripDetails.specialOccasion, 200),
-    interests: sanitizeStringArray(tripDetails.interests, 50, 20),
-    tripDescription: sanitizeString(tripDetails.tripDescription, 2000),
-    diningPreferences: sanitizeStringArray(
-      tripDetails.diningPreferences,
-      50,
-      20,
-    ),
+    currency: sanitizeString(tripDetails.currency, 10),
+    outbound: sanitizeString(tripDetails.outbound, 30),
+    arrivalTime: sanitizeString(tripDetails.arrivalTime, 20),
+    departureTime: sanitizeString(tripDetails.departureTime, 20),
+    adults: validateDuration(tripDetails.adults),
+    children: validateDuration(tripDetails.children),
+    pets: validateDuration(tripDetails.pets),
+    styles: sanitizeStringArray(tripDetails.styles, 100, 3),
+    interests: sanitizeStringArray(tripDetails.interests, 100, 15),
+    pace: sanitizeString(tripDetails.pace, 20),
+    stayLevel: sanitizeString(tripDetails.stayLevel, 30),
+    localTransport: sanitizeString(tripDetails.localTransport, 30),
+    includesFlights: tripDetails.includesFlights === true,
+    flightBudget: validateBudget(tripDetails.flightBudget),
+    comment: sanitizeString(tripDetails.comment, 2000),
   };
 }
 

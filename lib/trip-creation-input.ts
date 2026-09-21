@@ -2,6 +2,15 @@
 // Shared between the new-trip form (client) and the generate route (server).
 // Keep this file free of server-only imports so both sides can use it.
 
+import {
+  parseISODate,
+  pickEnum,
+  sanitizeString,
+  sanitizeStringArray,
+  toCoord,
+  toInt,
+} from "./input-validation";
+
 // ─── Options ──────────────────────────────────────────────────────────────────
 
 export const CURRENCIES = [
@@ -40,7 +49,6 @@ const LOCALS: LocalTransport[] = [
 ];
 const SLOTS: TimeSlot[] = ["morning", "afternoon", "evening", "night"];
 
-// Trip vibe options.
 export const STYLE_OPTIONS = [
   { value: "Adventure", emoji: "🏔️" },
   { value: "Cultural & Heritage", emoji: "🏛️" },
@@ -71,8 +79,6 @@ export const INTEREST_OPTIONS = [
   "Local Culture",
   "Cafes",
 ];
-
-export const FOOD_OPTIONS = ["Halal", "Vegetarian", "Vegan", "Gluten-free"];
 
 export const OUTBOUND_OPTIONS: {
   value: Outbound;
@@ -105,8 +111,6 @@ export const TIME_SLOTS: { value: TimeSlot; label: string; hint: string }[] = [
 ];
 
 // Approximate units per 1 USD, used only when the live FX API is unreachable.
-// PKR is from 20 Sep 2026; EUR/GBP/INR are derived from a March 2026 snapshot;
-// AED/SAR are pegged; TRY is Feb 2026.
 export const FALLBACK_RATES: Record<string, number> = {
   USD: 1,
   EUR: 0.87,
@@ -123,9 +127,6 @@ export const LIMITS = {
   maxDestinations: 10,
   maxStyles: 3,
   maxInterests: 15,
-  maxFood: 6,
-  maxMust: 5,
-  maxAvoid: 5,
   maxAdults: 20,
   maxChildren: 10,
   maxPets: 10,
@@ -144,7 +145,7 @@ export interface Origin {
 
 export interface Prebooked {
   type: "flight";
-  amount?: number; // in the trip currency; optional = "booked, amount unknown"
+  amount?: number;
 }
 
 export interface DestinationDays {
@@ -155,12 +156,12 @@ export interface DestinationDays {
 export interface SanitizedTrip {
   name: string;
   destinations: string[];
-  destinationDays: DestinationDays[]; // [] = "let the AI decide"
+  destinationDays: DestinationDays[];
   origin: Origin;
   outbound: Outbound;
   startDate: Date;
   endDate: Date;
-  duration: number; // always derived from the dates, never trusted from the client
+  duration: number;
   arrivalTime: TimeSlot;
   departureTime: TimeSlot;
   adults: number;
@@ -168,7 +169,6 @@ export interface SanitizedTrip {
   pets: number;
   styles: string[];
   interests: string[];
-  customTags: string[]; // labels the user typed themselves (subset of styles/interests/food)
   pace: TripPace;
   stayLevel: Accommodation;
   localTransport: LocalTransport;
@@ -178,22 +178,14 @@ export interface SanitizedTrip {
   flightBudget?: number;
   prebooked: Prebooked[];
   comment: string;
-  currentLocation: string;
-  tripType: string;
-  transportation: string;
-  accommodation: string;
-  tripPace: string;
-  travelers: number;
-  tripDescription: string;
 }
 
 export type SanitizeResult =
   | { ok: true; data: SanitizedTrip }
   | { ok: false; error: string };
 
-// ─── Small helpers (safe on client and server) ────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Round to a "nice" number: 83,295 → 85,000 ; 1,441 → 1,500 */
 export function niceRound(n: number): number {
   if (!isFinite(n) || n <= 0) return 0;
   const magnitude = Math.pow(10, Math.floor(Math.log10(n)));
@@ -201,7 +193,6 @@ export function niceRound(n: number): number {
   return Math.max(step, Math.round(n / step) * step);
 }
 
-/** Slider/preset scale for a currency, given how many units equal 1 USD. */
 export function budgetScale(unitsPerUSD: number) {
   const min = niceRound(200 * unitsPerUSD);
   const max = niceRound(20000 * unitsPerUSD);
@@ -219,76 +210,51 @@ export function diffDaysInclusive(startISO: string, endISO: string): number {
   return Math.round((e.getTime() - s.getTime()) / 86_400_000) + 1;
 }
 
-function parseISODate(v: unknown): Date | null {
-  if (typeof v !== "string") return null;
-  const s = v.trim();
-  const d = /^\d{4}-\d{2}-\d{2}$/.test(s)
-    ? new Date(`${s}T00:00:00.000Z`)
-    : new Date(s);
-  return isNaN(d.getTime()) ? null : d;
-}
-
-// ─── Server-side sanitizer ────────────────────────────────────────────────────
-
-function cleanStrings(v: unknown, max: number, maxLen = 60): string[] {
-  if (!Array.isArray(v)) return [];
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const item of v) {
-    if (typeof item !== "string") continue;
-    const s = item.trim().slice(0, maxLen);
-    const key = s.toLowerCase();
-    if (!s || seen.has(key)) continue;
-    seen.add(key);
-    out.push(s);
-    if (out.length >= max) break;
-  }
-  return out;
-}
-
-function pick<T extends string>(v: unknown, allowed: T[], fallback: T): T {
-  return typeof v === "string" && (allowed as string[]).includes(v)
-    ? (v as T)
-    : fallback;
-}
-
-function toInt(v: unknown, fallback: number): number {
-  const n = typeof v === "number" ? v : parseInt(String(v), 10);
-  return Number.isFinite(n) ? Math.trunc(n) : fallback;
-}
-
-function toCoord(v: unknown, min: number, max: number): number | undefined {
-  const n = typeof v === "number" ? v : parseFloat(String(v));
-  return Number.isFinite(n) && n >= min && n <= max ? n : undefined;
-}
+// ─── Trip input sanitizer ─────────────────────────────────────────────────────
 
 /**
- * Validates and normalizes the payload from the new-trip form.
- * Accepts the new field names and falls back to the legacy ones
- * (currentLocation, tripPace, accommodation, transportation, tripDescription).
- * Does NOT compute amountUSD — that needs an FX lookup (see lib/services/fx.ts).
+ * Validates and normalizes the trip payload from the new-trip form.
+ *
+ * @param input - Raw form data (any shape — fields may be missing or malformed)
+ * @returns `{ ok: true, data }` with validated/typed fields, or `{ ok: false, error }`
+ *
+ * @example
+ * ```ts
+ * sanitizeTripInput({
+ *   name: "Trip to Riyadh",
+ *   destinations: ["riyadh", "jeddah"],
+ *   origin: { name: "karachi", lat: 24.86, lng: 67.02, country: "PK" },
+ *   startDate: "2026-09-21",
+ *   endDate: "2026-09-29",
+ *   budget: 400000,
+ *   currency: "PKR",
+ *   adults: 1,
+ *   outbound: "flight",
+ *   includesFlights: true,
+ * });
+ * // → { ok: true, data: { name: "Trip to Riyadh", destinations: [...], duration: 9, ... } }
+ * ```
+ *
  */
 export function sanitizeTripInput(input: any): SanitizeResult {
   if (!input || typeof input !== "object") {
     return { ok: false, error: "Invalid trip data" };
   }
 
-  // Destinations
-  const destinations = cleanStrings(
+  // ── Destinations: filter non-strings, trim, dedupe ──
+  const destinations = sanitizeStringArray(
     input.destinations,
-    LIMITS.maxDestinations,
     100,
+    LIMITS.maxDestinations,
   );
   if (destinations.length === 0) {
     return { ok: false, error: "Please enter at least one destination" };
   }
 
-  // Origin (object from the new form, or legacy string)
+  // ── Origin: name, lat/lng range, optional country ──────────
   const rawOrigin =
     input.origin && typeof input.origin === "object" ? input.origin : {};
-  const originName = String(rawOrigin.name || input.currentLocation || "")
-    .trim()
-    .slice(0, 200);
+  const originName = sanitizeString(rawOrigin.name, 200);
   if (!originName) {
     return { ok: false, error: "Please enter your starting location" };
   }
@@ -296,17 +262,14 @@ export function sanitizeTripInput(input: any): SanitizeResult {
     name: originName,
     lat: toCoord(rawOrigin.lat, -90, 90),
     lng: toCoord(rawOrigin.lng, -180, 180),
-    country:
-      typeof rawOrigin.country === "string"
-        ? rawOrigin.country.slice(0, 80)
-        : undefined,
+    country: sanitizeString(rawOrigin.country, 80),
   };
   if (origin.lat === undefined || origin.lng === undefined) {
     delete origin.lat;
     delete origin.lng;
   }
 
-  // Dates — duration is derived here, never trusted from the client
+  // ── Dates: parse, validate, derive duration ──────────
   const start = parseISODate(input.startDate);
   const end = parseISODate(input.endDate);
   if (!start || !end) {
@@ -323,13 +286,10 @@ export function sanitizeTripInput(input: any): SanitizeResult {
   const duration =
     Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1;
   if (duration > LIMITS.maxDays) {
-    return {
-      ok: false,
-      error: `Trips can be at most ${LIMITS.maxDays} days`,
-    };
+    return { ok: false, error: `Trips can be at most ${LIMITS.maxDays} days` };
   }
 
-  // Days per destination — only kept if it is complete and adds up exactly
+  // ── Destination days: only if all covered and sum = duration ──
   let destinationDays: DestinationDays[] = [];
   if (Array.isArray(input.destinationDays) && destinations.length > 1) {
     const candidate: DestinationDays[] = [];
@@ -350,13 +310,10 @@ export function sanitizeTripInput(input: any): SanitizeResult {
     }
   }
 
-  // Travelers
+  // ── Travelers: clamp to limits ──
   const adults = Math.max(
     1,
-    Math.min(
-      LIMITS.maxAdults,
-      toInt(input.adults, 0) || toInt(input.travelers, 1),
-    ),
+    Math.min(LIMITS.maxAdults, toInt(input.adults, 1)),
   );
   const children = Math.max(
     0,
@@ -369,32 +326,19 @@ export function sanitizeTripInput(input: any): SanitizeResult {
       error: `Groups are limited to ${LIMITS.maxTravelers} travelers`,
     };
   }
-  // Vibe / interests / food (+ which labels the user typed themselves)
-  const styles = cleanStrings(input.styles, LIMITS.maxStyles);
-  const legacyType =
-    typeof input.tripType === "string"
-      ? input.tripType.trim().slice(0, 50)
-      : "";
-  const interests = cleanStrings(input.interests, LIMITS.maxInterests);
-  const food = cleanStrings(input.food, LIMITS.maxFood);
-  const known = new Set(
-    [
-      ...STYLE_OPTIONS.map((s) => s.value),
-      ...INTEREST_OPTIONS,
-      ...FOOD_OPTIONS,
-    ].map((s) => s.toLowerCase()),
-  );
-  const customTags = [...styles, ...interests, ...food].filter(
-    (t) => !known.has(t.toLowerCase()),
+
+  // ── Styles, interests ──────────────────────────────────
+  const styles = sanitizeStringArray(input.styles, 100, LIMITS.maxStyles);
+  const interests = sanitizeStringArray(
+    input.interests,
+    100,
+    LIMITS.maxInterests,
   );
 
-  const outbound = pick(
-    input.outbound ?? input.transportation,
-    OUTBOUNDS,
-    "flight",
-  );
+  // ── Transport ──
+  const outbound = pickEnum(input.outbound, OUTBOUNDS, "flight");
 
-  // Budget
+  // ── Budget: positive number, validate currency ──
   const budget =
     typeof input.budget === "number" ? input.budget : parseFloat(input.budget);
   if (!Number.isFinite(budget) || budget <= 0) {
@@ -403,6 +347,7 @@ export function sanitizeTripInput(input: any): SanitizeResult {
   const currency = CURRENCY_CODES.includes(String(input.currency))
     ? String(input.currency)
     : "USD";
+
   if (outbound === "flight" && typeof input.includesFlights !== "boolean") {
     return {
       ok: false,
@@ -410,6 +355,7 @@ export function sanitizeTripInput(input: any): SanitizeResult {
     };
   }
   const includesFlights = outbound === "flight" ? input.includesFlights : false;
+
   const flightBudget =
     includesFlights && input.flightBudget !== undefined
       ? Number(input.flightBudget)
@@ -429,10 +375,11 @@ export function sanitizeTripInput(input: any): SanitizeResult {
     };
   }
 
+  // ── Prebooked: max 2, positive amounts within budget ──
   const prebooked: Prebooked[] = [];
   if (Array.isArray(input.prebooked)) {
     for (const p of input.prebooked.slice(0, 2)) {
-      const type = p?.type === "flight" || p?.type === "hotel" ? p.type : null;
+      const type = p?.type === "flight" ? p.type : null;
       if (!type || prebooked.some((x) => x.type === type)) continue;
       const amount =
         p.amount === undefined || p.amount === null || p.amount === ""
@@ -451,25 +398,20 @@ export function sanitizeTripInput(input: any): SanitizeResult {
     }
   }
 
-  // Preferences
-  const pace = pick(input.pace ?? input.tripPace, PACES, "moderate");
-  const stayLevel = pick(
-    input.stayLevel ?? input.accommodation,
-    STAYS,
-    "mid-range",
-  );
-  const localTransport = pick(input.localTransport, LOCALS, "taxi");
-  const arrivalTime = pick(input.arrivalTime, SLOTS, "afternoon");
-  const departureTime = pick(input.departureTime, SLOTS, "evening");
+  // ── Preferences: pick from enums with fallbacks ──
+  const pace = pickEnum(input.pace, PACES, "moderate");
+  const stayLevel = pickEnum(input.stayLevel, STAYS, "mid-range");
+  const localTransport = pickEnum(input.localTransport, LOCALS, "taxi");
+  const arrivalTime = pickEnum(input.arrivalTime, SLOTS, "afternoon");
+  const departureTime = pickEnum(input.departureTime, SLOTS, "evening");
 
-  const comment = String(input.comment ?? input.tripDescription ?? "")
-    .trim()
-    .slice(0, 2000);
+  const comment = sanitizeString(input.comment, 2000);
 
+  // ── Result: build sanitized trip object ──
   return {
     ok: true,
     data: {
-      name: String(input.name || `Trip to ${destinations[0]}`).slice(0, 200),
+      name: sanitizeString(input.name, 200) || `Trip to ${destinations[0]}`,
       destinations,
       destinationDays,
       origin,
@@ -484,7 +426,6 @@ export function sanitizeTripInput(input: any): SanitizeResult {
       pets,
       styles,
       interests,
-      customTags,
       pace,
       stayLevel,
       localTransport,
@@ -494,13 +435,6 @@ export function sanitizeTripInput(input: any): SanitizeResult {
       flightBudget,
       prebooked,
       comment,
-      currentLocation: origin.name,
-      tripType: styles[0] || legacyType || "adventure",
-      transportation: outbound,
-      accommodation: stayLevel,
-      tripPace: pace,
-      travelers: adults + children,
-      tripDescription: comment,
     },
   };
 }

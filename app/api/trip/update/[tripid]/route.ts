@@ -114,7 +114,7 @@ export async function PATCH(
         - Day ${dayIndex + 1}: ${day?.title || "Unknown"}
         - Location: ${day?.location || "Not specified"}
         - Trip budget: $${trip.budget}
-        - Trip type: ${trip.tripType}`,
+        - Trip style: ${trip.styles?.[0] || "general sightseeing"}`,
       };
 
       const aiResponse = await generateAICompletion([

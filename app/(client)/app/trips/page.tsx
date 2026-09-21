@@ -51,8 +51,9 @@ interface Trip {
   duration: number;
   budget: number;
   currency: string;
-  tripType: string;
-  travelers: number;
+  styles?: string[];
+  adults?: number;
+  children?: number;
   status: "generating" | "completed" | "draft";
   createdAt: string;
   itinerary?: Array<{
@@ -289,12 +290,12 @@ function TripCard({
             {
               icon: Users,
               label: "Travelers",
-              value: `${trip.travelers} ${trip.travelers === 1 ? "person" : "people"}`,
+              value: `${(trip.adults || 0) + (trip.children || 0)} ${(trip.adults || 0) + (trip.children || 0) === 1 ? "person" : "people"}`,
             },
             {
               icon: Plane,
               label: "Style",
-              value: trip.tripType,
+              value: trip.styles?.[0] || "General sightseeing",
             },
           ].map((stat) => {
             const Icon = stat.icon;
@@ -473,7 +474,8 @@ export default function TripsPage() {
         trip.destinations.some((d) =>
           d.toLowerCase().includes(searchTerm.toLowerCase()),
         );
-      const matchesType = filterType === "all" || trip.tripType === filterType;
+      const matchesType =
+        filterType === "all" || trip.styles?.[0] === filterType;
       return matchesSearch && matchesType;
     })
     .sort((a, b) => {
@@ -497,7 +499,9 @@ export default function TripsPage() {
 
   const tripTypes = [
     "all",
-    ...Array.from(new Set(trips.map((t) => t.tripType))),
+    ...Array.from(
+      new Set(trips.map((t) => t.styles?.[0]).filter(Boolean) as string[]),
+    ),
   ];
 
   // ── Render ─────────────────────────────────────────────────────────────────

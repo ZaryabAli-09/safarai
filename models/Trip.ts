@@ -56,32 +56,26 @@ export interface ITrip {
   _id?: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   name: string;
-  currentLocation: string;
   destinations: string[];
   startDate: Date;
   endDate: Date;
   duration: number;
   budget: number;
   currency: string;
-  tripType: string;
-  transportation: string;
-  accommodation: string;
-  tripPace: string;
-  interests: string[];
-  travelers: number;
-  tripDescription: string;
   origin?: { name: string; lat?: number; lng?: number; country?: string };
-  outbound?: string; // flight | road | train | bus
-  arrivalTime?: string; // morning | afternoon | evening | night
-  departureTime?: string;
-  adults?: number;
-  children?: number;
-  pets?: number;
-  companions?: string; // solo | couple | family | friends
-  styles?: string[];
-  customTags?: string[]; // labels typed by the user (styles/interests/food)
-  localTransport?: string; // taxi | rental | public | walking
-  destinationDays?: { name: string; days: number }[]; // [] = AI decides
+  outbound: string;
+  arrivalTime: string;
+  departureTime: string;
+  adults: number;
+  children: number;
+  pets: number;
+  styles: string[];
+  pace: string;
+  stayLevel: string;
+  localTransport: string;
+  destinationDays: { name: string; days: number }[];
+  interests: string[];
+  comment: string;
   budgetUSD?: number; // computed server-side from budget + currency
   includesFlights?: boolean;
   flightBudget?: number;
@@ -172,40 +166,34 @@ const TripSchema = new mongoose.Schema<ITrip>(
       index: true,
     },
     name: { type: String, required: true, trim: true },
-    currentLocation: { type: String, default: "", trim: true },
     destinations: { type: [String], default: [] },
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
     duration: { type: Number, required: true },
     budget: { type: Number, required: true },
     currency: { type: String, default: "USD" },
-    tripType: { type: String, required: true },
-    transportation: { type: String, default: "mix" },
-    accommodation: { type: String, default: "mid-range" },
-    tripPace: { type: String, default: "moderate" },
-    interests: { type: [String], default: [] },
-    travelers: { type: Number, default: 1 },
-    tripDescription: { type: String, default: "", maxlength: 2000 },
     origin: {
-      name: { type: String, default: "" },
+      name: { type: String, required: true, trim: true },
       lat: { type: Number },
       lng: { type: Number },
       country: { type: String },
     },
-    outbound: { type: String, default: "flight" },
-    arrivalTime: { type: String, default: "afternoon" },
-    departureTime: { type: String, default: "evening" },
-    adults: { type: Number, default: 1 },
+    outbound: { type: String, required: true },
+    arrivalTime: { type: String, required: true },
+    departureTime: { type: String, required: true },
+    adults: { type: Number, required: true },
     children: { type: Number, default: 0 },
     pets: { type: Number, default: 0 },
-    companions: { type: String, default: "solo" },
     styles: { type: [String], default: [] },
-    customTags: { type: [String], default: [] },
-    localTransport: { type: String, default: "taxi" },
+    pace: { type: String, required: true },
+    stayLevel: { type: String, required: true },
+    localTransport: { type: String, required: true },
     destinationDays: {
       type: [{ _id: false, name: String, days: Number }],
       default: [],
     },
+    interests: { type: [String], default: [] },
+    comment: { type: String, default: "", maxlength: 2000 },
     budgetUSD: { type: Number },
     includesFlights: { type: Boolean, default: true },
     flightBudget: { type: Number },

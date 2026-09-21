@@ -82,18 +82,17 @@ interface TripSummary {
 interface Trip {
   _id: string;
   name: string;
-  currentLocation?: string;
+  origin?: { name: string };
   destinations: string[];
   startDate: string;
   endDate: string;
   duration: number;
   budget: number;
   currency: string;
-  tripType: string;
-  tripPace: string;
-  accommodation: string;
-  travelers: number;
-  tripDescription?: string;
+  styles: string[];
+  adults: number;
+  children: number;
+  stayLevel: string;
   itinerary: DayItinerary[];
   summary: TripSummary;
   budgetBreakdown: BudgetBreakdown;
@@ -660,10 +659,10 @@ export default function TripDetailPage() {
 
             {/* Destination + date in muted text */}
             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-5">
-              {trip.currentLocation && (
+              {trip.origin?.name && (
                 <span className="flex items-center gap-1.5">
                   <Plane className="w-3.5 h-3.5" />
-                  From {trip.currentLocation}
+                  From {trip.origin.name}
                 </span>
               )}
               <span className="flex items-center gap-1.5">
@@ -692,12 +691,12 @@ export default function TripDetailPage() {
                 {
                   icon: Users,
                   label: "Travelers",
-                  value: `${trip.travelers}`,
+                  value: `${trip.adults + trip.children}`,
                 },
                 {
                   icon: Plane,
                   label: "Style",
-                  value: trip.tripType,
+                  value: trip.styles?.[0] || "General sightseeing",
                 },
               ].map((stat) => {
                 return (
@@ -866,7 +865,7 @@ export default function TripDetailPage() {
                   per day ·{" "}
                   {formatCurrency(
                     (trip.budgetBreakdown?.total || trip.budget) /
-                      trip.travelers,
+                      trip.adults + trip.children,
                     trip.currency || "USD",
                   )}{" "}
                   per person

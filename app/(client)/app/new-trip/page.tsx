@@ -58,7 +58,7 @@ import {
   type LocalTransport,
   type TimeSlot,
   type Origin,
-} from "@/lib/tripInput";
+} from "@/lib/trip-creation-input";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
