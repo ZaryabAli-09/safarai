@@ -247,16 +247,13 @@ export function AppNav() {
             </div>
           </div>
 
-          {/* Floating New Trip Button */}
-          {pathname !== "/app/new-trip" && (
-            <Link
-              href="/app/new-trip"
-              className="absolute -top-7 left-1/2 -translate-x-1/2 z-10 w-18 h-18 rounded-full bg-brand-gradient-diagonal shadow-[0_10px_24px_-4px_rgba(239,69,99,0.5)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
-              aria-label="New Trip"
-            >
-              <Plus className="w-8 h-8 text-white stroke-[2.5]" />
-            </Link>
-          )}
+          <Link
+            href="/app/new-trip"
+            className="absolute -top-7 left-1/2 -translate-x-1/2 z-10 w-18 h-18 rounded-full bg-brand-gradient-diagonal shadow-[0_10px_24px_-4px_rgba(239,69,99,0.5)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+            aria-label="New Trip"
+          >
+            <Plus className="w-8 h-8 text-white stroke-[2.5]" />
+          </Link>
         </div>
       </div>
       {/* Spacers */}
