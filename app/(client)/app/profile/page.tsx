@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { z } from "zod";
 import toast from "react-hot-toast";
 import { Calendar } from "lucide-react";
+import Image from "next/image";
 
 import { MobileTopBar } from "@/app/_components/navigation/MobileTopBar";
 import { Spinner } from "@/components/ui/loader";
@@ -38,15 +39,26 @@ const formSchema = z.object({
   email: z.string().email("Invalid email address"),
   gender: z.string().nullable().optional(),
   dob: z.string().nullable().optional(),
+  avatar: z.string().optional(),
 });
 
 type FormDataType = z.infer<typeof formSchema>;
+
+const PROFILE_AVATARS = [
+  "female-1.jpeg",
+  "female-2.jpeg",
+  "female-3.jpeg",
+  "male-1.jpeg",
+  "male-2.jpeg",
+  "male-3.jpeg",
+] as const;
 
 const initialFormState: FormDataType = {
   username: "",
   email: "",
   gender: "",
   dob: "",
+  avatar: "",
 };
 
 export default function Profile() {
@@ -57,6 +69,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [openDatePicker, setOpenDatePicker] = useState(false);
+  const [showAvatarOptions, setShowAvatarOptions] = useState(false);
 
   const formatDate = (date: Date) => date.toISOString().split("T")[0]; // YYYY-MM-DD
 
@@ -79,6 +92,7 @@ export default function Profile() {
         email: result?.data?.email ?? "",
         gender: result?.data?.gender ?? "",
         dob: result?.data?.dob ?? "",
+        avatar: result?.data?.avatar ?? "",
       });
     } catch (error) {
       toast.error((error as Error).message);
@@ -100,6 +114,27 @@ export default function Profile() {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleAvatarSelect = async (avatar: string) => {
+    if (!userId) return;
+
+    setFormData((prev) => ({ ...prev, avatar }));
+    try {
+      const res = await fetch(`/api/profile/update-profile/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ avatar }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        toast.error(result.message);
+        return;
+      }
+      toast.success("Avatar updated");
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -174,11 +209,28 @@ export default function Profile() {
               <CardContent className="space-y-6">
                 {/* Avatar Section */}
                 <div className="flex items-center gap-4">
-                  <div className="h-16 w-16 rounded-full border-2 border-muted flex items-center justify-center text-xl font-semibold bg-muted">
-                    {formData.username
-                      ? formData.username.slice(0, 2).toUpperCase()
-                      : "U"}
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowAvatarOptions((open) => !open)}
+                    className="h-16 w-16 rounded-full border-2 border-muted overflow-hidden bg-muted flex items-center justify-center"
+                    aria-label="Choose profile avatar"
+                  >
+                    {formData.avatar ? (
+                      <Image
+                        src={`/profile-avatars/${formData.avatar}`}
+                        alt="Selected profile avatar"
+                        width={64}
+                        height={64}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-xl font-semibold">
+                        {formData.username
+                          ? formData.username.slice(0, 2).toUpperCase()
+                          : "U"}
+                      </span>
+                    )}
+                  </button>
                   <div>
                     <p className="font-medium">{formData.username || "User"}</p>
                     <p className="text-sm text-muted-foreground">
@@ -186,6 +238,35 @@ export default function Profile() {
                     </p>
                   </div>
                 </div>
+
+                {showAvatarOptions && (
+                  <div className="space-y-3 rounded-xl border border-border bg-white p-4">
+                    <Label>Choose an avatar</Label>
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                      {PROFILE_AVATARS.map((avatar) => (
+                        <button
+                          key={avatar}
+                          type="button"
+                          onClick={() => handleAvatarSelect(avatar)}
+                          className={`aspect-square overflow-hidden rounded-full border-2 transition-transform hover:scale-105 ${
+                            formData.avatar === avatar
+                              ? "border-primary ring-2 ring-primary/30"
+                              : "border-transparent"
+                          }`}
+                          aria-label={`Choose ${avatar.replace(".jpeg", "")}`}
+                        >
+                          <Image
+                            src={`/profile-avatars/${avatar}`}
+                            alt=""
+                            width={96}
+                            height={96}
+                            className="h-full w-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Name Field */}
                 <div className="space-y-2">

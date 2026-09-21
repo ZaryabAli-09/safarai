@@ -16,11 +16,10 @@ export async function PATCH(
     }
 
     // Only allow updates to specific fields
-    const ALLOWED_FIELDS = ["username", "gender", "dob"];
+    const ALLOWED_FIELDS = ["username", "gender", "dob", "avatar"];
     const filteredBody = Object.fromEntries(
       Object.entries(body).filter(([key]) => ALLOWED_FIELDS.includes(key)),
     );
-
     if (Object.keys(filteredBody).length === 0) {
       return response(false, 400, "No valid fields to update");
     }

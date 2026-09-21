@@ -1169,13 +1169,15 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16">
           <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-10">
             <div className="sm:col-span-2 md:col-span-1">
-              <Image
-                src={Logo}
-                alt="SafarAI"
-                width={180}
-                height={46}
-                className="h-12 w-auto"
-              />
+              <Link href="/" className="flex items-center shrink-0">
+                <Image
+                  className="w-auto h-10"
+                  src={Logo}
+                  alt="SafarAI"
+                  priority
+                />
+                <div className="font-bold text-black">SAFAR AI.</div>
+              </Link>
               <p className="mt-4 text-sm text-muted-foreground max-w-xs">
                 Travel planning, without the chaos.
               </p>

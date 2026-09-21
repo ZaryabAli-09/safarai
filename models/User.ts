@@ -8,6 +8,7 @@ export interface IUser {
   password: string;
   gender?: string;
   dob?: string;
+  avatar?: string;
   role?: "user" | "admin"; // Optional role field with default value
   isVerified?: boolean;
   verificationCode?: string;
@@ -73,6 +74,11 @@ const userSchema = new mongoose.Schema<IUser>(
     dob: {
       type: String,
       default: "",
+    },
+    avatar: {
+      type: String,
+      default: "",
+      trim: true,
     },
   },
   {

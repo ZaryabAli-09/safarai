@@ -15,7 +15,7 @@ export async function GET(
 
     await dbConnect();
     const user = await User.findById(userid).select(
-      "username email gender dob",
+      "username email gender dob avatar",
     );
 
     if (!user) {

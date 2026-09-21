@@ -8,8 +8,14 @@ export default function ResetPassword() {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className="flex flex-col gap-4 p-6 md:p-10">
-        <div className="flex justify-center gap-2 md:justify-start">
-          <Image className="w-40  h-20 " src={Logo} alt="Logo" />
+        <div className="flex justify-center items-center md:justify-start">
+          <Image className="w-20" src={Logo} alt="Logo" />
+          <div
+            className="font-bold text-4xl pr-1 bg-clip-text text-transparent
+                     bg-[linear-gradient(90deg,#fcd14a_10%,#f9a94a_18%,#ef595c_55%,#ef4563_72%,#654c9e_100%)]"
+          >
+            SAFAR AI.
+          </div>
         </div>
 
         <div className="flex flex-1 items-center justify-center ">

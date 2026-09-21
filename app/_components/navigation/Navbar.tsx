@@ -22,10 +22,10 @@ export function Navbar() {
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 max-w-7xl mx-auto">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            <Image className="w-auto h-7" src={Logo} alt="SafarAI" priority />
+          <Link href="/" className="flex items-center shrink-0">
+            <Image className="w-auto h-10" src={Logo} alt="SafarAI" priority />
+            <div className="font-bold text-black">SAFAR AI.</div>
           </Link>
-
           {/* Centered nav: desktop */}
           <nav className="hidden lg:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
             {navLinks.map((link) => (
@@ -38,7 +38,6 @@ export function Navbar() {
               </Link>
             ))}
           </nav>
-
           {/* CTA: desktop */}
           <div className="hidden lg:flex items-center gap-3">
             <Button
@@ -49,7 +48,6 @@ export function Navbar() {
               <Link href="/app">Get started</Link>
             </Button>
           </div>
-
           {/* Mobile toggle */}
           <button
             onClick={() => setOpen((v) => !v)}
