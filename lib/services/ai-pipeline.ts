@@ -176,6 +176,10 @@ export async function generateTripItinerary(
 
 The input fields are the complete source of truth. Preserve every style and interest label exactly as provided. Never abbreviate, rename, translate, or convert labels such as "Nature & Scenery" into codes or shortened values.
 
+Keep Budget and Estimated Cost for each activity in ${trip.currency}. Use the provided budget to guide your suggestions. Also suggest hotels, resturants and best sightseeing locations. Use real venues and locations, not generic placeholders.
+
+If userhas provided a flight booked with bugdet then it will be taken from the budget and remaining budget will be used for the trip. If user has not provided a flight booked with budget then it will be assumed that the budget is for the entire trip including flights.
+
 Return this shape:
 {
   "itinerary": [{
