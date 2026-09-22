@@ -15,11 +15,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Spinner } from "@/components/ui/loader";
 import { Skeleton } from "@/components/ui/skeleton";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import {
   Plane,
-  Plus,
   ChevronRight,
   Trash2,
   Clock,
@@ -85,16 +84,6 @@ function getFirstActivityImage(trip: Trip): string | null {
   const firstActivity = activitiesWithImages[0];
   return firstActivity.image?.url || null;
 }
-
-/** Trip type emoji */
-const TRIP_TYPE_EMOJI: Record<string, string> = {
-  adventure: "🏔️",
-  cultural: "🏛️",
-  relaxation: "🏖️",
-  family: "👨‍👩‍👧‍👦",
-  honeymoon: "💑",
-  solo: "🎒",
-};
 
 // ─── Skeleton card ────────────────────────────────────────────────────────
 
