@@ -108,6 +108,18 @@ body {
   --brand-pink: #ef4563;
   --brand-purple: #654c9e;
   /* -------------------------------- */
+  --brand-gradient: linear-gradient(
+    90deg,
+    var(--brand-yellow) 0%,
+    var(--brand-orange) 28%,
+    var(--brand-coral) 55%,
+    var(--brand-pink) 72%,
+    var(--brand-purple) 100%
+  );
+  /* Sidebar slider range uses brand gradient */
+  .brand-slider [data-slot="slider-range"] {
+    background: var(--brand-gradient);
+  }
   --radius: 0.625rem;
   --background: #ffffff;
   --foreground: #111827;
