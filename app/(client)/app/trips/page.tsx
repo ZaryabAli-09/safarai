@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
-import { Plus, Sparkles } from "lucide-react";
+import { MapPinned, Plus, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { MobileTopBar } from "@/app/_components/navigation/MobileTopBar";
 import { Button } from "@/components/ui/button";
@@ -247,45 +247,77 @@ export default function TripsPage() {
               )}
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="relative mb-6">
-                <div className="w-24 h-24 bg-accent rounded-full flex items-center justify-center">
-                  <Sparkles className="w-12 h-12 text-primary" />
+            <div className="flex min-h-[420px] w-full items-center justify-center px-4">
+              <div className="flex w-full max-w-md flex-col items-center text-center">
+                {/* Icon */}
+                <div className="relative mb-5">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-gradient-muted">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-background">
+                      <MapPinned className="h-5 w-5 text-[var(--brand-purple)]" />
+                    </div>
+                  </div>
+
+                  {/* Small sparkle accent */}
+                  <div className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-background shadow-sm">
+                    <Sparkles className="h-3 w-3 text-[var(--brand-coral)]" />
+                  </div>
                 </div>
-                <div className="absolute -top-1 -right-1 w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-muted-foreground" />
-                </div>
+
+                {/* Heading */}
+                <h2 className="text-base font-semibold text-foreground sm:text-lg">
+                  {hasActiveFilters
+                    ? "No trips match your filters"
+                    : "No trips yet"}
+                </h2>
+
+                {/* Description */}
+                <p className="mt-2 max-w-sm text-xs leading-5 text-muted-foreground sm:text-sm">
+                  {hasActiveFilters
+                    ? "Try adjusting your search or filters to find your trips."
+                    : "Start planning your next adventure. Tell us where you want to go and we'll help create the perfect trip."}
+                </p>
+
+                {/* Actions */}
+                {!hasActiveFilters ? (
+                  <Link href="/app/new-trip" className="mt-5">
+                    <Button
+                      className="
+            h-9
+            rounded-full
+            bg-brand-gradient
+            px-4
+            text-xs
+            font-medium
+            text-white
+            shadow-sm
+            transition-opacity
+            hover:opacity-90
+            sm:h-10
+            sm:px-5
+            sm:text-sm
+          "
+                    >
+                      <Plus className="mr-1.5 h-4 w-4" />
+                      Plan Your First Trip
+                    </Button>
+                  </Link>
+                ) : (
+                  <button
+                    onClick={handleResetFilters}
+                    className="
+          mt-5
+          text-xs
+          font-medium
+          text-muted-foreground
+          transition-colors
+          hover:text-foreground
+          sm:text-sm
+        "
+                  >
+                    Clear filters
+                  </button>
+                )}
               </div>
-
-              <h2 className="text-xl font-bold text-foreground mb-2">
-                {hasActiveFilters
-                  ? "No trips match your filters"
-                  : "No trips yet"}
-              </h2>
-
-              <p className="text-muted-foreground mb-6 max-w-sm text-sm leading-relaxed">
-                {hasActiveFilters
-                  ? "Try adjusting your search or filters to find your trips."
-                  : "Let our AI plan your perfect trip! Just tell us where you want to go and we'll handle the rest."}
-              </p>
-
-              {!hasActiveFilters && (
-                <Link href="/app/new-trip">
-                  <Button className="bg-primary hover:bg-primary/90 text-white flex items-center gap-2 rounded-xl px-6">
-                    <Plus className="w-4 h-4" />
-                    Plan Your First Trip
-                  </Button>
-                </Link>
-              )}
-
-              {hasActiveFilters && (
-                <button
-                  onClick={handleResetFilters}
-                  className="text-sm text-primary hover:underline"
-                >
-                  Clear filters
-                </button>
-              )}
             </div>
           )}
         </div>

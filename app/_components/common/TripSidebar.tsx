@@ -110,21 +110,26 @@ export default function TripSidebar({
           {SORT_OPTIONS.map((opt) => (
             <label
               key={opt.value}
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors  ${
+              className={`relative flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors ${
                 filters.sortBy === opt.value
-                  ? "bg-accent text-accent-foreground"
+                  ? "text-accent-foreground"
                   : "hover:bg-muted"
               }`}
             >
+              {filters.sortBy === opt.value && (
+                <span className="absolute inset-0 -z-0 rounded-lg bg-brand-gradient-muted opacity-30" />
+              )}
+
               <input
                 type="radio"
                 name="trip-sort"
                 value={opt.value}
                 checked={filters.sortBy === opt.value}
                 onChange={() => update("sortBy", opt.value)}
-                className=""
+                className="relative z-10"
               />
-              <span className="text-sm">{opt.label}</span>
+
+              <span className="relative z-10 text-sm">{opt.label}</span>
             </label>
           ))}
         </div>
@@ -139,26 +144,33 @@ export default function TripSidebar({
           role="radiogroup"
           aria-label="Trip status"
         >
-          {STATUS_OPTIONS.map((opt) => (
-            <label
-              key={opt.value}
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors ${
-                filters.statusFilter === opt.value
-                  ? "bg-accent text-accent-foreground"
-                  : "hover:bg-muted"
-              }`}
-            >
-              <input
-                type="radio"
-                name="trip-status"
-                value={opt.value}
-                checked={filters.statusFilter === opt.value}
-                onChange={() => update("statusFilter", opt.value)}
-                className="accent-primary"
-              />
-              <span className="text-sm">{opt.label}</span>
-            </label>
-          ))}
+          {STATUS_OPTIONS.map((opt) => {
+            const isSelected = filters.statusFilter === opt.value;
+
+            return (
+              <label
+                key={opt.value}
+                className={`relative isolate flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors ${
+                  isSelected ? "text-accent-foreground" : "hover:bg-muted"
+                }`}
+              >
+                {isSelected && (
+                  <span className="absolute inset-0 z-0 rounded-lg bg-brand-gradient-muted opacity-30" />
+                )}
+
+                <input
+                  type="radio"
+                  name="trip-status"
+                  value={opt.value}
+                  checked={isSelected}
+                  onChange={() => update("statusFilter", opt.value)}
+                  className="relative z-10 accent-primary"
+                />
+
+                <span className="relative z-10 text-sm">{opt.label}</span>
+              </label>
+            );
+          })}
         </div>
       </div>
 

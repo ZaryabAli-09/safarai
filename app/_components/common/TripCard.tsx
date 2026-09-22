@@ -19,12 +19,14 @@ import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import {
   Plane,
-  ChevronRight,
   Trash2,
   Clock,
   Wallet,
   Users,
   Globe,
+  ExternalLink,
+  CornerDownRight,
+  ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -62,7 +64,7 @@ export interface TripFilters {
   budgetRange: [number, number];
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-GB", {
@@ -72,39 +74,77 @@ function formatDate(dateStr: string) {
   });
 }
 
-/** Get first available activity image from trip (use first, not random) */
+/**
+ * Get first available activity image from trip.
+ * Uses the first available image instead of a random image.
+ */
 function getFirstActivityImage(trip: Trip): string | null {
-  if (!trip.itinerary || trip.itinerary.length === 0) return null;
+  if (!trip.itinerary || trip.itinerary.length === 0) {
+    return null;
+  }
 
   const allActivities = trip.itinerary.flatMap((day) => day.activities || []);
-  const activitiesWithImages = allActivities.filter((a) => a.image?.url);
 
-  if (activitiesWithImages.length === 0) return null;
+  const activitiesWithImages = allActivities.filter(
+    (activity) => activity.image?.url,
+  );
+
+  if (activitiesWithImages.length === 0) {
+    return null;
+  }
 
   const firstActivity = activitiesWithImages[0];
+
   return firstActivity.image?.url || null;
 }
 
-// ─── Skeleton card ────────────────────────────────────────────────────────
+// ─── Skeleton card ──────────────────────────────────────────────────────────
 
 export function TripCardSkeleton() {
   return (
-    <div className="bg-white rounded-2xl border border-border overflow-hidden flex flex-col">
-      <Skeleton className="h-36 w-full rounded-none" />
-      <div className="p-4 flex flex-col gap-3">
-        <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="h-3 w-1/2" />
-        <div className="grid grid-cols-2 gap-2">
-          <Skeleton className="h-12 rounded-xl" />
-          <Skeleton className="h-12 rounded-xl" />
+    <div
+      className="
+        relative
+        min-w-0
+        w-full
+        overflow-hidden
+        rounded-2xl
+        border
+        border-border/70
+        bg-background
+        shadow-sm
+      "
+    >
+      {/* Image */}
+      <Skeleton className="aspect-[16/10] w-full rounded-none" />
+
+      {/* Content */}
+      <div className="flex flex-col gap-3 p-4">
+        {/* Title */}
+        <div className="space-y-1.5">
+          <Skeleton className="h-5 w-3/4" />
+          <Skeleton className="h-3.5 w-1/2" />
         </div>
-        <Skeleton className="h-9 rounded-xl" />
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-2">
+          <Skeleton className="h-14 rounded-xl" />
+          <Skeleton className="h-14 rounded-xl" />
+          <Skeleton className="h-14 rounded-xl" />
+          <Skeleton className="h-14 rounded-xl" />
+        </div>
+
+        {/* Actions */}
+        <div className="mt-1 flex items-center justify-between">
+          <Skeleton className="h-9 w-24 rounded-full" />
+          <Skeleton className="h-9 w-9 rounded-full" />
+        </div>
       </div>
     </div>
   );
 }
 
-// ─── Trip card ────────────────────────────────────────────────────────────
+// ─── Trip card ──────────────────────────────────────────────────────────────
 
 export default function TripCard({
   trip,
@@ -116,18 +156,27 @@ export default function TripCard({
   onDelete: (id: string) => void;
 }) {
   const [deleting, setDeleting] = useState(false);
+
   const activityImage = getFirstActivityImage(trip);
-  const isReady = trip.status === "completed";
+
+  const travelerCount = (trip.adults || 0) + (trip.children || 0);
 
   const handleDelete = async () => {
     setDeleting(true);
+
     try {
       const res = await fetch(`/api/trip/delete/${trip._id}`, {
         method: "DELETE",
       });
+
       const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "Failed to delete trip");
+
+      if (!res.ok) {
+        throw new Error(result.message || "Failed to delete trip");
+      }
+
       toast.success("Trip deleted successfully");
+
       onDelete(trip._id);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to delete trip");
@@ -140,52 +189,91 @@ export default function TripCard({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.35, delay: index * 0.06 }}
-      className="group bg-white rounded-2xl border border-border overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col"
+      exit={{ opacity: 0 }}
+      transition={{
+        duration: 0.35,
+        delay: index * 0.06,
+      }}
+      className="
+        group
+        relative
+        isolate
+        min-w-0
+        w-full
+        overflow-hidden
+        rounded-2xl
+        border
+        border-border/70
+        bg-background
+        shadow-sm
+      "
     >
-      {/* Card header — image or flat muted for drafts */}
+      {/* Brand gradient bottom accent */}
+      <div className="pointer-events-none absolute rounded-md opacity-20 inset-x-0 bottom-0 -z-10 h-full bg-brand-gradient-muted" />
+
+      {/* ─── Image ─────────────────────────────────────────────────────── */}
+
       <div
-        className={`relative h-36 overflow-hidden ${
-          activityImage ? "" : "bg-muted"
-        }`}
+        className={`
+          relative
+          aspect-[16/10]
+          w-full
+          overflow-hidden
+          ${activityImage ? "" : "bg-muted"}
+        `}
       >
         {activityImage ? (
           <img
             src={activityImage}
             alt={trip.name}
-            className="w-full h-full object-cover"
+            className="h-full w-full object-cover"
           />
         ) : (
-          /* Draft / no-image: flat muted with single centered neutral icon */
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Globe className="w-10 h-10 text-muted-foreground/40" />
+          <div className="flex h-full w-full items-center justify-center">
+            <Globe className="h-8 w-8 text-muted-foreground/30" />
           </div>
         )}
 
-        {/* Status pill — positioned top-right, semantic colors */}
-        <div className="absolute top-3 right-3">
-          {isReady ? (
-            <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-[#dcfce7] text-[color:var(--success)] border border-[#bbf7d0]">
-              ✓ Ready
-            </span>
-          ) : trip.status === "generating" ? (
-            <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-muted text-muted-foreground border border-border">
-              ⏳ Generating
-            </span>
-          ) : (
-            /* Draft — neutral bordered pill */
-            <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-white text-muted-foreground border border-border">
-              Draft
-            </span>
-          )}
-        </div>
+        {/* Image bottom gradient */}
+        {activityImage && (
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/50 to-transparent" />
+        )}
 
-        {/* Delete button */}
+        {/* ─── Destination ────────────────────────────────────────────── */}
+
+        {activityImage ? (
+          <div className="absolute bottom-3 left-4 right-4">
+            <p className="truncate text-xs font-medium text-white drop-shadow-sm">
+              {trip.destinations.join(" → ")}
+            </p>
+          </div>
+        ) : (
+          <div className="absolute bottom-3 left-4 right-4">
+            <p className="truncate text-xs font-medium text-muted-foreground">
+              {trip.destinations.join(" → ")}
+            </p>
+          </div>
+        )}
+
+        {/* ─── Delete button ──────────────────────────────────────────── */}
+
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <button
-              className="absolute bottom-3 right-3 w-8 h-8 bg-black/20 hover:bg-destructive/80 backdrop-blur-sm rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+              className="
+                absolute
+                bottom-3
+                right-3
+                flex
+                h-7
+                w-7
+                items-center
+                justify-center
+                rounded-full
+                bg-black/30
+                backdrop-blur-sm
+                hover:bg-destructive/80
+              "
               title="Delete trip"
             >
               {deleting ? (
@@ -194,121 +282,256 @@ export default function TripCard({
                   className="border-white border-t-white/60"
                 />
               ) : (
-                <Trash2 className="w-3.5 h-3.5 text-white" />
+                <Trash2 className="h-3 w-3 text-white" />
               )}
             </button>
           </AlertDialogTrigger>
+
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
                 Delete &quot;{trip.name}&quot;?
               </AlertDialogTitle>
+
               <AlertDialogDescription>
                 This action cannot be undone. Your trip itinerary and all
                 associated data will be permanently deleted.
               </AlertDialogDescription>
             </AlertDialogHeader>
+
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
+
               <AlertDialogAction
                 onClick={handleDelete}
-                className="bg-destructive hover:bg-destructive/90 text-white"
+                className="bg-destructive text-white hover:bg-destructive/90"
               >
                 Delete Trip
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-
-        {/* Destination label — only show when there's an image */}
-        {activityImage && (
-          <>
-            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/30 to-transparent" />
-            <div className="absolute bottom-3 left-4 right-12">
-              <p className="text-white text-xs font-medium opacity-90 truncate">
-                {trip.destinations.join(" → ")}
-              </p>
-            </div>
-          </>
-        )}
-
-        {/* Destination label for draft/no-image cards — below the icon area */}
-        {!activityImage && (
-          <div className="absolute bottom-3 left-4 right-12">
-            <p className="text-muted-foreground text-xs font-medium truncate">
-              {trip.destinations.join(" → ")}
-            </p>
-          </div>
-        )}
       </div>
 
-      {/* Card body */}
-      <div className="p-4 flex flex-col flex-1 gap-3">
+      {/* ─── Card body ────────────────────────────────────────────────── */}
+
+      <div className="flex min-w-0 flex-1 flex-col gap-3 p-4">
         {/* Title + date */}
-        <div>
-          <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-1">
+
+        <div className="min-w-0">
+          <h3
+            className="
+              truncate
+              text-base
+              font-bold
+              leading-tight
+              text-foreground
+              sm:text-lg
+            "
+          >
             {trip.name}
           </h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {formatDate(trip.startDate)} — {formatDate(trip.endDate)}
+
+          <p className="flex items-center gap-2 **:mt-1 truncate text-xs text-muted-foreground sm:text-sm">
+            {formatDate(trip.startDate)}{" "}
+            <ArrowRight className="w-3 relative bottom-0.5" />{" "}
+            {formatDate(trip.endDate)}
           </p>
         </div>
 
-        {/* Stats grid */}
-        <div className="grid grid-cols-2 gap-2">
-          {[
-            {
-              icon: Clock,
-              label: "Duration",
-              value: `${trip.duration} days`,
-            },
-            {
-              icon: Wallet,
-              label: "Budget",
-              value: `${trip.currency || "USD"} ${trip.budget.toLocaleString()}`,
-            },
-            {
-              icon: Users,
-              label: "Travelers",
-              value: `${(trip.adults || 0) + (trip.children || 0)} ${
-                (trip.adults || 0) + (trip.children || 0) === 1
-                  ? "person"
-                  : "people"
-              }`,
-            },
-            {
-              icon: Plane,
-              label: "Style",
-              value: trip.styles?.[0] || "General sightseeing",
-            },
-          ].map((stat) => {
-            const Icon = stat.icon;
-            return (
-              <div
-                key={stat.label}
-                className="flex items-center gap-2 p-2.5 bg-muted rounded-xl"
-              >
-                <Icon className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                <div>
-                  <p className="text-xs text-muted-foreground leading-none">
-                    {stat.label}
-                  </p>
-                  <p className="text-xs font-semibold text-foreground mt-0.5 capitalize">
-                    {stat.value}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
+        {/* ─── Stats grid ─────────────────────────────────────────────── */}
+
+        <div className="grid min-w-0 grid-cols-2 gap-2">
+          {/* Duration */}
+
+          <div
+            className="
+              flex
+              min-w-0
+              items-center
+              gap-2
+              rounded-xl
+              border
+              border-[var(--brand-yellow-muted)]
+              bg-background
+              px-2.5
+              py-2.5
+            "
+          >
+            <Clock
+              className="
+                h-5
+                w-5
+                shrink-0
+                text-[var(--brand-yellow)]
+              "
+            />
+
+            <div className="min-w-0">
+              <p className="text-[10px] leading-none text-muted-foreground">
+                Duration
+              </p>
+
+              <p className="mt-1 truncate text-xs font-semibold text-foreground sm:text-sm">
+                {trip.duration} {trip.duration === 1 ? "Day" : "Days"}
+              </p>
+            </div>
+          </div>
+
+          {/* Budget */}
+
+          <div
+            className="
+              flex
+              min-w-0
+              items-center
+              gap-2
+              rounded-xl
+              border
+              border-[var(--brand-coral-muted)]
+              bg-background
+              px-2.5
+              py-2.5
+            "
+          >
+            <Wallet
+              className="
+                h-5
+                w-5
+                shrink-0
+                text-[var(--brand-coral)]
+              "
+            />
+
+            <div className="min-w-0">
+              <p className="text-[10px] leading-none text-muted-foreground">
+                Budget
+              </p>
+
+              <p className="mt-1 truncate text-xs font-semibold text-foreground sm:text-sm">
+                {trip.currency || "USD"} {trip.budget.toLocaleString()}
+              </p>
+            </div>
+          </div>
+
+          {/* Travelers */}
+
+          <div
+            className="
+              flex
+              min-w-0
+              items-center
+              gap-2
+              rounded-xl
+              border
+              border-[var(--brand-pink-muted)]
+              bg-background
+              px-2.5
+              py-2.5
+            "
+          >
+            <Users
+              className="
+                h-5
+                w-5
+                shrink-0
+                text-[var(--brand-pink)]
+              "
+            />
+
+            <div className="min-w-0">
+              <p className="text-[10px] leading-none text-muted-foreground">
+                Travelers
+              </p>
+
+              <p className="mt-1 truncate text-xs font-semibold text-foreground sm:text-sm">
+                {travelerCount} {travelerCount === 1 ? "Person" : "People"}
+              </p>
+            </div>
+          </div>
+
+          {/* Style */}
+
+          <div
+            className="
+              flex
+              min-w-0
+              items-center
+              gap-2
+              rounded-xl
+              border
+              border-[var(--brand-purple-muted)]
+              bg-background
+              px-2.5
+              py-2.5
+            "
+          >
+            <Plane
+              className="
+                h-5
+                w-5
+                shrink-0
+                text-[var(--brand-purple)]
+              "
+            />
+
+            <div className="min-w-0">
+              <p className="text-[10px] leading-none text-muted-foreground">
+                Style
+              </p>
+
+              <p className="mt-1 truncate text-xs font-semibold capitalize text-foreground sm:text-sm">
+                {trip.styles?.[0] || "General"}
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* View button */}
-        <Link href={`/app/trips/${trip._id}`} className="mt-auto">
-          <Button className="w-full bg-primary hover:bg-primary/90 text-white text-sm font-medium flex items-center justify-center gap-2 rounded-xl h-9">
-            View Itinerary
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </Link>
+        {/* ─── Actions ────────────────────────────────────────────────── */}
+
+        <div className="mt-1 flex justify-between gap-3 text-gray-500 ">
+          {/* View Trip */}
+
+          <div
+            className="
+            flex justify-between items-center
+                h-9
+                rounded-full
+                px-3
+                text-xs
+                font-medium
+              
+              
+              "
+          >
+            View Trip
+            <CornerDownRight className="ml-2 mt-2 h-4.5 w-4.5" />
+          </div>
+
+          {/* Open Itinerary */}
+
+          <Link href={`/app/trips/${trip._id}`} aria-label="Open itinerary">
+            <Button
+              size="icon"
+              aria-label="Open itinerary"
+              className="
+                h-9
+                w-9
+                shrink-0
+                rounded-full
+                bg-brand-gradient
+                opacity-90
+                text-white
+                shadow-sm
+                hover:opacity-100
+                hover:scale-110
+                cursor-pointer
+              "
+            >
+              <ExternalLink className="h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
       </div>
     </motion.div>
   );

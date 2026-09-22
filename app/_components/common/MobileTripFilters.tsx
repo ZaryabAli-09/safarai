@@ -59,7 +59,7 @@ export function MobileTripFilters({
             className="flex-1 relative cursor-pointer"
           >
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <div className="w-full pl-10 pr-4 py-2 bg-muted border border-border rounded-lg text-sm text-muted-foreground">
+            <div className="w-full pl-10 pr-4 py-2 bg-white border border-border rounded-lg text-sm text-muted-foreground">
               {filters.searchTerm || "Search trips..."}
             </div>
           </div>
@@ -121,7 +121,7 @@ export function MobileTripFilters({
                           searchTerm: e.target.value,
                         }))
                       }
-                      className="w-full pl-10 pr-4 py-2 bg-muted border border-border rounded-full text-base focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                      className="w-full pl-10 pr-4 py-2 bg-white border border-border rounded-full text-base focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
                     />
                   </div>
                 </div>
