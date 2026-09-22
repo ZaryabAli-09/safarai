@@ -73,6 +73,16 @@ body {
     var(--brand-purple) 100%
   );
 }
+@utility bg-brand-gradient-muted {
+  background: linear-gradient(
+    90deg,
+    var(--brand-yellow-muted) 0%,
+    var(--brand-orange-muted) 28%,
+    var(--brand-coral-muted) 55%,
+    var(--brand-pink-muted) 72%,
+    var(--brand-purple-muted) 100%
+  );
+}
 
 @utility bg-brand-gradient-diagonal {
   background: linear-gradient(
@@ -107,6 +117,13 @@ body {
   --brand-coral: #ef595c;
   --brand-pink: #ef4563;
   --brand-purple: #654c9e;
+
+  /* muted brand colors  */
+  --brand-yellow-muted: #f4e9c6;
+  --brand-orange-muted: #fce6c8;
+  --brand-coral-muted: #fbd5d6;
+  --brand-pink-muted: #fbd0d6;
+  --brand-purple-muted: #d9d3ea;
   /* -------------------------------- */
   --brand-gradient: linear-gradient(
     90deg,
@@ -116,6 +133,7 @@ body {
     var(--brand-pink) 72%,
     var(--brand-purple) 100%
   );
+
   /* Sidebar slider range uses brand gradient */
   .brand-slider [data-slot="slider-range"] {
     background: var(--brand-gradient);

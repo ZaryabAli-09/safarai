@@ -23,14 +23,45 @@ export async function GET(
     );
     const skip = (page - 1) * limit;
 
+    const searchTerm = searchParams.get("searchTerm")?.trim();
+    const sortBy = searchParams.get("sortBy") || "latest";
+    const statusFilter = searchParams.get("statusFilter") || "all";
+    const durationMin = Number(searchParams.get("durationMin"));
+    const durationMax = Number(searchParams.get("durationMax"));
+
+    const query: Record<string, unknown> = { userId: userid };
+
+    if (searchTerm) {
+      query.$or = [
+        { name: { $regex: searchTerm, $options: "i" } },
+        { destinations: { $regex: searchTerm, $options: "i" } },
+      ];
+    }
+
+    if (statusFilter === "ready") query.status = "completed";
+    if (statusFilter === "draft") query.status = "draft";
+    if (statusFilter === "in-progress") query.status = "generating";
+
+    if (Number.isFinite(durationMin) || Number.isFinite(durationMax)) {
+      query.duration = {};
+      if (Number.isFinite(durationMin)) {
+        (query.duration as Record<string, number>).$gte = durationMin;
+      }
+      if (Number.isFinite(durationMax)) {
+        (query.duration as Record<string, number>).$lte = durationMax;
+      }
+    }
+
+    const sort = sortBy === "oldest" ? { createdAt: 1 } : { createdAt: -1 };
+
     await dbConnect();
 
     // Get total count for pagination
-    const total = await Trip.countDocuments({ userId: userid });
+    const total = await Trip.countDocuments(query);
 
     // Fetch paginated trips
-    const trips = await Trip.find({ userId: userid })
-      .sort({ createdAt: -1 })
+    const trips = await Trip.find(query)
+      .sort(sort)
       .skip(skip)
       .limit(limit)
       .lean(); // Use lean for better performance on read-only queries
