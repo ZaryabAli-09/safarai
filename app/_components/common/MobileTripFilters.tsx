@@ -121,7 +121,7 @@ export function MobileTripFilters({
                           searchTerm: e.target.value,
                         }))
                       }
-                      className="w-full pl-10 pr-4 py-2 bg-muted border border-border rounded-full text-sm focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                      className="w-full pl-10 pr-4 py-2 bg-muted border border-border rounded-full text-base focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
                     />
                   </div>
                 </div>
