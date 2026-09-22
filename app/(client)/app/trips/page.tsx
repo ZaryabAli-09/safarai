@@ -52,6 +52,12 @@ export default function TripsPage() {
 
   const getTrips = useCallback(
     async (page = 1, append = false, currentFilters: TripFilters) => {
+      const hasUnpaginatedFilters =
+        currentFilters.searchTerm.trim() !== "" ||
+        currentFilters.statusFilter !== "all" ||
+        currentFilters.durationRange[0] !== DEFAULT_FILTERS.durationRange[0] ||
+        currentFilters.durationRange[1] !== DEFAULT_FILTERS.durationRange[1];
+
       if (append) {
         setLoadingMore(true);
       } else {
@@ -67,6 +73,7 @@ export default function TripsPage() {
           statusFilter: currentFilters.statusFilter,
           durationMin: currentFilters.durationRange[0].toString(),
           durationMax: currentFilters.durationRange[1].toString(),
+          paginate: hasUnpaginatedFilters ? "false" : "true",
         });
 
         const res = await fetch(
@@ -86,7 +93,10 @@ export default function TripsPage() {
         }
 
         setPaginationData(result?.data?.pagination);
-        setHasMore(page < (result?.data?.pagination?.totalPages || 1));
+        setHasMore(
+          !hasUnpaginatedFilters &&
+            page < (result?.data?.pagination?.totalPages || 1),
+        );
       } catch (error) {
         toast.error((error as Error).message);
       } finally {
@@ -190,11 +200,7 @@ export default function TripsPage() {
       {/* Desktop: 35% sidebar / 65% content */}
       <div className="mx-auto max-w-7xl px-4 pt-32 pb-8 md:flex md:gap-6 md:pt-8">
         <div className="hidden md:block  md:w-[35%] shrink-0">
-          <TripSidebar
-            trips={trips}
-            filters={filters}
-            onFiltersChange={setFilters}
-          />
+          <TripSidebar filters={filters} onFiltersChange={setFilters} />
         </div>
 
         <div className="md:w-[65%]">

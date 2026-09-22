@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { Trip, TripFilters } from "./TripCard";
+import { TripFilters } from "./TripCard";
 
 const STATUS_OPTIONS: { value: TripFilters["statusFilter"]; label: string }[] =
   [
@@ -21,7 +21,6 @@ const SORT_OPTIONS: { value: TripFilters["sortBy"]; label: string }[] = [
 ];
 
 interface TripSidebarProps {
-  trips: Trip[];
   filters: TripFilters;
   onFiltersChange: (filters: TripFilters) => void;
 }
@@ -31,15 +30,24 @@ interface TripSidebarProps {
 // its width (35%); this component just fills that column. Mobile uses its own
 // separate filter bar in TripsPage.
 export default function TripSidebar({
-  trips,
   filters,
   onFiltersChange,
 }: TripSidebarProps) {
-  const durationRange = useMemo(() => {
-    if (trips.length === 0) return [1, 30];
-    const durations = trips.map((t) => t.duration);
-    return [1, Math.max(...durations, 1)];
-  }, [trips]);
+  const durationRange = [1, 30];
+  const [searchTerm, setSearchTerm] = useState(filters.searchTerm);
+
+  useEffect(() => {
+    setSearchTerm(filters.searchTerm);
+  }, [filters.searchTerm]);
+
+  useEffect(() => {
+    if (searchTerm === filters.searchTerm) return;
+    const timeout = window.setTimeout(() => {
+      onFiltersChange({ ...filters, searchTerm });
+    }, 400);
+
+    return () => window.clearTimeout(timeout);
+  }, [filters, onFiltersChange, searchTerm]);
 
   const update = <K extends keyof TripFilters>(
     key: K,
@@ -84,8 +92,8 @@ export default function TripSidebar({
         <Input
           type="text"
           placeholder="Search trips or destinations..."
-          value={filters.searchTerm}
-          onChange={(e) => update("searchTerm", e.target.value)}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
           className="h-9  text-base focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
         />
       </div>

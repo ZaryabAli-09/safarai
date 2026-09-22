@@ -28,6 +28,7 @@ export async function GET(
     const statusFilter = searchParams.get("statusFilter") || "all";
     const durationMin = Number(searchParams.get("durationMin"));
     const durationMax = Number(searchParams.get("durationMax"));
+    const paginate = searchParams.get("paginate") !== "false";
 
     const query: Record<string, unknown> = { userId: userid };
 
@@ -52,7 +53,9 @@ export async function GET(
       }
     }
 
-    const sort = sortBy === "oldest" ? { createdAt: 1 } : { createdAt: -1 };
+    const sort = {
+      createdAt: (sortBy === "oldest" ? 1 : -1) as 1 | -1,
+    };
 
     await dbConnect();
 
@@ -60,19 +63,18 @@ export async function GET(
     const total = await Trip.countDocuments(query);
 
     // Fetch paginated trips
-    const trips = await Trip.find(query)
-      .sort(sort)
-      .skip(skip)
-      .limit(limit)
-      .lean(); // Use lean for better performance on read-only queries
+    const tripsQuery = Trip.find(query).sort(sort);
+    const trips = paginate
+      ? await tripsQuery.skip(skip).limit(limit).lean()
+      : await tripsQuery.lean();
 
-    const totalPages = Math.ceil(total / limit);
+    const totalPages = paginate ? Math.ceil(total / limit) : 1;
 
     return response(true, 200, "Trips retrieved successfully", {
       trips,
       pagination: {
         page,
-        limit,
+        limit: paginate ? limit : total,
         total,
         totalPages,
         hasMore: page < totalPages,
