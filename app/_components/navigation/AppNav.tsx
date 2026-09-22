@@ -128,7 +128,7 @@ export function AppNav() {
         <div className="relative">
           {/* Bar with circular notch cut via CSS mask (width-independent, always round) */}
           <div
-            className="bg-slate-100 rounded-t-2xl h-24 shadow-[0_-6px_16px_rgba(0,0,0,0.08)]"
+            className="bg-slate-100 rounded-t-2xl h-20 shadow-[0_-6px_16px_rgba(0,0,0,0.08)]"
             style={{
               WebkitMaskImage:
                 "radial-gradient(circle 40px at 50% 8px, transparent 0%, transparent 94%, black 100%)",
