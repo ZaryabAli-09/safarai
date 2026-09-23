@@ -647,48 +647,81 @@ function GeneratingOverlay({
 }) {
   if (!visible) return null;
 
+  const total = GENERATION_STEPS.length;
+  const pct = Math.round(((activeStep + 1) / total) * 100);
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/95 backdrop-blur-sm px-6">
-      <div className="w-full max-w-sm flex flex-col items-center text-center gap-5">
-        <div className="relative w-16 h-16">
-          <span className="absolute inset-0 rounded-full border-4 border-[var(--brand-coral)]/15" />
-          <span className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-[var(--brand-coral)]" />
-          <Plane className="absolute inset-0 m-auto h-6 w-6 text-[var(--brand-coral)]" />
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/70 px-5 backdrop-blur-sm">
+      <div className="max-h-[calc(100dvh_-_2rem)] w-full max-w-md overflow-y-auto rounded-3xl border border-border bg-white p-6 shadow-xl sm:p-7">
+        {/* Brand ring + plane */}
+        <div className="flex justify-center">
+          <div className="relative flex size-20 items-center justify-center">
+            <span className="absolute inset-0 rounded-full border-[3px] border-[var(--brand-coral)]/15" />
+            <span className="absolute inset-0 animate-spin rounded-full border-[3px] border-transparent border-t-[var(--brand-coral)] border-r-[var(--brand-coral)]" />
+            <span className="flex size-12 items-center justify-center rounded-full bg-brand-gradient-muted">
+              <Plane className="h-5 w-5 text-[var(--brand-purple)]" />
+            </span>
+          </div>
         </div>
 
-        <div className="space-y-1.5">
+        <div className="mt-5 text-center">
           <h2 className="text-lg font-semibold text-foreground">
             Crafting your itinerary…
           </h2>
-          <p className="text-sm text-muted-foreground">
-            Building a personalized {duration || ""}-day plan
-            {destinations.length > 0 ? ` for ${destinations.join(", ")}` : ""}.
-            This can take up to a minute.
+          <p className="mx-auto mt-1 max-w-xs text-sm text-muted-foreground">
+            {duration ? `A personalized ${duration}-day plan` : "Your plan"}
+            {destinations.length > 0
+              ? ` for ${destinations.join(", ")}`
+              : ""}
+            . This usually takes under a minute.
           </p>
         </div>
 
-        <div className="w-full flex flex-col gap-2.5 text-center mt-1">
-          {GENERATION_STEPS.map((step, i) => (
-            <div key={step} className="flex items-center gap-2.5 text-sm">
-              {i < activeStep ? (
-                <CheckCircle2 className="w-4 h-4 text-[color:var(--success)] flex-shrink-0" />
-              ) : i === activeStep ? (
-                <Spinner size="small" className="flex-shrink-0" />
-              ) : (
-                <span className="w-4 h-4 rounded-full border-2 border-border flex-shrink-0" />
-              )}
-              <span
-                className={
-                  i <= activeStep
-                    ? "text-foreground font-medium"
-                    : "text-muted-foreground/50"
-                }
-              >
-                {step}
-              </span>
-            </div>
-          ))}
+        {/* Brand-gradient progress */}
+        <div className="mt-5">
+          <BrandProgress value={pct} />
+          <p className="mt-2 text-right text-[11px] font-medium text-muted-foreground">
+            Step {Math.min(activeStep + 1, total)} of {total}
+          </p>
         </div>
+
+        {/* Steps — one aligned icon column, matching the sidebar list */}
+        <ul className="mt-4 space-y-2.5">
+          {GENERATION_STEPS.map((step, i) => {
+            const isDone = i < activeStep;
+            const isActive = i === activeStep;
+            return (
+              <li key={step} className="flex items-center gap-3">
+                <span className="flex size-5 shrink-0 items-center justify-center">
+                  {isDone ? (
+                    <span className="flex size-5 items-center justify-center rounded-full bg-brand-gradient">
+                      <Check className="h-3 w-3 text-white" />
+                    </span>
+                  ) : isActive ? (
+                    <Spinner
+                      size="small"
+                      className="border-[var(--brand-coral)]/25 border-t-[var(--brand-coral)]"
+                    />
+                  ) : (
+                    <span className="size-5 rounded-full border-2 border-border" />
+                  )}
+                </span>
+                <span
+                  className={cn(
+                    "text-sm",
+                    isDone
+                      ? "text-muted-foreground"
+                      : isActive
+                        ? "font-semibold text-foreground"
+                        : "text-muted-foreground/50",
+                  )}
+                >
+                  {step}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </div>
   );
