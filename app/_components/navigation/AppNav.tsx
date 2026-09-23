@@ -34,6 +34,10 @@ export function AppNav() {
       .catch(() => undefined);
   }, [session?.user?._id]);
 
+  // The trip planner is a full-screen chat shell with its own header and back
+  // button, so it must not inherit the desktop navbar or the mobile bottom nav.
+  if (pathname.startsWith("/app/new-trip")) return null;
+
   const navItems = [
     { label: "Feed", href: "/app/feed", icon: UserStarIcon },
     { label: "Trips", href: "/app/trips", icon: Send },

@@ -1,13 +1,18 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, differenceInDays, startOfToday } from "date-fns";
+import { cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
 import { Spinner } from "@/components/ui/loader";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
@@ -15,7 +20,6 @@ import {
 } from "@/components/ui/popover";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import type { DateRange as RDPDateRange } from "react-day-picker";
-import { MobileTopBar } from "@/app/_components/navigation/MobileTopBar";
 import {
   Select,
   SelectContent,
@@ -25,21 +29,27 @@ import {
 } from "@/components/ui/select";
 import toast from "react-hot-toast";
 import {
-  Plane,
-  MapPin,
-  Calendar as CalendarIcon,
-  DollarSign,
-  Users,
-  Zap,
-  ChevronRight,
-  ChevronDown,
+  ArrowLeft,
+  ArrowRight,
   Bot,
-  User,
-  CheckCircle2,
-  Plus,
-  X,
-  Wallet,
+  Calendar as CalendarIcon,
+  CalendarRange,
   Check,
+  CheckCircle2,
+  ChevronDown,
+  Clock,
+  MapPin,
+  MessageSquarePlus,
+  Minus,
+  Plane,
+  Plus,
+  SlidersHorizontal,
+  Sparkles,
+  User,
+  Users,
+  Wallet,
+  X,
+  Zap,
 } from "lucide-react";
 import {
   CURRENCIES,
@@ -128,19 +138,23 @@ const GENERATION_STEPS = [
   "Finalizing your personalized plan",
 ];
 
-// Steps that ask the user something (the optional "split" step is filtered out
-// of the progress count when it doesn't apply).
-const QUESTION_STEPS: ChatStep[] = [
-  "destination",
-  "origin",
-  "dates",
-  "split",
-  "timing",
-  "travelers",
-  "vibe",
-  "preferences",
-  "budget",
-  "extras",
+// Every question the planner asks, in order. The optional "split" step is left
+// out of the progress count when the trip only has a single destination.
+const STEP_META: {
+  step: ChatStep;
+  label: string;
+  icon: React.ElementType;
+}[] = [
+  { step: "destination", label: "Destinations", icon: MapPin },
+  { step: "origin", label: "Starting point", icon: Plane },
+  { step: "dates", label: "Travel dates", icon: CalendarIcon },
+  { step: "split", label: "Days per stop", icon: CalendarRange },
+  { step: "timing", label: "Arrival & departure", icon: Clock },
+  { step: "travelers", label: "Travelers", icon: Users },
+  { step: "vibe", label: "Trip style", icon: Sparkles },
+  { step: "preferences", label: "Pace & stay", icon: SlidersHorizontal },
+  { step: "budget", label: "Budget", icon: Wallet },
+  { step: "extras", label: "Final notes", icon: MessageSquarePlus },
 ];
 
 // Pre-select a sensible currency from where the traveler starts.
@@ -179,35 +193,70 @@ function evenSplit(total: number, parts: number): number[] {
   return Array.from({ length: parts }, (_, i) => base + (i < rem ? 1 : 0));
 }
 
+// ─── Theme helpers (brand tokens are declared in app/globals.css) ──────────────
+
+/** Shared focus treatment so every control matches the brand palette. */
+const focusRing =
+  "focus-visible:border-[var(--brand-coral)] focus-visible:ring-[3px] focus-visible:ring-[var(--brand-coral)]/25";
+
+/**
+ * Base look for text fields. Font size is intentionally 16px on small screens
+ * (`text-base md:text-sm`) so iOS Safari does not zoom when the field is focused.
+ */
+const fieldBaseCls = cn(
+  "h-11 rounded-xl border-border bg-white placeholder:text-muted-foreground",
+  "focus-visible:border-[var(--brand-coral)] focus-visible:ring-[3px] focus-visible:ring-[var(--brand-coral)]/25",
+);
+
+const inputCls = cn(fieldBaseCls, "text-base md:text-sm");
+
+/** Select trigger — needs the data-size height overridden to win the cascade. */
+const selectTriggerCls = cn(
+  inputCls,
+  "data-[size=default]:h-11 w-full justify-between",
+);
+
+const textareaCls = cn(
+  fieldBaseCls,
+  "h-auto min-h-24 resize-y py-2.5 text-base md:text-sm",
+);
+
+/** Large selectable option tile used in grids. */
 const cardCls = (active: boolean) =>
-  `flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+  cn(
+    "h-auto w-full flex-col gap-1.5 whitespace-normal rounded-xl border-2 p-3 text-center transition-all",
     active
-      ? "border-primary bg-accent text-primary"
-      : "border-border bg-white text-muted-foreground hover:border-primary/40"
-  }`;
+      ? "border-[var(--brand-coral)] bg-[var(--brand-coral)]/10 text-[var(--brand-coral)] hover:bg-[var(--brand-coral)]/15 hover:text-[var(--brand-coral)]"
+      : "border-border bg-white text-muted-foreground hover:border-[var(--brand-coral)]/40 hover:bg-white hover:text-foreground",
+    focusRing,
+  );
 
+/** Rounded pill used for interests. */
 const chipCls = (active: boolean) =>
-  `px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+  cn(
+    "h-auto whitespace-normal rounded-full border-2 px-3 py-1.5 text-xs font-semibold transition-colors",
     active
-      ? "bg-primary text-white border-primary"
-      : "bg-white text-muted-foreground border-border hover:border-primary/40"
-  }`;
+      ? "border-transparent bg-[var(--brand-coral)] text-white hover:bg-[var(--brand-coral)] hover:text-white"
+      : "border-border bg-white text-muted-foreground hover:border-[var(--brand-coral)]/40 hover:bg-white hover:text-foreground",
+    focusRing,
+  );
 
+/** Equal-width segmented option. */
 const segCls = (active: boolean) =>
-  `flex-1 py-2 rounded-xl text-xs font-medium border transition-colors ${
+  cn(
+    "h-auto flex-1 whitespace-normal rounded-xl border-2 px-3 py-2.5 text-xs font-semibold transition-colors",
     active
-      ? "bg-primary text-white border-primary"
-      : "bg-white text-muted-foreground border-border hover:border-primary/40"
-  }`;
-
-const inputCls =
-  "w-full px-3 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-transparent bg-white";
+      ? "border-transparent bg-[var(--brand-coral)] text-white hover:bg-[var(--brand-coral)] hover:text-white"
+      : "border-border bg-white text-muted-foreground hover:border-[var(--brand-coral)]/40 hover:bg-white hover:text-foreground",
+    focusRing,
+  );
 
 // ─── Small shared UI pieces ───────────────────────────────────────────────────
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+    <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-gradient" />
       {children}
     </p>
   );
@@ -225,16 +274,22 @@ function ContinueButton({
   children?: React.ReactNode;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled || loading}
-      className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed text-white font-medium py-2.5 rounded-xl transition-colors text-sm"
-    >
-      {loading ? <Spinner size="small" /> : null}
-      {children}
-      {!loading && <ChevronRight className="w-4 h-4" />}
-    </button>
+    <div className="flex justify-end">
+      <Button
+        type="button"
+        onClick={onClick}
+        disabled={disabled || loading}
+        className={cn(
+          "h-11 w-full rounded-xl bg-brand-gradient px-6 text-sm font-semibold text-white transition-opacity hover:bg-brand-gradient hover:opacity-90",
+          "disabled:bg-none disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100",
+          focusRing,
+        )}
+      >
+        {loading ? <Spinner size="small" /> : null}
+        {children}
+        {!loading && <ArrowRight className="h-4 w-4" />}
+      </Button>
+    </div>
   );
 }
 
@@ -251,31 +306,38 @@ function Stepper({
   max: number;
   onChange: (n: number) => void;
 }) {
-  const btn =
-    "w-8 h-8 rounded-full border-2 border-border hover:border-primary disabled:opacity-40 disabled:hover:border-border flex items-center justify-center text-lg font-bold text-muted-foreground transition-colors";
+  const stepBtn = cn(
+    "size-9 shrink-0 rounded-full border-2 border-border bg-white text-muted-foreground transition-colors",
+    "hover:border-[var(--brand-coral)] hover:bg-white hover:text-[var(--brand-coral)]",
+    focusRing,
+  );
   return (
-    <div className="flex items-center justify-between bg-white border border-border rounded-xl px-3 py-2">
+    <div className="flex items-center justify-between rounded-xl border border-border bg-white px-3 py-2">
       <span className="text-sm text-foreground">{label}</span>
       <div className="flex items-center gap-3">
-        <button
+        <Button
           type="button"
-          className={btn}
+          variant="outline"
           disabled={value <= min}
           onClick={() => onChange(Math.max(min, value - 1))}
+          aria-label={`Decrease ${label}`}
+          className={stepBtn}
         >
-          −
-        </button>
-        <span className="w-6 text-center text-lg font-bold text-primary">
+          <Minus className="h-4 w-4" />
+        </Button>
+        <span className="w-6 text-center text-lg font-bold text-[var(--brand-coral)]">
           {value}
         </span>
-        <button
+        <Button
           type="button"
-          className={btn}
+          variant="outline"
           disabled={value >= max}
           onClick={() => onChange(Math.min(max, value + 1))}
+          aria-label={`Increase ${label}`}
+          className={stepBtn}
         >
-          +
-        </button>
+          <Plus className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );
@@ -300,7 +362,7 @@ function ChipAdder({
   };
   return (
     <div className="flex gap-2">
-      <input
+      <Input
         type="text"
         value={value}
         maxLength={60}
@@ -313,17 +375,23 @@ function ChipAdder({
           }
         }}
         placeholder={placeholder}
-        className={`${inputCls} flex-1 disabled:opacity-50`}
+        className={cn(inputCls, "flex-1")}
       />
-      <button
+      <Button
         type="button"
+        variant="secondary"
         onClick={submit}
         disabled={disabled}
         title="Add"
-        className="px-3 py-2 bg-muted hover:bg-border rounded-xl transition-colors disabled:opacity-50"
+        aria-label="Add"
+        className={cn(
+          "size-11 shrink-0 rounded-xl border border-border bg-muted text-muted-foreground transition-colors",
+          "hover:bg-[var(--brand-coral)]/10 hover:text-[var(--brand-coral)]",
+          focusRing,
+        )}
       >
-        <Plus className="w-4 h-4 text-muted-foreground" />
-      </button>
+        <Plus className="h-4 w-4" />
+      </Button>
     </div>
   );
 }
@@ -342,16 +410,19 @@ function RemovableChips({
       {items.map((item) => (
         <span
           key={item}
-          className="flex items-center gap-1.5 bg-accent border border-primary/20 text-primary text-xs px-3 py-1.5 rounded-full"
+          className="flex items-center gap-1.5 rounded-full border border-[var(--brand-coral)]/25 bg-[var(--brand-coral)]/10 px-3 py-1.5 text-xs text-[var(--brand-coral)]"
         >
           {item}
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={() => onRemove(item)}
-            className="hover:text-destructive transition-colors"
+            aria-label={`Remove ${item}`}
+            className="size-4 rounded-full text-[var(--brand-coral)] hover:bg-transparent hover:text-destructive"
           >
-            <X className="w-3 h-3" />
-          </button>
+            <X className="h-3 w-3" />
+          </Button>
         </span>
       ))}
     </div>
@@ -367,7 +438,7 @@ function TypingIndicator() {
       {[0, 1, 2].map((i) => (
         <motion.span
           key={i}
-          className="w-2 h-2 rounded-full bg-primary/40"
+          className="w-2 h-2 rounded-full bg-[var(--brand-coral)]/40"
           animate={{ y: [0, -6, 0] }}
           transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
         />
@@ -376,13 +447,24 @@ function TypingIndicator() {
   );
 }
 
-/** Single chat bubble */
+/** Bot avatar — kept exactly as it always was (brand-muted circle + Bot icon) */
+function BotAvatar() {
+  return (
+    <div className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full border border-[var(--brand-purple)]/20 bg-brand-gradient-muted">
+      <Bot className="h-4 w-4 text-[var(--brand-purple)]" />
+    </div>
+  );
+}
+
+/** Single chat bubble. The traveller's own avatar is shown on user messages. */
 function ChatBubble({
   message,
   isNew,
+  avatar,
 }: {
   message: ChatMessage;
   isNew?: boolean;
+  avatar?: string;
 }) {
   const isBot = message.role === "bot";
   return (
@@ -390,192 +472,163 @@ function ChatBubble({
       initial={isNew ? { opacity: 0, y: 16 } : false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
-      className={`flex gap-3 ${isBot ? "justify-start" : "justify-end"}`}
+      className={cn("flex gap-2.5", isBot ? "justify-start" : "justify-end")}
     >
-      {isBot && (
-        <div className="w-8 h-8 rounded-full bg-accent border border-primary/20 flex items-center justify-center flex-shrink-0 mt-1">
-          <Bot className="w-4 h-4 text-primary" />
-        </div>
-      )}
+      {isBot && <BotAvatar />}
       <div
-        className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+        className={cn(
+          "max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed",
           isBot
-            ? "bg-muted text-foreground rounded-tl-sm"
-            : "bg-accent text-primary rounded-tr-sm border border-primary/20"
-        }`}
+            ? "rounded-tl-sm bg-muted text-foreground"
+            : "rounded-tr-sm border border-[var(--brand-coral)]/25 bg-[var(--brand-coral)]/10 text-foreground",
+        )}
       >
         {message.content}
       </div>
       {!isBot && (
-        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
-          <User className="w-4 h-4 text-muted-foreground" />
+        <div className="mt-1 size-8 shrink-0 overflow-hidden rounded-full border border-[var(--brand-coral)]/30 bg-white">
+          {avatar ? (
+            <Image
+              src={`/profile-avatars/${avatar}`}
+              alt=""
+              width={32}
+              height={32}
+              className="h-8 w-8 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
+              <User className="h-4 w-4 text-muted-foreground" />
+            </div>
+          )}
         </div>
       )}
     </motion.div>
   );
 }
 
-/** Progress + "trip so far" summary — shared shape, rendered differently on mobile vs desktop */
-function useTripProgress(formData: TripFormData, currentStep: ChatStep) {
+interface TripProgress {
+  steps: { step: ChatStep; label: string; icon: React.ElementType }[];
+  activeIndex: number;
+  done: boolean;
+  progressPct: number;
+  stepLabel: string;
+}
+
+/** Step list + counters shared by the page header and the desktop sidebar */
+function useTripProgress(
+  formData: TripFormData,
+  currentStep: ChatStep,
+): TripProgress {
   const splitApplies =
     formData.destinations.length > 1 &&
     formData.duration >= formData.destinations.length;
-  const steps = QUESTION_STEPS.filter((s) => s !== "split" || splitApplies);
+  const steps = STEP_META.filter((s) => s.step !== "split" || splitApplies);
 
   const done = currentStep === "summary" || currentStep === "generating";
-  const idx = steps.indexOf(currentStep);
-  const completed = done ? steps.length : Math.max(0, idx);
-  const passed = (s: ChatStep) => done || steps.indexOf(s) < completed;
-
-  const progressPct = Math.min(
-    100,
-    Math.round((completed / steps.length) * 100),
-  );
-
-  const who =
-    `${formData.adults} adult${formData.adults === 1 ? "" : "s"}` +
-    (formData.children > 0
-      ? `, ${formData.children} child${formData.children === 1 ? "" : "ren"}`
-      : "") +
-    (formData.pets > 0
-      ? `, ${formData.pets} pet${formData.pets === 1 ? "" : "s"}`
-      : "");
-
-  const rows: {
-    icon: React.ElementType;
-    label: string;
-    value: string | null;
-  }[] = [
-    {
-      icon: Plane,
-      label: "Starting from",
-      value: passed("origin") ? formData.origin.name || null : null,
-    },
-    {
-      icon: MapPin,
-      label: "Destination",
-      value:
-        formData.destinations.length > 0
-          ? formData.destinations.join(", ")
-          : null,
-    },
-    {
-      icon: CalendarIcon,
-      label: "Dates",
-      value:
-        formData.startDate && formData.endDate
-          ? `${formData.duration} ${formData.duration === 1 ? "day" : "days"}`
-          : currentStep === "dates"
-            ? "In progress"
-            : null,
-    },
-    {
-      icon: Users,
-      label: "Travelers",
-      value: passed("travelers") ? who : null,
-    },
-    {
-      icon: DollarSign,
-      label: "Budget",
-      value: passed("budget")
-        ? `${currencySymbol(formData.currency)}${Math.round(formData.budget).toLocaleString()} ${formData.currency}`
-        : null,
-    },
-  ];
+  const rawIndex = steps.findIndex((s) => s.step === currentStep);
+  const activeIndex = done ? steps.length : Math.max(0, rawIndex);
 
   return {
-    rows,
-    progressPct,
+    steps,
+    activeIndex,
+    done,
+    progressPct: Math.min(100, Math.round((activeIndex / steps.length) * 100)),
     stepLabel: done
       ? "Ready"
-      : `Step ${Math.min(completed + 1, steps.length)} of ${steps.length}`,
+      : `Step ${Math.min(activeIndex + 1, steps.length)} of ${steps.length}`,
   };
 }
 
-/** Desktop "Trip so far" side panel — fixed width, never contributes to page overflow */
-function TripSoFarPanel({
-  formData,
-  currentStep,
+/** Brand-gradient progress bar */
+function BrandProgress({
+  value,
+  className,
 }: {
-  formData: TripFormData;
-  currentStep: ChatStep;
+  value: number;
+  className?: string;
 }) {
-  const { rows, progressPct, stepLabel } = useTripProgress(
-    formData,
-    currentStep,
-  );
-
   return (
-    <div className="flex flex-col gap-4">
-      <div className="bg-white rounded-2xl border border-border p-5 shadow-sm">
-        <h2 className="text-sm font-semibold text-foreground mb-4">
-          Trip so far
-        </h2>
-        <div className="space-y-3">
-          {rows.map((row) => {
-            const Icon = row.icon;
-            const isDone = row.value !== null && row.value !== "In progress";
-            const isInProgress = row.value === "In progress";
-            return (
-              <div key={row.label} className="flex items-start gap-3">
-                {isDone ? (
-                  <div className="w-6 h-6 rounded-full bg-[#dcfce7] flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Check className="w-3.5 h-3.5 text-[color:var(--success)]" />
-                  </div>
-                ) : (
-                  <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Icon className="w-3.5 h-3.5 text-muted-foreground" />
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <p
-                    className={`text-xs ${isDone || isInProgress ? "text-muted-foreground" : "text-muted-foreground/50"}`}
-                  >
-                    {row.label}
-                  </p>
-                  {row.value ? (
-                    <p
-                      className={`text-sm font-semibold truncate ${isInProgress ? "text-muted-foreground" : "text-foreground"}`}
-                    >
-                      {row.value}
-                    </p>
-                  ) : (
-                    <p className="text-sm text-muted-foreground/40">—</p>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="bg-white rounded-2xl border border-border p-4 shadow-sm">
-        <div className="flex items-center justify-between gap-3 mb-2">
-          <Progress value={progressPct} className="h-1.5 flex-1" />
-          <span className="text-xs text-muted-foreground whitespace-nowrap">
-            {stepLabel}
-          </span>
-        </div>
-      </div>
-    </div>
+    <Progress
+      value={value}
+      className={cn(
+        "h-1.5 bg-[var(--brand-coral)]/15 [&_[data-slot=progress-indicator]]:bg-brand-gradient",
+        className,
+      )}
+    />
   );
 }
 
-/** Compact progress strip for mobile/tablet — replaces the desktop-only sidebar there */
-function MobileProgressBar({
-  formData,
-  currentStep,
-}: {
-  formData: TripFormData;
-  currentStep: ChatStep;
-}) {
-  const { progressPct, stepLabel } = useTripProgress(formData, currentStep);
+/** Desktop side panel: brand-gradient progress + every step of the plan */
+function TripSidePanel({ progress }: { progress: TripProgress }) {
+  const { steps, activeIndex, done, progressPct, stepLabel } = progress;
+
   return (
-    <div className="lg:hidden bg-white border-b border-border px-4 py-2.5 flex items-center gap-3 flex-shrink-0">
-      <Progress value={progressPct} className="h-1.5 flex-1" />
-      <span className="text-xs text-muted-foreground whitespace-nowrap">
-        {stepLabel}
-      </span>
+    <div className="flex flex-col gap-4">
+      <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+        <div className="mb-2.5 flex items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-foreground">
+            Planning progress
+          </h2>
+          <span className="whitespace-nowrap text-xs font-semibold text-[var(--brand-coral)]">
+            {stepLabel}
+          </span>
+        </div>
+        <BrandProgress value={progressPct} />
+        <p className="mt-2 text-right text-[11px] text-muted-foreground">
+          {progressPct}% complete
+        </p>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+        <h2 className="mb-3 text-sm font-semibold text-foreground">
+          Your plan, step by step
+        </h2>
+        <ol className="space-y-0.5">
+          {steps.map((s, i) => {
+            const Icon = s.icon;
+            const isDone = done || i < activeIndex;
+            const isCurrent = !done && i === activeIndex;
+            return (
+              <li
+                key={s.step}
+                className={cn(
+                  "flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors",
+                  isCurrent && "bg-[var(--brand-coral)]/10",
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex size-6 shrink-0 items-center justify-center rounded-full border",
+                    isDone
+                      ? "border-transparent bg-brand-gradient text-white"
+                      : isCurrent
+                        ? "border-[var(--brand-coral)] bg-white text-[var(--brand-coral)]"
+                        : "border-border bg-white text-muted-foreground/60",
+                  )}
+                >
+                  {isDone ? (
+                    <Check className="h-3.5 w-3.5" />
+                  ) : (
+                    <Icon className="h-3.5 w-3.5" />
+                  )}
+                </span>
+                <span
+                  className={cn(
+                    "truncate text-xs",
+                    isCurrent
+                      ? "font-semibold text-foreground"
+                      : isDone
+                        ? "text-muted-foreground"
+                        : "text-muted-foreground/60",
+                  )}
+                >
+                  {s.label}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
     </div>
   );
 }
@@ -598,9 +651,9 @@ function GeneratingOverlay({
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/95 backdrop-blur-sm px-6">
       <div className="w-full max-w-sm flex flex-col items-center text-center gap-5">
         <div className="relative w-16 h-16">
-          <span className="absolute inset-0 rounded-full border-4 border-accent" />
-          <span className="absolute inset-0 rounded-full border-4 border-transparent border-t-primary animate-spin" />
-          <Plane className="w-6 h-6 text-primary absolute inset-0 m-auto" />
+          <span className="absolute inset-0 rounded-full border-4 border-[var(--brand-coral)]/15" />
+          <span className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-[var(--brand-coral)]" />
+          <Plane className="absolute inset-0 m-auto h-6 w-6 text-[var(--brand-coral)]" />
         </div>
 
         <div className="space-y-1.5">
@@ -648,6 +701,8 @@ export default function NewTripPage() {
   const router = useRouter();
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  // Mirrors messages.length so the back button can snapshot/restore the chat
+  const messagesLenRef = useRef(0);
 
   // ── State ──────────────────────────────────────────────────────────────────
 
@@ -716,6 +771,14 @@ export default function NewTripPage() {
 
   const [genStepIndex, setGenStepIndex] = useState(0);
 
+  // Traveller avatar (shown on their own chat bubbles) + step history (back button)
+  const [avatar, setAvatar] = useState("");
+  const [stepHistory, setStepHistory] = useState<
+    { step: ChatStep; count: number }[]
+  >([]);
+
+  const progress = useTripProgress(formData, currentStep);
+
   const unitsPerUSD = useCallback(
     (code: string) => rates?.rates?.[code] ?? FALLBACK_RATES[code] ?? 1,
     [rates],
@@ -744,6 +807,22 @@ export default function NewTripPage() {
   useEffect(() => {
     if (currentStep === "dates") setIsDatePopoverOpen(true);
   }, [currentStep]);
+
+  // Profile avatar for the traveller's own chat bubbles
+  useEffect(() => {
+    const userId = session?.user?._id;
+    if (!userId) return;
+    let cancelled = false;
+    fetch(`/api/profile/get-profile/${userId}`)
+      .then((res) => res.json())
+      .then((result) => {
+        if (!cancelled) setAvatar(result?.data?.avatar || "");
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user?._id]);
 
   // Live FX rates for the budget step (falls back to built-in rates if it fails)
   useEffect(() => {
@@ -783,6 +862,7 @@ export default function NewTripPage() {
   const addMessage = useCallback(
     (role: "bot" | "user", content: React.ReactNode) => {
       const id = genId();
+      messagesLenRef.current += 1;
       setNewMessageIds((prev) => new Set(prev).add(id));
       setMessages((prev) => [
         ...prev,
@@ -812,14 +892,36 @@ export default function NewTripPage() {
   /** user bubble → one or more bot bubbles → move to the next step */
   const advance = useCallback(
     async (userText: string, bot: React.ReactNode[], next: ChatStep) => {
+      setStepHistory((prev) => [
+        ...prev,
+        { step: currentStep, count: messagesLenRef.current },
+      ]);
       addMessage("user", userText);
       for (let i = 0; i < bot.length; i++) {
         await botSay(bot[i], i === 0 ? 600 : 800);
       }
       setCurrentStep(next);
     },
-    [addMessage, botSay],
+    [addMessage, botSay, currentStep],
   );
+
+  /** The single back button: undo one step, or leave the planner at the start */
+  const canGoBack = stepHistory.length > 0;
+
+  const handleBack = useCallback(() => {
+    if (isTyping || isGenerating) return;
+    const last = stepHistory[stepHistory.length - 1];
+    if (!last) {
+      router.push("/app/trips");
+      return;
+    }
+    setStepHistory((prev) => prev.slice(0, -1));
+    setMessages((prev) => prev.slice(0, last.count));
+    messagesLenRef.current = last.count;
+    setNewMessageIds(new Set());
+    setIsDatePopoverOpen(false);
+    setCurrentStep(last.step);
+  }, [isTyping, isGenerating, stepHistory, router]);
 
   const initRan = useRef(false);
   useEffect(() => {
@@ -1293,8 +1395,8 @@ export default function NewTripPage() {
         <div className="flex flex-col gap-3">
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
+              <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
                 type="text"
                 value={destInput}
                 onChange={(e) => setDestInput(e.target.value)}
@@ -1307,16 +1409,23 @@ export default function NewTripPage() {
                   }
                 }}
                 placeholder="e.g. Paris, Kumrat Valley, Tokyo..."
-                className={`${inputCls} pl-9`}
+                className={cn(inputCls, "pl-9")}
               />
             </div>
-            <button
+            <Button
+              type="button"
+              variant="secondary"
               onClick={handleAddDestination}
-              className="px-3 py-2.5 bg-muted hover:bg-border rounded-xl transition-colors"
               title="Add destination"
+              aria-label="Add destination"
+              className={cn(
+                "size-11 shrink-0 rounded-xl border border-border bg-muted text-muted-foreground transition-colors",
+                "hover:bg-[var(--brand-coral)]/10 hover:text-[var(--brand-coral)]",
+                focusRing,
+              )}
             >
-              <Plus className="w-4 h-4 text-muted-foreground" />
-            </button>
+              <Plus className="h-4 w-4" />
+            </Button>
           </div>
 
           {formData.destinations.length > 0 && (
@@ -1324,16 +1433,20 @@ export default function NewTripPage() {
               {formData.destinations.map((dest) => (
                 <span
                   key={dest}
-                  className="flex items-center gap-1.5 bg-accent border border-primary/20 text-primary text-sm px-3 py-1.5 rounded-full"
+                  className="flex items-center gap-1.5 rounded-full border border-[var(--brand-coral)]/25 bg-[var(--brand-coral)]/10 px-3 py-1.5 text-sm text-[var(--brand-coral)]"
                 >
-                  <MapPin className="w-3 h-3" />
+                  <MapPin className="h-3 w-3" />
                   {dest}
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => handleRemoveDestination(dest)}
-                    className="ml-1 hover:text-destructive transition-colors"
+                    aria-label={`Remove ${dest}`}
+                    className="ml-1 size-4 rounded-full text-[var(--brand-coral)] hover:bg-transparent hover:text-destructive"
                   >
-                    <X className="w-3 h-3" />
-                  </button>
+                    <X className="h-3 w-3" />
+                  </Button>
                 </span>
               ))}
             </div>
@@ -1354,28 +1467,29 @@ export default function NewTripPage() {
           <div>
             <SectionLabel>Starting from</SectionLabel>
             {originCandidate ? (
-              <div className="flex items-start gap-2.5 p-3 bg-accent border border-primary/20 rounded-xl">
-                <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+              <div className="flex items-start gap-2.5 rounded-xl border border-[var(--brand-coral)]/25 bg-[var(--brand-coral)]/10 p-3">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand-coral)]" />
                 <div className="min-w-0 flex-1">
                   <p className="text-xs text-muted-foreground">
                     Is this right?
                   </p>
-                  <p className="text-sm font-medium text-foreground break-words">
+                  <p className="break-words text-sm font-medium text-foreground">
                     {originCandidate.displayName}
                   </p>
                 </div>
-                <button
+                <Button
                   type="button"
+                  variant="link"
                   onClick={() => setOriginCandidate(null)}
-                  className="text-xs text-primary hover:underline flex-shrink-0"
+                  className="h-auto shrink-0 p-0 text-xs font-semibold text-[var(--brand-coral)] hover:text-[var(--brand-coral)]/80"
                 >
                   Change
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="relative">
-                <Plane className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
+                <Plane className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
                   type="text"
                   value={originInput}
                   onChange={(e) => {
@@ -1389,7 +1503,7 @@ export default function NewTripPage() {
                     }
                   }}
                   placeholder="e.g. Islamabad, Pakistan"
-                  className={`${inputCls} pl-9`}
+                  className={cn(inputCls, "pl-9")}
                 />
               </div>
             )}
@@ -1407,9 +1521,10 @@ export default function NewTripPage() {
             </SectionLabel>
             <div className="grid grid-cols-4 gap-2">
               {OUTBOUND_OPTIONS.map((o) => (
-                <button
+                <Button
                   key={o.value}
                   type="button"
+                  variant="outline"
                   onClick={() =>
                     setFormData((prev) => ({ ...prev, outbound: o.value }))
                   }
@@ -1417,7 +1532,7 @@ export default function NewTripPage() {
                 >
                   <span className="text-xl">{o.emoji}</span>
                   <span className="text-xs font-medium">{o.label}</span>
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -1456,17 +1571,21 @@ export default function NewTripPage() {
         <div className="space-y-3">
           <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
             <PopoverTrigger asChild>
-              <button
+              <Button
                 type="button"
-                className="w-full flex items-center gap-3 p-3.5 bg-white border border-border rounded-xl hover:border-primary/40 transition-colors text-left"
+                variant="outline"
+                className={cn(
+                  inputCls,
+                  "h-auto w-full justify-start gap-3 p-3.5 text-left font-normal",
+                )}
               >
-                <CalendarIcon className="w-4 h-4 text-primary flex-shrink-0" />
-                <span className="flex-1 min-w-0 text-sm">
+                <CalendarIcon className="h-4 w-4 shrink-0 text-[var(--brand-coral)]" />
+                <span className="min-w-0 flex-1 text-sm">
                   {dateRange.from && dateRange.to ? (
                     <span className="font-medium text-foreground">
                       {format(dateRange.from, "MMM d, yyyy")} →{" "}
                       {format(dateRange.to, "MMM d, yyyy")}
-                      <span className="ml-2 text-muted-foreground font-normal">
+                      <span className="ml-2 font-normal text-muted-foreground">
                         ({days} {days === 1 ? "day" : "days"})
                       </span>
                     </span>
@@ -1476,8 +1595,8 @@ export default function NewTripPage() {
                     </span>
                   )}
                 </span>
-                <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-              </button>
+                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </Button>
             </PopoverTrigger>
             <PopoverContent
               align="start"
@@ -1539,22 +1658,25 @@ export default function NewTripPage() {
             {total} of {formData.duration} days assigned
             {ok ? "" : " — the days need to add up exactly"}
           </p>
-          <div className="flex gap-2">
-            <button
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <Button
               type="button"
+              variant="outline"
               onClick={() => handleSplitConfirm(true)}
-              className="flex-1 py-2.5 rounded-xl text-sm font-medium border border-border bg-white text-muted-foreground hover:border-primary/40 transition-colors"
+              className={cn(
+                "h-11 rounded-xl border-border bg-white px-4 text-sm font-medium text-muted-foreground",
+                "hover:border-[var(--brand-coral)]/40 hover:bg-white hover:text-foreground",
+                focusRing,
+              )}
             >
               Let AI decide
-            </button>
-            <div className="flex-1">
-              <ContinueButton
-                onClick={() => handleSplitConfirm(false)}
-                disabled={!ok}
-              >
-                Use this
-              </ContinueButton>
-            </div>
+            </Button>
+            <ContinueButton
+              onClick={() => handleSplitConfirm(false)}
+              disabled={!ok}
+            >
+              Use this
+            </ContinueButton>
           </div>
         </div>
       );
@@ -1567,9 +1689,10 @@ export default function NewTripPage() {
           <SectionLabel>{label}</SectionLabel>
           <div className="grid grid-cols-4 gap-2">
             {TIME_SLOTS.map((s) => (
-              <button
+              <Button
                 key={s.value}
                 type="button"
+                variant="outline"
                 onClick={() =>
                   setFormData((prev) => ({ ...prev, [field]: s.value }))
                 }
@@ -1577,7 +1700,7 @@ export default function NewTripPage() {
               >
                 <span className="text-xs font-medium">{s.label}</span>
                 <span className="text-[10px] opacity-70">{s.hint}</span>
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -1640,19 +1763,20 @@ export default function NewTripPage() {
             </SectionLabel>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {STYLE_OPTIONS.map((s) => (
-                <button
+                <Button
                   key={s.value}
                   type="button"
+                  variant="outline"
                   onClick={() =>
                     toggleInList("styles", s.value, LIMITS.maxStyles)
                   }
                   className={cardCls(formData.styles.includes(s.value))}
                 >
                   <span className="text-xl">{s.emoji}</span>
-                  <span className="text-xs font-medium text-center">
+                  <span className="text-center text-xs font-medium">
                     {s.value}
                   </span>
-                </button>
+                </Button>
               ))}
             </div>
             <div className="mt-2 space-y-2">
@@ -1672,16 +1796,17 @@ export default function NewTripPage() {
             <SectionLabel>Interests</SectionLabel>
             <div className="flex flex-wrap gap-2">
               {INTEREST_OPTIONS.map((i) => (
-                <button
+                <Button
                   key={i}
                   type="button"
+                  variant="outline"
                   onClick={() =>
                     toggleInList("interests", i, LIMITS.maxInterests)
                   }
                   className={chipCls(formData.interests.includes(i))}
                 >
                   {i}
-                </button>
+                </Button>
               ))}
             </div>
             <div className="mt-2 space-y-2">
@@ -1716,14 +1841,15 @@ export default function NewTripPage() {
                   ["fast", "⚡ Fast"],
                 ] as [TripPace, string][]
               ).map(([v, label]) => (
-                <button
+                <Button
                   key={v}
                   type="button"
+                  variant="outline"
                   onClick={() => setFormData((p) => ({ ...p, pace: v }))}
                   className={segCls(formData.pace === v)}
                 >
                   {label}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -1738,14 +1864,15 @@ export default function NewTripPage() {
                   ["luxury", "🏰 Luxury"],
                 ] as [Accommodation, string][]
               ).map(([v, label]) => (
-                <button
+                <Button
                   key={v}
                   type="button"
+                  variant="outline"
                   onClick={() => setFormData((p) => ({ ...p, stayLevel: v }))}
                   className={segCls(formData.stayLevel === v)}
                 >
                   {label}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -1754,16 +1881,17 @@ export default function NewTripPage() {
             <SectionLabel>Getting around once there</SectionLabel>
             <div className="grid grid-cols-2 gap-2">
               {LOCAL_TRANSPORT_OPTIONS.map((o) => (
-                <button
+                <Button
                   key={o.value}
                   type="button"
+                  variant="outline"
                   onClick={() =>
                     setFormData((p) => ({ ...p, localTransport: o.value }))
                   }
                   className={segCls(formData.localTransport === o.value)}
                 >
                   {o.emoji} {o.label}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -1787,7 +1915,7 @@ export default function NewTripPage() {
           <div>
             <SectionLabel>Currency</SectionLabel>
             <Select value={budgetCurrency} onValueChange={handleCurrencyChange}>
-              <SelectTrigger className="w-full h-11 bg-white border-border">
+              <SelectTrigger className={selectTriggerCls}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -1806,7 +1934,7 @@ export default function NewTripPage() {
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">
                 {currencySymbol(budgetCurrency)}
               </span>
-              <input
+              <Input
                 type="number"
                 min={0}
                 value={budgetAmount || ""}
@@ -1817,7 +1945,10 @@ export default function NewTripPage() {
                     handleBudgetConfirm();
                   }
                 }}
-                className="w-full pl-10 pr-4 py-2.5 border border-border rounded-xl text-lg font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-transparent bg-white"
+                className={cn(
+                  fieldBaseCls,
+                  "h-12 pl-10 text-lg font-bold text-foreground",
+                )}
               />
             </div>
             {budgetCurrency !== "USD" && budgetAmount > 0 && (
@@ -1851,18 +1982,15 @@ export default function NewTripPage() {
 
           <div className="flex gap-2 flex-wrap">
             {scale.presets.map((preset) => (
-              <button
+              <Button
                 key={preset}
                 type="button"
+                variant="outline"
                 onClick={() => setBudgetAmount(preset)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                  budgetAmount === preset
-                    ? "bg-primary text-white border-primary"
-                    : "bg-white text-muted-foreground border-border hover:border-primary/40"
-                }`}
+                className={cn(chipCls(budgetAmount === preset), "rounded-lg")}
               >
                 {formatMoney(preset, budgetCurrency)}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -1870,17 +1998,19 @@ export default function NewTripPage() {
             <div>
               <SectionLabel>Does this budget include flights?</SectionLabel>
               <div className="flex gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() =>
                     setFormData((p) => ({ ...p, includesFlights: true }))
                   }
                   className={segCls(formData.includesFlights === true)}
                 >
                   Yes, include flights
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() =>
                     setFormData((p) => ({
                       ...p,
@@ -1891,16 +2021,16 @@ export default function NewTripPage() {
                   className={segCls(formData.includesFlights === false)}
                 >
                   No, already paid
-                </button>
+                </Button>
               </div>
               {formData.includesFlights === true && (
-                <input
+                <Input
                   type="number"
                   min={0}
                   value={flightAmount}
                   onChange={(e) => setFlightAmount(e.target.value)}
                   placeholder={`Flight expense in ${budgetCurrency}`}
-                  className={`${inputCls} mt-2`}
+                  className={cn(inputCls, "mt-2")}
                 />
               )}
             </div>
@@ -1917,7 +2047,7 @@ export default function NewTripPage() {
         <div className="space-y-4">
           <div>
             <SectionLabel>Anything else?</SectionLabel>
-            <textarea
+            <Textarea
               value={formData.comment}
               onChange={(e) =>
                 setFormData((p) => ({ ...p, comment: e.target.value }))
@@ -1925,7 +2055,7 @@ export default function NewTripPage() {
               placeholder="e.g. It's my parents' first trip abroad, so keep walking light. We want time for prayer."
               rows={3}
               maxLength={2000}
-              className="w-full resize-y rounded-xl border border-border bg-white px-3 py-2.5 text-sm leading-relaxed focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className={textareaCls}
             />
           </div>
 
@@ -1939,8 +2069,8 @@ export default function NewTripPage() {
       const timeLabel = (v: TimeSlot) =>
         TIME_SLOTS.find((s) => s.value === v)?.label.toLowerCase();
       const row = (Icon: React.ElementType, text: React.ReactNode) => (
-        <div className="flex items-start gap-1.5 text-muted-foreground min-w-0">
-          <Icon className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />
+        <div className="flex min-w-0 items-start gap-1.5 text-muted-foreground">
+          <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--brand-coral)]" />
           <span className="min-w-0 break-words">{text}</span>
         </div>
       );
@@ -1948,8 +2078,8 @@ export default function NewTripPage() {
       return (
         <div className="space-y-3">
           <div className="bg-muted border border-border rounded-xl p-4 space-y-3">
-            <div className="flex items-center gap-2 text-foreground font-semibold text-sm">
-              <CheckCircle2 className="w-4 h-4 text-primary" />
+            <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+              <CheckCircle2 className="h-4 w-4 text-[var(--brand-coral)]" />
               Trip Summary
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
@@ -1996,7 +2126,7 @@ export default function NewTripPage() {
                 {tags.map((t) => (
                   <span
                     key={t}
-                    className="px-2 py-0.5 bg-accent text-primary rounded-full text-xs border border-primary/20"
+                    className="rounded-full border border-[var(--brand-coral)]/25 bg-[var(--brand-coral)]/10 px-2 py-0.5 text-xs text-[var(--brand-coral)]"
                   >
                     {t}
                   </span>
@@ -2005,14 +2135,21 @@ export default function NewTripPage() {
             )}
           </div>
 
-          <button
-            onClick={handleGenerateTrip}
-            disabled={isGenerating}
-            className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-60 text-white font-semibold py-3 rounded-xl transition-all text-sm"
-          >
-            <Zap className="w-4 h-4" />
-            Generate My Trip Itinerary
-          </button>
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              onClick={handleGenerateTrip}
+              disabled={isGenerating}
+              className={cn(
+                "h-12 rounded-xl bg-brand-gradient px-6 text-sm font-semibold text-white transition-opacity hover:bg-brand-gradient hover:opacity-90",
+                "disabled:bg-none disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100",
+                focusRing,
+              )}
+            >
+              <Zap className="h-4 w-4" />
+              Generate My Trip Itinerary
+            </Button>
+          </div>
         </div>
       );
     }
@@ -2023,84 +2160,122 @@ export default function NewTripPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-dvh bg-secondary overflow-hidden">
+    // Fixed app shell: the header and composer stay put while only the chat
+    // (and the desktop sidebar) scroll. No site navbar / mobile appbar here.
+    <div className="fixed inset-0 flex overflow-hidden bg-secondary">
       {/* ── Chat column ── */}
-      <div className="flex flex-col flex-1 min-w-0 bg-secondary pt-14 md:pt-0">
-        <MobileTopBar pageName="New Trip" />
-        <div className="bg-white border-b border-border px-4 py-3 flex items-center gap-3 flex-shrink-0">
-          <div className="w-9 h-9 rounded-full bg-accent border border-primary/20 flex items-center justify-center flex-shrink-0">
-            <Bot className="w-5 h-5 text-primary" />
-          </div>
-          <div className="min-w-0">
-            <h1 className="font-semibold text-foreground text-sm">
-              SafarAI Planner
-            </h1>
-            <p className="text-xs text-[color:var(--success)] flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-[color:var(--success)] inline-block" />
-              Online
-            </p>
-          </div>
-        </div>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-secondary">
+        {/* Page header — the only top bar on this page */}
+        <header className="flex-shrink-0 border-b border-border bg-white px-3 py-2.5 md:px-4">
+          <div className="flex w-full items-center gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={handleBack}
+              disabled={isTyping || isGenerating}
+              aria-label={
+                canGoBack ? "Back to previous step" : "Back to my trips"
+              }
+              title={canGoBack ? "Back to previous step" : "Back to my trips"}
+              className={cn(
+                "size-9 shrink-0 rounded-full text-muted-foreground",
+                "hover:bg-[var(--brand-coral)]/10 hover:text-[var(--brand-coral)]",
+                focusRing,
+              )}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
 
-        <MobileProgressBar formData={formData} currentStep={currentStep} />
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-[var(--brand-purple)]/20 bg-brand-gradient-muted">
+              <Bot className="h-5 w-5 text-[var(--brand-purple)]" />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-sm font-semibold text-foreground">
+                SafarAI Planner
+              </h1>
+              <p className="flex items-center gap-1 text-xs text-[color:var(--success)]">
+                <span className="inline-block size-1.5 rounded-full bg-[color:var(--success)]" />
+                Online
+              </p>
+            </div>
+
+            <span className="shrink-0 rounded-full border border-border bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+              {progress.stepLabel}
+            </span>
+          </div>
+        </header>
 
         <div
           ref={chatContainerRef}
-          className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-4 scroll-smooth"
+          className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden scroll-smooth px-4 py-4"
           style={{
             scrollbarWidth: "thin",
-            scrollbarColor: "#cbd5e1 transparent",
+            scrollbarColor: "#f3b7bd transparent",
           }}
         >
-          <AnimatePresence initial={false}>
-            {messages.map((msg) => (
-              <ChatBubble
-                key={msg.id}
-                message={msg}
-                isNew={newMessageIds.has(msg.id)}
-              />
-            ))}
-          </AnimatePresence>
+          <div className="w-full space-y-4">
+            <AnimatePresence initial={false}>
+              {messages.map((msg) => (
+                <ChatBubble
+                  key={msg.id}
+                  message={msg}
+                  isNew={newMessageIds.has(msg.id)}
+                  avatar={avatar}
+                />
+              ))}
+            </AnimatePresence>
 
-          {isTyping && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="flex gap-3 justify-start"
-            >
-              <div className="w-8 h-8 rounded-full bg-accent border border-primary/20 flex items-center justify-center flex-shrink-0">
-                <Bot className="w-4 h-4 text-primary" />
-              </div>
-              <div className="bg-muted rounded-2xl rounded-tl-sm">
-                <TypingIndicator />
-              </div>
-            </motion.div>
-          )}
+            {isTyping && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex justify-start gap-2.5"
+              >
+                <BotAvatar />
+                <div className="rounded-2xl rounded-tl-sm bg-muted">
+                  <TypingIndicator />
+                </div>
+              </motion.div>
+            )}
 
-          <div ref={chatEndRef} />
+            <div ref={chatEndRef} />
+          </div>
         </div>
 
-        {/* Input area — scrolls internally so tall steps (vibe, budget, extras)
-            never push the chat off small screens */}
-        <div className="bg-white border-t border-border px-4 py-3 flex-shrink-0 max-h-[65dvh] overflow-y-auto">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentStep}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-            >
-              {renderInputArea()}
-            </motion.div>
-          </AnimatePresence>
+        {/* Composer — pinned to the bottom. Tall steps scroll inside it so the
+            chat above is never pushed off screen. */}
+        <div className="flex-shrink-0 border-t border-border bg-white px-4 py-3">
+          <div className="max-h-[52dvh] w-full overflow-y-auto">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentStep}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+              >
+                {renderInputArea()}
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
-      <div className="hidden lg:block w-80 flex-shrink-0 border-l border-border overflow-y-auto overflow-x-hidden p-4">
-        <TripSoFarPanel formData={formData} currentStep={currentStep} />
-      </div>
+      {/* ── Desktop sidebar — only this column scrolls ── */}
+      <aside className="hidden w-96 flex-shrink-0 flex-col border-l border-border bg-secondary lg:flex">
+        <div className="flex-shrink-0 border-b border-border bg-white px-4 py-3">
+          <h2 className="text-sm font-semibold text-foreground">
+            Trip planner
+          </h2>
+          <p className="text-xs text-muted-foreground">Your trip at a glance</p>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4">
+          <TripSidePanel progress={progress} />
+        </div>
+      </aside>
 
       <GeneratingOverlay
         visible={isGenerating}
