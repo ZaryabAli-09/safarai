@@ -1972,7 +1972,7 @@ export default function NewTripPage() {
               step={scale.step}
               value={[Math.min(Math.max(budgetAmount, scale.min), scale.max)]}
               onValueChange={([v]) => setBudgetAmount(v)}
-              className="w-full"
+              className="brand-slider w-full [&_[data-slot=slider-thumb]]:border-[var(--brand-coral)]"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>{formatMoney(scale.min, budgetCurrency)}</span>
@@ -2141,7 +2141,7 @@ export default function NewTripPage() {
               onClick={handleGenerateTrip}
               disabled={isGenerating}
               className={cn(
-                "h-12 rounded-xl bg-brand-gradient px-6 text-sm font-semibold text-white transition-opacity hover:bg-brand-gradient hover:opacity-90",
+                "h-12 rounded-xl w-full bg-brand-gradient px-6 text-sm font-semibold text-white transition-opacity hover:bg-brand-gradient hover:opacity-90",
                 "disabled:bg-none disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100",
                 focusRing,
               )}
@@ -2245,10 +2245,13 @@ export default function NewTripPage() {
           </div>
         </div>
 
-        {/* Composer — pinned to the bottom. Tall steps scroll inside it so the
-            chat above is never pushed off screen. */}
+        {/* Composer — pinned to the bottom.
+            Height strategy (no per-step JS map needed):
+              • min-h  → fixed floor, so short steps always look the same
+              • h auto → tall steps (budget, vibe, preferences) grow by themselves
+              • max-h  → never eats the whole chat; only then does it scroll */}
         <div className="flex-shrink-0 border-t border-border bg-white px-4 py-3">
-          <div className="max-h-[52dvh] w-full overflow-y-auto">
+          <div className="max-h-[calc(100dvh_-_12rem)] min-h-[9rem] w-full overflow-y-auto">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentStep}
