@@ -57,7 +57,7 @@ const TIME_OF_DAY_CONFIG = {
   morning: {
     label: "Morning",
     icon: Sun,
-    chipCls: "bg-[var(--brand-yellow-muted)] text-[#8a6a05]",
+    chipCls: "bg-brand-gradient-muted text-[#8a6a05]",
     dotCls: "bg-[var(--brand-yellow)]",
   },
   afternoon: {
@@ -1329,54 +1329,58 @@ export default function TripDetailPage() {
       return (
         <motion.div key="packing" {...panelMotion} className="space-y-5">
           {/* Header, progress and the add form */}
-          <div className="rounded-3xl border border-border bg-white p-5 shadow-sm sm:p-6">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h3 className="flex items-center gap-2 text-base font-bold text-foreground">
-                  <span className="flex size-8 items-center justify-center rounded-xl bg-[var(--brand-orange-muted)]/70">
-                    <Package className="size-4 text-[var(--brand-orange)]" />
-                  </span>
-                  Packing list
-                </h3>
-                <p className="mt-1.5 text-xs text-muted-foreground">
-                  Tick items off as you pack — add or remove anything you like.
-                </p>
+          <div className="overflow-hidden rounded-3xl border border-border bg-white shadow-sm">
+            <div className="h-1.5 w-full bg-brand-gradient-muted" />
+            <div className="p-5 sm:p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="flex items-center gap-2 text-base font-bold text-foreground">
+                    <span className="flex size-8 items-center justify-center rounded-xl bg-[var(--brand-orange-muted)]/70">
+                      <Package className="size-4 text-[var(--brand-orange)]" />
+                    </span>
+                    Packing list
+                  </h3>
+                  <p className="mt-1.5 text-xs text-muted-foreground">
+                    Tick items off as you pack — add or remove anything you
+                    like.
+                  </p>
+                </div>
+                <span className="rounded-full bg-secondary px-3 py-1 text-[11px] font-semibold text-foreground">
+                  {packedCount}/{packingList.length} packed
+                </span>
               </div>
-              <span className="rounded-full bg-secondary px-3 py-1 text-[11px] font-semibold text-foreground">
-                {packedCount}/{packingList.length} packed
-              </span>
-            </div>
 
-            <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${packingProgress}%` }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-                className="h-full rounded-full bg-brand-gradient"
-              />
-            </div>
+              <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${packingProgress}%` }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                  className="h-full rounded-full bg-brand-gradient"
+                />
+              </div>
 
-            <form onSubmit={handleAddPackingItem} className="mt-4 flex gap-2">
-              <Input
-                value={newPackingItem}
-                onChange={(e) => setNewPackingItem(e.target.value)}
-                placeholder="Add an item (e.g. sunscreen)"
-                aria-label="New packing item"
-                className="h-11 flex-1 text-base md:text-sm"
-              />
-              <Button
-                type="submit"
-                disabled={addingPacking || !newPackingItem.trim()}
-                className="h-11 shrink-0 bg-brand-gradient px-4 text-white hover:opacity-90"
-              >
-                {addingPacking ? (
-                  <Spinner size="small" />
-                ) : (
-                  <Plus className="size-4" />
-                )}
-                <span className="hidden sm:inline">Add</span>
-              </Button>
-            </form>
+              <form onSubmit={handleAddPackingItem} className="mt-4 flex gap-2">
+                <Input
+                  value={newPackingItem}
+                  onChange={(e) => setNewPackingItem(e.target.value)}
+                  placeholder="Add an item (e.g. sunscreen)"
+                  aria-label="New packing item"
+                  className="h-11 flex-1 text-base md:text-sm"
+                />
+                <Button
+                  type="submit"
+                  disabled={addingPacking || !newPackingItem.trim()}
+                  className="h-11 shrink-0 bg-brand-gradient px-4 text-white hover:opacity-90"
+                >
+                  {addingPacking ? (
+                    <Spinner size="small" />
+                  ) : (
+                    <Plus className="size-4" />
+                  )}
+                  <span className="hidden sm:inline">Add</span>
+                </Button>
+              </form>
+            </div>
           </div>
 
           {/* Items */}
@@ -1450,38 +1454,41 @@ export default function TripDetailPage() {
     if (activeView === "tips") {
       return (
         <motion.div key="tips" {...panelMotion} className="space-y-5">
-          <div className="rounded-3xl border border-border bg-white p-5 shadow-sm sm:p-6">
-            <h3 className="flex items-center gap-2 text-base font-bold text-foreground">
-              <span className="flex size-8 items-center justify-center rounded-xl bg-[var(--brand-yellow-muted)]/70">
-                <Lightbulb className="size-4 text-[#8a6a05]" />
-              </span>
-              Travel tips
-            </h3>
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              Keep the advice that matters to you — and note down your own.
-            </p>
+          <div className="overflow-hidden rounded-3xl border border-border bg-white shadow-sm">
+            <div className="h-1.5 w-full bg-brand-gradient-muted" />
+            <div className="p-5 sm:p-6">
+              <h3 className="flex items-center gap-2 text-base font-bold text-foreground">
+                <span className="flex size-8 items-center justify-center rounded-xl bg-[var(--brand-yellow-muted)]/70">
+                  <Lightbulb className="size-4 text-[#8a6a05]" />
+                </span>
+                Travel tips
+              </h3>
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                Keep the advice that matters to you — and note down your own.
+              </p>
 
-            <form onSubmit={handleAddTip} className="mt-5 flex gap-2">
-              <Input
-                value={newTipText}
-                onChange={(e) => setNewTipText(e.target.value)}
-                placeholder="Add a tip (e.g. carry cash for markets)"
-                aria-label="New travel tip"
-                className="h-11 flex-1 text-base md:text-sm"
-              />
-              <Button
-                type="submit"
-                disabled={addingTip || !newTipText.trim()}
-                className="h-11 shrink-0 bg-brand-gradient px-4 text-white hover:opacity-90"
-              >
-                {addingTip ? (
-                  <Spinner size="small" />
-                ) : (
-                  <Plus className="size-4" />
-                )}
-                <span className="hidden sm:inline">Add</span>
-              </Button>
-            </form>
+              <form onSubmit={handleAddTip} className="mt-5 flex gap-2">
+                <Input
+                  value={newTipText}
+                  onChange={(e) => setNewTipText(e.target.value)}
+                  placeholder="Add a tip (e.g. carry cash for markets)"
+                  aria-label="New travel tip"
+                  className="h-11 flex-1 text-base md:text-sm"
+                />
+                <Button
+                  type="submit"
+                  disabled={addingTip || !newTipText.trim()}
+                  className="h-11 shrink-0 bg-brand-gradient px-4 text-white hover:opacity-90"
+                >
+                  {addingTip ? (
+                    <Spinner size="small" />
+                  ) : (
+                    <Plus className="size-4" />
+                  )}
+                  <span className="hidden sm:inline">Add</span>
+                </Button>
+              </form>
+            </div>
           </div>
 
           {travelTips.length > 0 ? (
@@ -1782,7 +1789,7 @@ export default function TripDetailPage() {
                               {day.title}
                             </span>
                             <span className="block truncate text-[10px] text-muted-foreground">
-                              {day.activities?.length || 0} stops11
+                              {day.activities?.length || 0} stops
                               {day.date
                                 ? ` · ${formatShortDate(day.date)}`
                                 : ""}
