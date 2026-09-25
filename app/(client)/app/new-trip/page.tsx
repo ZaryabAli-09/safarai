@@ -202,10 +202,10 @@ const segCls = (active: boolean) =>
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+    <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
       <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-gradient" />
       {children}
-    </p>
+    </h2>
   );
 }
 
@@ -1964,10 +1964,10 @@ export default function NewTripPage() {
       return (
         <div className="space-y-3">
           <div className="bg-muted border border-border rounded-xl p-4 space-y-3">
-            <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
               <CheckCircle2 className="h-4 w-4 text-[var(--brand-coral)]" />
               Trip Summary
-            </div>
+            </h2>
             <div className="grid grid-cols-2 gap-2 text-xs">
               {row(
                 MapPin,

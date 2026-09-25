@@ -5,22 +5,44 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Body copy uses Inter throughout the app for a clean, readable interface. */
 html,
-body {
+body,
+body
+  :where(
+    p,
+    div,
+    span,
+    a,
+    button,
+    input,
+    textarea,
+    select,
+    option,
+    label,
+    li,
+    ul,
+    ol,
+    small,
+    strong,
+    em
+  ) {
   font-family:
-    sans-serif,
-    system-ui,
+    var(--font-inter),
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
-    Roboto,
-    "Helvetica Neue",
-    Arial,
-    "Noto Sans",
-    "Apple Color Emoji",
-    "Segoe UI Emoji",
-    "Segoe UI Symbol",
-    "Noto Color Emoji";
+    sans-serif;
+}
+
+/* Display headings use DM Serif Display to create a distinct editorial hierarchy. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-roboto), Georgia, "Times New Roman", serif;
 }
 
 @theme inline {

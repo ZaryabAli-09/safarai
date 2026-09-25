@@ -1,8 +1,22 @@
 // app/layout.tsx
 import type { Metadata, Viewport } from "next";
+import { Inter, Roboto } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import SessionProviderWrapper from "@/lib/SessionProviderWrapper";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
+
+const roboto = Roboto({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-roboto",
+  weight: "600",
+});
 
 export const viewport: Viewport = {
   themeColor: "#2563eb",
@@ -55,7 +69,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="antialiased">
+      <body className={`${inter.variable} ${roboto.variable} antialiased`}>
         <SessionProviderWrapper>{children}</SessionProviderWrapper>
         <Toaster position="top-center" />
         <script

@@ -34,8 +34,63 @@ export async function PATCH(
       return response(false, 404, "Trip not found");
     }
 
-    if (!trip.itinerary || trip.itinerary.length === 0) {
+    if (
+      ["replace", "remove", "ai-suggest", "move"].includes(action) &&
+      (!trip.itinerary || trip.itinerary.length === 0)
+    ) {
       return response(false, 400, "No itinerary found for this trip");
+    }
+
+    // Packing list updates
+    if (action === "add-packing-item") {
+      const item = (body.item || "").toString().trim();
+      if (!item) return response(false, 400, "Item text is required");
+      if (!Array.isArray(trip.packingList)) trip.packingList = [];
+      trip.packingList.push(item);
+      trip.markModified("packingList");
+      await trip.save();
+      return response(true, 200, "Packing item added", trip);
+    }
+
+    if (action === "remove-packing-item") {
+      const index = typeof body.index === "number" ? body.index : -1;
+      if (
+        index < 0 ||
+        !Array.isArray(trip.packingList) ||
+        index >= trip.packingList.length
+      ) {
+        return response(false, 400, "Invalid packing item index");
+      }
+      trip.packingList.splice(index, 1);
+      trip.markModified("packingList");
+      await trip.save();
+      return response(true, 200, "Packing item removed", trip);
+    }
+
+    // Travel tips updates
+    if (action === "add-tip") {
+      const tip = (body.tip || "").toString().trim();
+      if (!tip) return response(false, 400, "Tip text is required");
+      if (!Array.isArray(trip.travelTips)) trip.travelTips = [];
+      trip.travelTips.push(tip);
+      trip.markModified("travelTips");
+      await trip.save();
+      return response(true, 200, "Tip added", trip);
+    }
+
+    if (action === "remove-tip") {
+      const index = typeof body.index === "number" ? body.index : -1;
+      if (
+        index < 0 ||
+        !Array.isArray(trip.travelTips) ||
+        index >= trip.travelTips.length
+      ) {
+        return response(false, 400, "Invalid tip index");
+      }
+      trip.travelTips.splice(index, 1);
+      trip.markModified("travelTips");
+      await trip.save();
+      return response(true, 200, "Tip removed", trip);
     }
 
     // Handle different actions
