@@ -10,6 +10,17 @@ import {
   toCoord,
   toInt,
 } from "./input-validation";
+import type {
+  Accommodation,
+  DestinationDays,
+  LocalTransport,
+  Origin,
+  Outbound,
+  Prebooked,
+  SanitizeResult,
+  TimeSlot,
+  TripPace,
+} from "@/types/app-types";
 
 // ─── Options ──────────────────────────────────────────────────────────────────
 
@@ -25,17 +36,6 @@ export const CURRENCIES = [
 ] as const;
 
 export const CURRENCY_CODES: string[] = CURRENCIES.map((c) => c.code);
-
-export type TripPace = "slow" | "moderate" | "fast";
-export type Accommodation = "budget" | "mid-range" | "luxury";
-export type Outbound = "flight" | "road" | "train" | "bus";
-export type LocalTransport =
-  | "taxi"
-  | "rental"
-  | "own-car"
-  | "public"
-  | "walking";
-export type TimeSlot = "morning" | "afternoon" | "evening" | "night";
 
 const PACES: TripPace[] = ["slow", "moderate", "fast"];
 const STAYS: Accommodation[] = ["budget", "mid-range", "luxury"];
@@ -133,56 +133,6 @@ export const LIMITS = {
   maxTravelers: 20,
   maxBudgetUSD: 1_000_000,
 } as const;
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-export interface Origin {
-  name: string;
-  lat?: number;
-  lng?: number;
-  country?: string;
-}
-
-export interface Prebooked {
-  type: "flight";
-  amount?: number;
-}
-
-export interface DestinationDays {
-  name: string;
-  days: number;
-}
-
-export interface SanitizedTrip {
-  name: string;
-  destinations: string[];
-  destinationDays: DestinationDays[];
-  origin: Origin;
-  outbound: Outbound;
-  startDate: Date;
-  endDate: Date;
-  duration: number;
-  arrivalTime: TimeSlot;
-  departureTime: TimeSlot;
-  adults: number;
-  children: number;
-  pets: number;
-  styles: string[];
-  interests: string[];
-  pace: TripPace;
-  stayLevel: Accommodation;
-  localTransport: LocalTransport;
-  budget: number;
-  currency: string;
-  includesFlights: boolean;
-  flightBudget?: number;
-  prebooked: Prebooked[];
-  comment: string;
-}
-
-export type SanitizeResult =
-  | { ok: true; data: SanitizedTrip }
-  | { ok: false; error: string };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

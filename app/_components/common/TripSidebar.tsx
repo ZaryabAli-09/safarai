@@ -5,7 +5,7 @@ import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { TripFilters } from "./TripCard";
+import { TripFilters } from "@/types/app-types";
 
 const STATUS_OPTIONS: { value: TripFilters["statusFilter"]; label: string }[] =
   [

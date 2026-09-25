@@ -1,43 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { generateAICompletion, OpenRouterMessage } from "@/config/ai";
-import type { SanitizedTrip } from "@/lib/trip-creation-input";
-
-export interface TripAIInput extends SanitizedTrip {
-  budgetUSD: number;
-}
-
-export interface GeneratedActivity {
-  id?: string;
-  timeOfDay?: string;
-  title?: string;
-  description?: string;
-  location?: string;
-  venue?: string;
-  city?: string;
-  country?: string;
-  estimatedCost?: string;
-  duration?: string;
-  category?: string;
-  [key: string]: unknown;
-}
-
-export interface GeneratedDay {
-  dayNumber?: number;
-  date?: string;
-  title?: string;
-  location?: string;
-  activities?: GeneratedActivity[];
-  [key: string]: unknown;
-}
-
-export interface AIItineraryResult {
-  itinerary: GeneratedDay[];
-  summary?: any;
-  budgetBreakdown?: any;
-  packingList?: string[];
-  travelTips?: string[];
-  aiNotes?: string;
-}
+import type {
+  AIItineraryResult,
+  GeneratedDay,
+  TripAIInput,
+} from "@/types/app-types";
 
 const SLOT_HINT: Record<string, string> = {
   morning: "morning (6am-11am)",

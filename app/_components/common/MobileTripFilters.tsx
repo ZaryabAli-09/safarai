@@ -5,7 +5,7 @@ import { RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { TripFilters } from "@/app/_components/common/TripCard";
+import { TripFilters } from "@/types/app-types";
 
 interface MobileTripFiltersProps {
   filters: TripFilters;

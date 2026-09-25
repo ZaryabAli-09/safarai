@@ -9,20 +9,10 @@ import { MobileTopBar } from "@/app/_components/navigation/MobileTopBar";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/loader";
 import TripSidebar from "@/app/_components/common/TripSidebar";
-import TripCard, {
-  Trip,
-  TripCardSkeleton,
-  TripFilters,
-} from "@/app/_components/common/TripCard";
+import TripCard, { TripCardSkeleton } from "@/app/_components/common/TripCard";
 import { MobileTripFilters } from "@/app/_components/common/MobileTripFilters"; // Import the new component
 import EmptyState from "@/app/_components/common/EmptyState";
-
-interface PaginationData {
-  total: number;
-  totalPages: number;
-  page: number;
-  limit: number;
-}
+import type { PaginationData, TripFilters, TripListItem } from "@/types/app-types";
 
 const DEFAULT_FILTERS: TripFilters = {
   searchTerm: "",
@@ -37,7 +27,7 @@ export default function TripsPage() {
   const { data: session } = useSession();
   const userid = session?.user?._id;
 
-  const [trips, setTrips] = useState<Trip[]>([]);
+  const [trips, setTrips] = useState<TripListItem[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -157,7 +147,9 @@ export default function TripsPage() {
   }, [currentPage, getTrips, filters]);
 
   const handleDelete = (id: string) => {
-    setTrips((prev: Trip[]) => prev.filter((t: Trip) => t._id !== id));
+    setTrips((prev: TripListItem[]) =>
+      prev.filter((t: TripListItem) => t._id !== id)
+    );
     if (paginationData) {
       setPaginationData((prev: PaginationData | null) =>
         prev

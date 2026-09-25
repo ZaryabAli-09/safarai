@@ -62,72 +62,18 @@ import {
   FALLBACK_RATES,
   budgetScale,
   niceRound,
-  type TripPace,
-  type Accommodation,
-  type Outbound,
-  type LocalTransport,
-  type TimeSlot,
-  type Origin,
 } from "@/lib/trip-creation-input";
+import type {
+  Accommodation,
+  ChatMessage,
+  ChatStep,
+  Origin,
+  OriginCandidate,
+  TimeSlot,
+  TripFormData,
+  TripPace,
+} from "@/types/app-types";
 import GeneratingOverlay from "@/app/_components/common/GeneratingOverlay";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface TripFormData {
-  name: string;
-  destinations: string[];
-  destinationDays: { name: string; days: number }[];
-  origin: Origin;
-  outbound: Outbound;
-  startDate: string;
-  endDate: string;
-  duration: number;
-  arrivalTime: TimeSlot;
-  departureTime: TimeSlot;
-  adults: number;
-  children: number;
-  pets: number;
-  styles: string[];
-  interests: string[];
-  pace: TripPace;
-  stayLevel: Accommodation;
-  localTransport: LocalTransport;
-  budget: number;
-  currency: string;
-  includesFlights?: boolean;
-  flightBudget?: number;
-  prebooked: { type: "flight"; amount?: number }[];
-  comment: string;
-}
-
-type ChatStep =
-  | "welcome"
-  | "destination"
-  | "origin"
-  | "dates"
-  | "split"
-  | "timing"
-  | "travelers"
-  | "vibe"
-  | "preferences"
-  | "budget"
-  | "extras"
-  | "summary"
-  | "generating";
-
-interface ChatMessage {
-  id: string;
-  role: "bot" | "user";
-  content: React.ReactNode;
-  timestamp: Date;
-}
-
-interface OriginCandidate {
-  displayName: string;
-  lat: number;
-  lng: number;
-  country: string;
-}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 

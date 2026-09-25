@@ -1,95 +1,19 @@
 import mongoose from "mongoose";
+import type {
+  IActivity,
+  IDayItinerary,
+  IBudgetBreakdown,
+  ITripSummary,
+  ITrip,
+} from "@/types/app-types";
 
-// interface
-export interface IActivity {
-  id: string;
-  timeOfDay: string; // "morning" | "afternoon" | "evening"
-  title: string;
-  description: string;
-  location?: string;
-  venue?: string; // Specific place name (e.g., "Faisal Mosque")
-  city?: string; // City name (e.g., "Islamabad")
-  country?: string; // Country name (e.g., "Pakistan")
-  coordinates?: { lat: number; lng: number };
-  estimatedCost: string;
-  duration?: string;
-  category?: string;
-  weather?: {
-    temp?: string;
-    condition?: string;
-    icon?: string;
-  };
-  image?: {
-    url: string;
-    attribution?: string;
-  };
-}
-
-export interface IDayItinerary {
-  dayNumber: number;
-  date?: string;
-  title: string;
-  location: string;
-  activities: IActivity[];
-}
-
-export interface IBudgetBreakdown {
-  accommodation: number;
-  food: number;
-  transport: number;
-  activities: number;
-  miscellaneous: number;
-  total: number;
-  currency: string;
-}
-
-export interface ITripSummary {
-  totalDays: number;
-  destinations: string[];
-  estimatedBudget: string;
-  bestSeason?: string;
-  travelStyle?: string;
-  familyFriendly?: boolean;
-}
-
-export interface ITrip {
-  _id?: mongoose.Types.ObjectId;
-  userId: mongoose.Types.ObjectId;
-  name: string;
-  destinations: string[];
-  startDate: Date;
-  endDate: Date;
-  duration: number;
-  budget: number;
-  currency: string;
-  origin?: { name: string; lat?: number; lng?: number; country?: string };
-  outbound: string;
-  arrivalTime: string;
-  departureTime: string;
-  adults: number;
-  children: number;
-  pets: number;
-  styles: string[];
-  pace: string;
-  stayLevel: string;
-  localTransport: string;
-  destinationDays: { name: string; days: number }[];
-  interests: string[];
-  comment: string;
-  budgetUSD?: number; // computed server-side from budget + currency
-  includesFlights?: boolean;
-  flightBudget?: number;
-  prebooked?: { type: "flight"; amount?: number }[];
-  itinerary: IDayItinerary[];
-  summary: ITripSummary;
-  budgetBreakdown: IBudgetBreakdown;
-  packingList: string[];
-  travelTips: string[];
-  aiNotes: string;
-  status: "generating" | "completed" | "draft";
-  createdAt?: Date;
-  updatedAt?: Date;
-}
+export type {
+  IActivity,
+  IDayItinerary,
+  IBudgetBreakdown,
+  ITripSummary,
+  ITrip,
+};
 
 const ActivitySchema = new mongoose.Schema(
   {

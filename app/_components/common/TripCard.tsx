@@ -29,40 +29,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
-
-// ─── Types ──────────────────────────────────────────────────────────────────
-
-export interface Trip {
-  _id: string;
-  name: string;
-  destinations: string[];
-  startDate: string;
-  endDate: string;
-  duration: number;
-  budget: number;
-  currency: string;
-  styles?: string[];
-  adults?: number;
-  children?: number;
-  status: "generating" | "completed" | "draft";
-  createdAt: string;
-  itinerary?: Array<{
-    activities?: Array<{
-      image?: {
-        url: string;
-      };
-    }>;
-  }>;
-}
-
-export interface TripFilters {
-  searchTerm: string;
-  sortBy: "latest" | "oldest" | "a-z" | "z-a";
-  statusFilter: "all" | "ready" | "draft" | "in-progress";
-  styleFilter: string[];
-  durationRange: [number, number];
-  budgetRange: [number, number];
-}
+import { TripListItem } from "@/types/app-types";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -78,7 +45,7 @@ function formatDate(dateStr: string) {
  * Get first available activity image from trip.
  * Uses the first available image instead of a random image.
  */
-function getFirstActivityImage(trip: Trip): string | null {
+function getFirstActivityImage(trip: TripListItem): string | null {
   if (!trip.itinerary || trip.itinerary.length === 0) {
     return null;
   }
@@ -151,7 +118,7 @@ export default function TripCard({
   index,
   onDelete,
 }: {
-  trip: Trip;
+  trip: TripListItem;
   index: number;
   onDelete: (id: string) => void;
 }) {

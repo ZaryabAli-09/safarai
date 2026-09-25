@@ -32,76 +32,11 @@ import {
 import { Spinner } from "@/components/ui/loader";
 import toast from "react-hot-toast";
 import Link from "next/link";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Activity {
-  id: string;
-  timeOfDay: "morning" | "afternoon" | "evening";
-  title: string;
-  description: string;
-  location?: string;
-  venue?: string;
-  city?: string;
-  country?: string;
-  estimatedCost: string;
-  duration?: string;
-  category?: string;
-  weather?: { temp?: string; condition?: string; icon?: string };
-  coordinates?: { lat: number; lng: number };
-  image?: { url: string; attribution?: string };
-}
-
-interface DayItinerary {
-  dayNumber: number;
-  date?: string;
-  title: string;
-  location: string;
-  activities: Activity[];
-}
-
-interface BudgetBreakdown {
-  accommodation: number;
-  food: number;
-  transport: number;
-  activities: number;
-  miscellaneous: number;
-  total: number;
-  currency: string;
-}
-
-interface TripSummary {
-  totalDays: number;
-  destinations: string[];
-  estimatedBudget: string;
-  bestSeason?: string;
-  travelStyle?: string;
-  familyFriendly?: boolean;
-}
-
-interface Trip {
-  _id: string;
-  name: string;
-  origin?: { name: string };
-  destinations: string[];
-  startDate: string;
-  endDate: string;
-  duration: number;
-  budget: number;
-  currency: string;
-  styles: string[];
-  adults: number;
-  children: number;
-  stayLevel: string;
-  itinerary: DayItinerary[];
-  summary: TripSummary;
-  budgetBreakdown: BudgetBreakdown;
-  packingList: string[];
-  travelTips: string[];
-  aiNotes: string;
-  status: "generating" | "completed" | "draft";
-  createdAt: string;
-}
+import type {
+  Activity,
+  DayItinerary,
+  TripDetail,
+} from "@/types/app-types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -449,7 +384,7 @@ export default function TripDetailPage() {
   const { tripid } = useParams<{ tripid: string }>();
   const { data: session } = useSession();
 
-  const [trip, setTrip] = useState<Trip | null>(null);
+  const [trip, setTrip] = useState<TripDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [openDays, setOpenDays] = useState<Set<number>>(new Set([0]));
