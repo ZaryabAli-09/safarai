@@ -659,7 +659,7 @@ function DayAccordion({
           <span className="text-[8px] font-semibold uppercase leading-none opacity-90">
             Day
           </span>
-          <span className="text-sm font-extrabold leading-tight">
+          <span className="text-sm md:text-sm font-extrabold leading-tight">
             {day.dayNumber}
           </span>
         </span>
@@ -677,44 +677,43 @@ function DayAccordion({
             />
           </span>
 
-          <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+          <span className="mt-1 flex flex-wrap flex-col items-start gap-x-3 gap-y-1  text-[11px] text-muted-foreground">
             {day.date && (
-              <span className="inline-flex items-center gap-1">
-                <Calendar className="size-3 text-[var(--brand-orange)]" />
-                {formatShortDate(day.date)}
-              </span>
-            )}
-            <span className="inline-flex min-w-0 items-center gap-1">
-              <MapPin className="size-3 shrink-0 text-[var(--brand-coral)]" />
-              <span className="max-w-[140px] truncate">{day.location}</span>
-            </span>
-          </span>
-
-          <span className="mt-2 flex items-center justify-between gap-2">
-            <span className="flex items-center gap-2">
-              <span className="rounded-full bg-[var(--brand-coral-muted)]/70 px-2 py-0.5 text-[10px] font-bold text-[var(--brand-coral)]">
-                {activities.length} {activities.length === 1 ? "stop" : "stops"}
-              </span>
-              {thumbs.length > 0 && (
-                <span className="flex items-center">
-                  {thumbs.map((url, thumbIdx) => (
-                    <img
-                      key={`${url}-${thumbIdx}`}
-                      src={url}
-                      alt=""
-                      className={cn(
-                        "size-7 rounded-lg object-cover ring-2 ring-white",
-                        thumbIdx > 0 && "-ml-2.5",
-                      )}
-                      loading="lazy"
-                    />
-                  ))}
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1">
+                  <Calendar className="size-3 text-[var(--brand-orange)]" />
+                  {formatShortDate(day.date)}
                 </span>
-              )}
-            </span>
-            <span className="shrink-0 text-[10px] font-semibold text-muted-foreground">
-              {isOpen ? "Hide plan" : "View plan"}
-            </span>
+                <span className="rounded-full bg-brand-gradient-muted px-2 py-0.5 text-[9px] font-bold text-[var(--brand-coral)]">
+                  {activities.length}{" "}
+                  {activities.length === 1 ? "stop" : "stops"}
+                </span>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="inline-flex min-w-0 items-center gap-1">
+                <MapPin className="size-3 shrink-0 text-[var(--brand-coral)]" />
+                <span className="max-w-[140px]  truncate">{day.location}</span>
+              </span>
+              <span className="flex items-center gap-2">
+                {thumbs.length > 0 && (
+                  <span className="flex items-center">
+                    {thumbs.map((url, thumbIdx) => (
+                      <img
+                        key={`${url}-${thumbIdx}`}
+                        src={url}
+                        alt=""
+                        className={cn(
+                          "size-7 rounded-lg object-cover ring-2 ring-white",
+                          thumbIdx > 0 && "-ml-2.5",
+                        )}
+                        loading="lazy"
+                      />
+                    ))}
+                  </span>
+                )}
+              </span>
+            </div>
           </span>
         </span>
       </button>
@@ -1226,7 +1225,7 @@ export default function TripDetailPage() {
               <p className="mt-1 text-2xl font-extrabold tracking-tight text-foreground">
                 {formatCurrency(totalBudget, currency)}
               </p>
-              <div className="mt-4 grid grid-cols-3 gap-2 rounded-2xl  p-3 border border-border text-center text-xs sm:text-sm ">
+              <div className="hidden  mt-4 md:grid grid-cols-3 gap-2 rounded-2xl  p-3 border border-border text-center text-xs sm:text-sm ">
                 <div>
                   <p className="text-[11px] text-muted-foreground">
                     Per day Estimated
@@ -1332,7 +1331,7 @@ export default function TripDetailPage() {
           <div className="overflow-hidden rounded-3xl border border-border bg-white shadow-sm">
             <div className="h-1.5 w-full bg-brand-gradient-muted" />
             <div className="p-5 sm:p-6">
-              <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex flex-wrap items-start justify-between gap-3 relative">
                 <div>
                   <h3 className="flex items-center gap-2 text-base font-bold text-foreground">
                     <span className="flex size-8 items-center justify-center rounded-xl bg-[var(--brand-orange-muted)]/70">
@@ -1341,11 +1340,10 @@ export default function TripDetailPage() {
                     Packing list
                   </h3>
                   <p className="mt-1.5 text-xs text-muted-foreground">
-                    Tick items off as you pack — add or remove anything you
-                    like.
+                    Tick items off as you pack add or remove anything you like.
                   </p>
                 </div>
-                <span className="rounded-full bg-secondary px-3 py-1 text-[11px] font-semibold text-foreground">
+                <span className="rounded-full bg-secondary px-3 py-1 text-[11px] font-semibold text-foreground absolute right-0 top-0 sm:static">
                   {packedCount}/{packingList.length} packed
                 </span>
               </div>
@@ -1464,7 +1462,7 @@ export default function TripDetailPage() {
                 Travel tips
               </h3>
               <p className="mt-1.5 text-xs text-muted-foreground">
-                Keep the advice that matters to you — and note down your own.
+                Keep the advice that matters to you and note down your own.
               </p>
 
               <form onSubmit={handleAddTip} className="mt-5 flex gap-2">
@@ -1539,19 +1537,6 @@ export default function TripDetailPage() {
     return (
       <motion.div key="itinerary" {...panelMotion} className="space-y-4">
         <div className="md:hidden">
-          <div className="mb-3 rounded-2xl border border-border bg-white p-4 shadow-sm">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Your day-by-day plan
-            </p>
-            <p className="mt-1 text-sm font-bold text-foreground">
-              {daysCount} {daysCount === 1 ? "day" : "days"} · {totalActivities}{" "}
-              activities
-            </p>
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              Tap a day to open its plan.
-            </p>
-          </div>
-
           {itinerary.length > 0 ? (
             <div className="space-y-3">
               {itinerary.map((day, idx) => (
@@ -1632,7 +1617,7 @@ export default function TripDetailPage() {
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h1 className="truncate text-sm  text-foreground md:text-sm">
+              <h1 className="truncate text-xs  text-foreground md:text-sm">
                 {trip.name}
               </h1>
               {trip.status === "completed" ? (
@@ -1646,21 +1631,18 @@ export default function TripDetailPage() {
                 </span>
               )}
             </div>
-            {/* <p className="truncate text-[11px] text-muted-foreground md:hidden">
-              {destinations} · {dateRange}
-            </p> */}
           </div>
 
           {/* Desktop keeps the same bar, just with one compact meta line */}
-          <div className="items-center gap-4 text-[9px] md:text-xs text-muted-foreground flex">
-            <span className="flex items-center gap-1.5">
-              <MapPin className="size-3.5 text-[var(--brand-coral)]" />
+          <div className="flex items-center gap-1 md:gap-4 text-[9px] md:text-xs text-muted-foreground ">
+            <span className="hidden md:flex  items-center gap-1.5">
+              <MapPin className=" size-3.5 text-[var(--brand-coral)]" />
               <span className="max-w-[220px] truncate">
                 {startLocation} → {destinations}
               </span>
             </span>
             <span className="flex items-center gap-1.5">
-              <Calendar className="size-3.5 text-[var(--brand-orange)]" />
+              <Calendar className=" size-3.5 text-[var(--brand-orange)]" />
               {dateRange}
             </span>
           </div>
@@ -1669,62 +1651,81 @@ export default function TripDetailPage() {
 
       {/* ── Mobile: summary strip, then the sticky tab bar ── */}
       <div className="md:hidden">
-        <div className="mx-auto grid max-w-7xl grid-cols-3 gap-2 px-4 pt-3 sm:px-6">
+        <div className="mx-auto grid max-w-7xl grid-cols-3 gap-2.5 px-4 pt-3 sm:px-6">
           {[
-            { icon: Clock, label: "Days", value: `${daysCount}` },
+            {
+              icon: Clock,
+              label: "Days",
+              value: `${daysCount}`,
+              iconCls:
+                "bg-[var(--brand-purple-muted)] text-[var(--brand-purple)]",
+            },
             {
               icon: DollarSign,
               label: "Budget",
               value: formatCurrency(totalBudget, currency),
+              iconCls:
+                "bg-[var(--brand-coral-muted)] text-[var(--brand-coral)]",
             },
-            { icon: Users, label: "Travelers", value: `${travelers || "—"}` },
+            {
+              icon: Users,
+              label: "Travelers",
+              value: `${travelers || "—"}`,
+              iconCls:
+                "bg-[var(--brand-orange-muted)] text-[var(--brand-orange)]",
+            },
           ].map((stat) => (
             <div
               key={stat.label}
-              className="rounded-2xl border border-border bg-white px-2.5 py-2 shadow-sm"
+              className="relative flex min-w-0 flex-col items-center gap-1 overflow-hidden rounded-2xl border border-white/80 bg-white px-2.5 py-2.5 shadow-sm ring-1 ring-black/5"
             >
-              <span className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
-                <stat.icon className="size-3" />
+              <span
+                className={cn(
+                  "flex size-7 items-center justify-center rounded-lg",
+                  stat.iconCls,
+                )}
+              >
+                <stat.icon className="size-3.5" />
+              </span>
+              <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
                 {stat.label}
               </span>
-              <p className="mt-0.5 truncate text-xs font-bold text-foreground">
+              <p className="max-w-full truncate text-[9px] font-bold leading-none text-foreground">
                 {stat.value}
               </p>
             </div>
           ))}
         </div>
-
-        <nav
-          aria-label="Trip sections"
-          className="sticky top-14 z-30 mt-3 border-y border-border/70 bg-white/95 backdrop-blur"
-        >
-          <div className="grid grid-cols-4">
-            {MOBILE_TABS.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeView === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveView(tab.id)}
-                  aria-current={isActive ? "page" : undefined}
-                  className={cn(
-                    "flex flex-col items-center gap-0.5 border-b-2 px-1 py-2 text-[10px] font-semibold transition-colors",
-                    isActive
-                      ? "border-[var(--brand-coral)] text-[var(--brand-coral)]"
-                      : "border-transparent text-muted-foreground",
-                  )}
-                >
-                  <Icon className="size-4" />
-                  <span className="w-full truncate text-center">
-                    {tab.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </nav>
       </div>
+
+      <nav
+        aria-label="Trip sections"
+        className="sticky top-14 z-30 mt-3 border-y border-border/70 bg-white/95 shadow-sm backdrop-blur md:hidden"
+      >
+        <div className="grid grid-cols-4">
+          {MOBILE_TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeView === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveView(tab.id)}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "flex flex-col items-center gap-0.5 border-b-2 px-1 py-2 text-[10px] font-semibold transition-colors",
+                  isActive
+                    ? "border-[var(--brand-pink)] text-[var(--brand-coral)]"
+                    : "border-transparent text-muted-foreground",
+                )}
+              >
+                <Icon className="size-4" />
+                <span className="w-full truncate text-center">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
 
       {/* ── Body ── */}
       <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 md:py-6 lg:px-8">
