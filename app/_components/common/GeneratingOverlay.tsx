@@ -44,23 +44,23 @@ export default function GeneratingOverlay({
   const pct = Math.round(((activeStep + 1) / total) * 100);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/70 px-5 backdrop-blur-sm">
-      <div className="max-h-[calc(100dvh_-_2rem)] w-full max-w-md overflow-y-auto rounded-3xl border border-border bg-white p-6 shadow-xl sm:p-7">
-        {/* Generation lottie (replaces the old ring + plane spinner) */}
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/20 px-4 backdrop-blur-sm sm:px-6">
+      <div className="w-full max-w-md rounded-3xl border border-border bg-white p-5 shadow-2xl sm:p-6">
+        {/* Generation lottie */}
         <div className="flex justify-center">
           <Lottie
             src="/assets/json-gifs/generation.json"
             autoplay
             loop
-            className="size-36 sm:size-44"
+            className="size-20 sm:size-24"
           />
         </div>
 
-        <div className="mt-5 text-center">
-          <h2 className="text-lg font-semibold text-foreground">
+        <div className="mt-3 text-center">
+          <h2 className="text-base font-semibold text-foreground sm:text-lg">
             Crafting your itinerary…
           </h2>
-          <p className="mx-auto mt-1 max-w-xs text-sm text-muted-foreground">
+          <p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-muted-foreground sm:text-sm">
             {duration ? `A personalized ${duration}-day plan` : "Your plan"}
             {destinations.length > 0 ? ` for ${destinations.join(", ")}` : ""}.
             This usually takes under a minute.
@@ -68,37 +68,37 @@ export default function GeneratingOverlay({
         </div>
 
         {/* Brand-gradient progress */}
-        <div className="mt-5">
+        <div className="mt-4">
           <BrandProgress value={pct} />
-          <p className="mt-2 text-right text-[11px] font-medium text-muted-foreground">
+          <p className="mt-1.5 text-right text-[11px] font-medium text-muted-foreground">
             Step {Math.min(activeStep + 1, total)} of {total}
           </p>
         </div>
 
-        {/* Steps — one aligned icon column, matching the sidebar list */}
-        <ul className="mt-4 space-y-2.5">
+        {/* Steps — compact spacing */}
+        <ul className="mt-3 space-y-2">
           {GENERATION_STEPS.map((step, i) => {
             const isDone = i < activeStep;
             const isActive = i === activeStep;
             return (
-              <li key={step} className="flex items-center gap-3">
-                <span className="flex size-5 shrink-0 items-center justify-center">
+              <li key={step} className="flex items-center gap-2.5">
+                <span className="flex size-4.5 shrink-0 items-center justify-center">
                   {isDone ? (
-                    <span className="flex size-5 items-center justify-center rounded-full bg-brand-gradient">
-                      <Check className="h-3 w-3 text-white" />
+                    <span className="flex size-4.5 items-center justify-center rounded-full bg-brand-gradient">
+                      <Check className="h-2.5 w-2.5 text-white" />
                     </span>
                   ) : isActive ? (
                     <Spinner
                       size="small"
-                      className="border-[var(--brand-coral)]/25 border-t-[var(--brand-coral)]"
+                      className="size-3.5 border-[var(--brand-coral)]/25 border-t-[var(--brand-coral)]"
                     />
                   ) : (
-                    <span className="size-5 rounded-full border-2 border-border" />
+                    <span className="size-4 rounded-full border-2 border-border" />
                   )}
                 </span>
                 <span
                   className={cn(
-                    "text-sm",
+                    "text-xs sm:text-sm",
                     isDone
                       ? "text-muted-foreground"
                       : isActive

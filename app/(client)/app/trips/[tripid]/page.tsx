@@ -1051,17 +1051,19 @@ export default function TripDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[70vh] flex-col items-center justify-center px-5 pb-16 text-center">
-        <Lottie
-          src="/assets/json-gifs/Empty.json"
-          autoplay
-          loop
-          className="h-40 w-52 sm:h-44 sm:w-56"
-        />
-        <h2 className="text-base font-semibold text-foreground sm:text-lg">
+      <div className="flex min-h-[100vh] flex-col items-center justify-center px-5 pb-16 text-center">
+        <div className="flex items-center justify-center">
+          <Lottie
+            src="/assets/json-gifs/Empty.json"
+            autoplay
+            loop
+            className="h-24 w-32 sm:h-28 sm:w-36"
+          />
+        </div>
+        <h2 className="mt-2 text-base font-semibold text-foreground sm:text-lg">
           Loading your trip…
         </h2>
-        <p className="mt-2 max-w-sm text-xs leading-5 text-muted-foreground sm:text-sm">
+        <p className="mt-1.5 max-w-sm text-xs leading-5 text-muted-foreground sm:text-sm">
           Fetching your personalised itinerary, budget and packing list.
         </p>
       </div>
@@ -1072,18 +1074,20 @@ export default function TripDetailPage() {
 
   if (error || !trip) {
     return (
-      <div className="flex min-h-[70vh] flex-col items-center justify-center px-5 pb-16 text-center">
-        <Lottie
-          src="/assets/json-gifs/Empty.json"
-          autoplay
-          loop
-          className="h-40 w-52 sm:h-44 sm:w-56"
-        />
-        <h2 className="flex items-center justify-center gap-2 text-base font-semibold text-foreground sm:text-lg">
+      <div className="flex min-h-[60vh] flex-col items-center justify-center px-5 pb-16 text-center">
+        <div className="flex items-center justify-center">
+          <Lottie
+            src="/assets/json-gifs/Empty.json"
+            autoplay
+            loop
+            className="h-24 w-32 sm:h-28 sm:w-36"
+          />
+        </div>
+        <h2 className="mt-2 flex items-center justify-center gap-2 text-base font-semibold text-foreground sm:text-lg">
           <AlertCircle className="size-4 text-destructive" />
           Trip not found
         </h2>
-        <p className="mt-2 max-w-sm text-xs leading-5 text-muted-foreground sm:text-sm">
+        <p className="mt-1.5 max-w-sm text-xs leading-5 text-muted-foreground sm:text-sm">
           {error || "This trip could not be loaded."}
         </p>
         <Link
@@ -1101,17 +1105,19 @@ export default function TripDetailPage() {
 
   if (trip.status === "generating") {
     return (
-      <div className="flex min-h-[70vh] flex-col items-center justify-center px-5 pb-16 text-center">
-        <Lottie
-          src="/assets/json-gifs/generation.json"
-          autoplay
-          loop
-          className="h-40 w-52 sm:h-44 sm:w-56"
-        />
-        <h2 className="text-base font-semibold text-foreground sm:text-lg">
+      <div className="flex min-h-[60vh] flex-col items-center justify-center px-5 pb-16 text-center">
+        <div className="flex items-center justify-center">
+          <Lottie
+            src="/assets/json-gifs/generation.json"
+            autoplay
+            loop
+            className="size-24 sm:size-28"
+          />
+        </div>
+        <h2 className="mt-2 text-base font-semibold text-foreground sm:text-lg">
           Crafting your itinerary…
         </h2>
-        <p className="mt-2 max-w-sm text-xs leading-5 text-muted-foreground sm:text-sm">
+        <p className="mt-1.5 max-w-sm text-xs leading-5 text-muted-foreground sm:text-sm">
           Our AI is still building your plan. This usually takes under a minute.
         </p>
         <Button

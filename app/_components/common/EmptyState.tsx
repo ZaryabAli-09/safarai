@@ -21,9 +21,9 @@ export default function EmptyState({
   return (
     <div className="flex min-h-[420px] w-full items-center justify-center px-4">
       <div className="flex w-full max-w-md flex-col items-center text-center">
-        <div className="relative mb-5">
+        <div className="relative mb-4">
           {gifjson ? (
-            <Lottie src={gifjson} autoplay loop className="h-40 w-52" />
+            <Lottie src={gifjson} autoplay loop className="h-24 w-32 sm:h-28 sm:w-36" />
           ) : (
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-gradient-muted">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-background">
