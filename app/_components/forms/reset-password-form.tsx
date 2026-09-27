@@ -12,7 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
-const passwordScehma = z.string().min(6, "Password must be 6 characters");
+// Password policy aligned with server schema
+const passwordSchema = z
+  .string()
+  .trim()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[A-Z]/, "Password must contain an uppercase letter")
+  .regex(/[0-9]/, "Password must contain a number")
+  .regex(/[@$!%*?&]/, "Password must contain a special character (@$!%*?&)");
 
 export function ResetPasswordForm({
   className,
@@ -25,28 +32,37 @@ export function ResetPasswordForm({
   const searchParams = useSearchParams();
   const resetToken = searchParams.get("resetToken");
 
-  async function handleSubmit() {
-    const result = passwordScehma.safeParse(newPassword);
+  async function handleSubmit(e?: React.FormEvent) {
+    if (e) e.preventDefault();
 
+    if (!resetToken) {
+      toast.error("Invalid or missing reset token");
+      return;
+    }
+
+    const result = passwordSchema.safeParse(newPassword);
     if (!result.success) {
       toast.error(result.error.issues[0].message);
       return;
     }
+
     try {
       setLoading(true);
 
-      const res = await fetch(
-        `/api/auth/reset-password?resetToken=${resetToken}&newPassword=${newPassword}`,
-      );
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resetToken, newPassword }),
+      });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
       if (!res.ok) {
-        toast.error(data.message || "Something went wrong");
+        toast.error(data?.message || "Something went wrong");
         setLoading(false);
         return;
       }
 
-      toast.success(data.message || "Password update successfully");
+      toast.success(data?.message || "Password updated successfully");
       setNewPassword("");
       setLoading(false);
       router.push("/sign-in");
@@ -58,8 +74,13 @@ export function ResetPasswordForm({
       setLoading(false);
     }
   }
+
   return (
-    <form className={cn("flex flex-col gap-6", className)} {...props}>
+    <form
+      className={cn("flex flex-col gap-6", className)}
+      onSubmit={handleSubmit}
+      {...props}
+    >
       <FieldGroup>
         <div className="flex flex-col items-center gap-1 text-center">
           <h1 className="text-2xl font-bold">Create Password</h1>
@@ -81,7 +102,6 @@ export function ResetPasswordForm({
         <Field>
           <Button
             type="submit"
-            onClick={handleSubmit}
             disabled={newPassword.trim().length < 1 || loading}
             className="cursor-pointer"
           >

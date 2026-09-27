@@ -218,7 +218,7 @@ export function RegisterForm({
             className="cursor-pointer"
           >
             <Image
-              src="/assets/google.png"
+              src="/assets/auth/google.png"
               alt="Google"
               width={20}
               height={20}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import Logo from "@/public/assets/logo.png";
+import Logo from "@/public/assets/logo/logo.png";
 
 interface MobileTopBarProps {
   pageName: string;

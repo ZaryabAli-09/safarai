@@ -16,7 +16,7 @@ import {
   MapPinPlusInsideIcon,
 } from "lucide-react";
 import Image from "next/image";
-import Logo from "@/public/assets/logo.png";
+import Logo from "@/public/assets/logo/logo.png";
 import { Button } from "@/components/ui/button";
 export function AppNav() {
   const pathname = usePathname();
@@ -98,7 +98,7 @@ export function AppNav() {
                   >
                     {item.label === "Profile" && avatar ? (
                       <Image
-                        src={`/profile-avatars/${avatar}`}
+                        src={`/assets/profile-avatars/${avatar}`}
                         alt=""
                         width={24}
                         height={24}
@@ -210,7 +210,7 @@ export function AppNav() {
                         )}
                       >
                         <Image
-                          src={`/profile-avatars/${avatar}`}
+                          src={`/assets/profile-avatars/${avatar}`}
                           alt=""
                           width={24}
                           height={24}

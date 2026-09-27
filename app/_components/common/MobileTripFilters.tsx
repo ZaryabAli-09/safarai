@@ -67,7 +67,7 @@ export function MobileTripFilters({
           {/* Filter Button */}
           <button
             onClick={() => setIsOpen(true)}
-            className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-r from-orange-400 via-pink-500 to-purple-500 text-white shadow-md active:scale-95 transition-transform"
+            className="flex items-center justify-center w-10 h-10 rounded-lg bg-brand-gradient text-white shadow-md active:scale-95 transition-transform"
           >
             <SlidersHorizontal className="w-4 h-4" />
           </button>

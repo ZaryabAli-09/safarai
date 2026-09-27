@@ -217,7 +217,7 @@ export default function Profile() {
                   >
                     {formData.avatar ? (
                       <Image
-                        src={`/profile-avatars/${formData.avatar}`}
+                        src={`/assets/profile-avatars/${formData.avatar}`}
                         alt="Selected profile avatar"
                         width={64}
                         height={64}
@@ -256,7 +256,7 @@ export default function Profile() {
                           aria-label={`Choose ${avatar.replace(".jpeg", "")}`}
                         >
                           <Image
-                            src={`/profile-avatars/${avatar}`}
+                            src={`/assets/profile-avatars/${avatar}`}
                             alt=""
                             width={96}
                             height={96}

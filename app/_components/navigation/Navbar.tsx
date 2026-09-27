@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { FaBars, FaTimes } from "react-icons/fa";
-import Logo from "@/public/assets/logo.png";
+import Logo from "@/public/assets/logo/logo.png";
 import { Button } from "@/components/ui/button";
 
 const navLinks = [
@@ -43,7 +43,7 @@ export function Navbar() {
             <Button
               asChild
               size="sm"
-              className="rounded-full font-semibold px-5 bg-primary-blue text-white hover:bg-primary-blue-dark transition-colors"
+              className="rounded-full font-semibold px-5 bg-brand-gradient text-white shadow-sm transition-all hover:brightness-110 hover:shadow-md"
             >
               <Link href="/app">Get started</Link>
             </Button>

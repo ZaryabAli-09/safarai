@@ -49,7 +49,7 @@ export default function GeneratingOverlay({
         {/* Generation lottie (replaces the old ring + plane spinner) */}
         <div className="flex justify-center">
           <Lottie
-            src="/json-gifs/generation.json"
+            src="/assets/json-gifs/generation.json"
             autoplay
             loop
             className="size-36 sm:size-44"

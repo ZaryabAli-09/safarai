@@ -1,7 +1,11 @@
+import type { Metadata } from "next";
 import Image from "next/image";
-import SignInBanner from "@/public/assets/signin-banner.png"; // Assuming you have a logo image
-import Logo from "@/public/assets/logo.png";
+import SignInBanner from "@/public/assets/auth/signin-banner.png"; // Assuming you have a logo image
+import Logo from "@/public/assets/logo/logo.png";
 import { RegisterForm } from "@/app/_components/forms/register-form";
+import { buildMetadata } from "@/seo.config";
+
+export const metadata: Metadata = buildMetadata("register");
 
 export default function Register() {
   return (

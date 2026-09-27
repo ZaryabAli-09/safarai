@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import React from "react";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
@@ -10,6 +11,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { buildMetadata } from "@/seo.config";
+
+export const metadata: Metadata = buildMetadata("admin");
 
 export default async function AdminDashboard() {
   const session = await getServerSession(authOptions);
@@ -26,16 +30,16 @@ export default async function AdminDashboard() {
       value: "1,234",
       change: "+12%",
       icon: Users,
-      color: "bg-blue-100",
-      textColor: "text-blue-600",
+      color: "bg-[var(--brand-coral)]/10",
+      textColor: "text-[var(--brand-coral)]",
     },
     {
       title: "Total Trips",
       value: "5,678",
       change: "+23%",
       icon: MapPin,
-      color: "bg-purple-100",
-      textColor: "text-purple-600",
+      color: "bg-[var(--brand-purple)]/10",
+      textColor: "text-[var(--brand-purple)]",
     },
     {
       title: "Active Users",
@@ -56,7 +60,7 @@ export default async function AdminDashboard() {
   ];
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50 py-8 px-4">
+    <div className="w-full min-h-screen bg-brand-gradient-muted py-8 px-4">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div>
@@ -122,7 +126,7 @@ export default async function AdminDashboard() {
                       <p className="text-sm text-gray-600">By User {i + 1}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-indigo-600">7 days</p>
+                      <p className="font-semibold text-[var(--brand-coral)]">7 days</p>
                       <p className="text-sm text-gray-600">₨50,000</p>
                     </div>
                   </div>
@@ -150,13 +154,13 @@ export default async function AdminDashboard() {
                       <span className="text-sm font-medium text-gray-700">
                         {item.label}
                       </span>
-                      <span className="text-sm font-bold text-indigo-600">
+                      <span className="text-sm font-bold text-[var(--brand-coral)]">
                         {item.value}
                       </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
-                        className="bg-gradient-to-r from-indigo-600 to-purple-600 h-2 rounded-full"
+                        className="bg-brand-gradient h-2 rounded-full"
                         style={{ width: `${Math.random() * 100}%` }}
                       />
                     </div>
@@ -180,7 +184,7 @@ export default async function AdminDashboard() {
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold">
+                      <div className="w-10 h-10 rounded-full bg-brand-gradient flex items-center justify-center text-white font-bold">
                         {String.fromCharCode(65 + i)}
                       </div>
                       <div>
@@ -190,7 +194,7 @@ export default async function AdminDashboard() {
                         <p className="text-xs text-gray-600">{i + 3} trips</p>
                       </div>
                     </div>
-                    <button className="text-indigo-600 hover:text-indigo-700 font-medium text-sm">
+                    <button className="text-[var(--brand-coral)] hover:text-[var(--brand-coral)]/80 font-medium text-sm">
                       View
                     </button>
                   </div>
@@ -208,16 +212,40 @@ export default async function AdminDashboard() {
             <CardContent>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: "View All Users", color: "bg-blue" },
-                  { label: "View All Trips", color: "bg-purple" },
-                  { label: "View Analytics", color: "bg-green" },
-                  { label: "Send Announcement", color: "bg-orange" },
-                  { label: "System Settings", color: "bg-red" },
-                  { label: "Export Reports", color: "bg-indigo" },
+                  {
+                    label: "View All Users",
+                    color: "bg-[var(--brand-coral)]/10",
+                    textColor: "text-[var(--brand-coral)]",
+                  },
+                  {
+                    label: "View All Trips",
+                    color: "bg-[var(--brand-purple)]/10",
+                    textColor: "text-[var(--brand-purple)]",
+                  },
+                  {
+                    label: "View Analytics",
+                    color: "bg-[var(--brand-orange)]/15",
+                    textColor: "text-[var(--brand-orange)]",
+                  },
+                  {
+                    label: "Send Announcement",
+                    color: "bg-[var(--brand-yellow)]/15",
+                    textColor: "text-[var(--brand-yellow)]",
+                  },
+                  {
+                    label: "System Settings",
+                    color: "bg-secondary",
+                    textColor: "text-secondary-foreground",
+                  },
+                  {
+                    label: "Export Reports",
+                    color: "bg-[var(--brand-pink)]/10",
+                    textColor: "text-[var(--brand-pink)]",
+                  },
                 ].map((action) => (
                   <button
                     key={action.label}
-                    className={`${action.color}-100 hover:${action.color}-200 transition-colors text-${action.color}-700 font-medium py-2 px-3 rounded-lg text-sm`}
+                    className={`${action.color} ${action.textColor} font-medium py-2 px-3 rounded-lg text-sm transition-all hover:brightness-95 hover:shadow-sm`}
                   >
                     {action.label}
                   </button>

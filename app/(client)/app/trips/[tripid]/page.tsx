@@ -1053,7 +1053,7 @@ export default function TripDetailPage() {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center px-5 pb-16 text-center">
         <Lottie
-          src="/json-gifs/Empty.json"
+          src="/assets/json-gifs/Empty.json"
           autoplay
           loop
           className="h-40 w-52 sm:h-44 sm:w-56"
@@ -1074,7 +1074,7 @@ export default function TripDetailPage() {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center px-5 pb-16 text-center">
         <Lottie
-          src="/json-gifs/Empty.json"
+          src="/assets/json-gifs/Empty.json"
           autoplay
           loop
           className="h-40 w-52 sm:h-44 sm:w-56"
@@ -1103,7 +1103,7 @@ export default function TripDetailPage() {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center px-5 pb-16 text-center">
         <Lottie
-          src="/json-gifs/generation.json"
+          src="/assets/json-gifs/generation.json"
           autoplay
           loop
           className="h-40 w-52 sm:h-44 sm:w-56"

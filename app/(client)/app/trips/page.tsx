@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/loader";
 import TripSidebar from "@/app/_components/common/TripSidebar";
 import TripCard, { TripCardSkeleton } from "@/app/_components/common/TripCard";
-import { MobileTripFilters } from "@/app/_components/common/MobileTripFilters"; // Import the new component
+import { MobileTripFilters } from "@/app/_components/common/MobileTripFilters";
 import EmptyState from "@/app/_components/common/EmptyState";
 import type { PaginationData, TripFilters, TripListItem } from "@/types/app-types";
 
@@ -241,7 +241,7 @@ export default function TripsPage() {
             </>
           ) : (
             <EmptyState
-              gifjson="/json-gifs/Empty.json"
+              gifjson="/assets/json-gifs/Empty.json"
               heading={
                 hasActiveFilters
                   ? "No trips match your filters"

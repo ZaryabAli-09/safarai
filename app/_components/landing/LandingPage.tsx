@@ -21,7 +21,8 @@ import {
   FaBolt,
 } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
-import Logo from "@/public/assets/logo.png";
+import Logo from "@/public/assets/logo/logo.png";
+import { FAQ_ITEMS } from "@/lib/faq";
 
 /* Lightweight reveal: only opacity + transform. No layout thrashing. */
 function FadeIn({
@@ -48,35 +49,11 @@ function FadeIn({
 
 const destinationPills = ["Bali", "Lisbon", "Tokyo", "Marrakech"];
 
-const faqs = [
-  {
-    q: "How does SafarAI plan trips?",
-    a: "SafarAI guides you through your destination, dates, budget, travelers, transport, travel style, pace, accommodation, and interests. It then generates a day-by-day itinerary tailored to your answers.",
-  },
-  {
-    q: "What does a generated trip include?",
-    a: "Your trip includes daily activities with descriptions, locations, timing, duration, estimated costs, images, weather details, and map links, along with a budget breakdown, packing list, and travel tips.",
-  },
-  {
-    q: "Can I plan more than one destination?",
-    a: "Yes. Add multiple destinations during trip setup and SafarAI will use them when building your itinerary.",
-  },
-  {
-    q: "Does SafarAI show estimated trip costs?",
-    a: "Yes. Set your currency and budget during setup. The generated trip includes estimated costs for activities plus a breakdown for accommodation, food, transport, activities, and miscellaneous expenses.",
-  },
-  {
-    q: "What devices does SafarAI support?",
-    a: "SafarAI runs in any modern browser on desktop or mobile. Nothing to install.",
-  },
-];
-
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   return (
     <>
-      {/* ===== HERO ===== */}
       {/* ===== HERO ===== */}
       <section className="relative overflow-hidden bg-background">
         {/* Layered background */}
@@ -93,9 +70,9 @@ export default function LandingPage() {
                 "radial-gradient(ellipse 70% 55% at 50% 0%, #000 55%, transparent 100%)",
             }}
           />
-          <div className="absolute -top-40 left-1/2 h-[700px] w-[1000px] -translate-x-1/2 rounded-full bg-blue-600/10 blur-[130px]" />
-          <div className="absolute left-1/4 top-32 h-[420px] w-[420px] rounded-full bg-blue-400/10 blur-[110px]" />
-          <div className="absolute right-1/4 top-32 h-[420px] w-[420px] rounded-full bg-blue-400/10 blur-[110px]" />
+          <div className="absolute -top-40 left-1/2 h-[700px] w-[1000px] -translate-x-1/2 rounded-full bg-[var(--brand-coral)]/10 blur-[130px]" />
+          <div className="absolute left-1/4 top-32 h-[420px] w-[420px] rounded-full bg-[var(--brand-orange)]/10 blur-[110px]" />
+          <div className="absolute right-1/4 top-32 h-[420px] w-[420px] rounded-full bg-[var(--brand-orange)]/10 blur-[110px]" />
         </div>
 
         <div className="mx-auto max-w-5xl px-6 pt-20 text-center md:pt-28">
@@ -108,8 +85,8 @@ export default function LandingPage() {
           >
             <div className="inline-flex items-center gap-2.5 rounded-full border border-border bg-card/70 px-3 py-1.5 text-xs shadow-sm backdrop-blur">
               <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-600 opacity-70" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-blue-600" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--brand-coral)] opacity-70" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--brand-coral)]" />
               </span>
               <span className="font-medium text-muted-foreground">
                 Your AI trip planner companion is here.
@@ -125,7 +102,7 @@ export default function LandingPage() {
             className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.04] text-foreground"
           >
             <span className="block font-extrabold">Plan your next trip</span>
-            <span className="block  pb-1 font-extrabold">
+            <span className="block pb-1 font-extrabold">
               in under a minute.
             </span>
           </motion.h1>
@@ -152,7 +129,7 @@ export default function LandingPage() {
             <Button
               asChild
               size="lg"
-              className="group text-base px-7 h-12 rounded-full font-semibold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/25 hover:shadow-blue-600/40 transition-all w-full sm:w-auto"
+              className="group text-base px-7 h-12 rounded-full font-semibold bg-brand-gradient text-white hover:brightness-110 shadow-lg shadow-[var(--brand-coral)]/25 hover:shadow-[var(--brand-coral)]/30 transition-all w-full sm:w-auto"
             >
               <Link href="/app">
                 Start planning free
@@ -183,9 +160,9 @@ export default function LandingPage() {
             ].map((value) => (
               <div
                 key={value}
-                className="flex items-center justify-center gap-2 rounded-xl border border-primary-blue/15 bg-accent/60 px-3 py-3 text-xs font-medium "
+                className="flex items-center justify-center gap-2 rounded-xl border border-[var(--brand-coral)]/25 bg-accent/60 px-3 py-3 text-xs font-medium "
               >
-                <FaCheck className="text-[10px] text-primary-blue" />
+                <FaCheck className="text-[10px] text-[var(--brand-coral)]" />
                 {value}
               </div>
             ))}
@@ -204,7 +181,7 @@ export default function LandingPage() {
                 key={d}
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium border transition-colors cursor-default ${
                   i === 0
-                    ? "bg-accent border-primary-blue/20 "
+                    ? "bg-accent border-[var(--brand-coral)]/30 "
                     : "bg-card border-border text-muted-foreground hover:border-foreground/20"
                 }`}
               >
@@ -223,7 +200,7 @@ export default function LandingPage() {
           className="relative max-w-5xl mx-auto mt-20 px-6"
         >
           {/* Glow behind the card */}
-          <div className="absolute inset-x-12 top-12 bottom-0 rounded-[2rem] bg-gradient-to-b from-blue-500/25 via-blue-500/5 to-transparent blur-3xl -z-10 pointer-events-none" />
+          <div className="absolute inset-x-12 top-12 bottom-0 rounded-[2rem] bg-gradient-to-b from-[var(--brand-coral)]/25 via-[var(--brand-coral)]/5 to-transparent blur-3xl -z-10 pointer-events-none" />
 
           <div className="relative">
             <div className="rounded-2xl border border-border bg-card shadow-[0_50px_120px_-30px_rgba(0,0,0,0.25)] overflow-hidden ring-1 ring-black/[0.02]">
@@ -269,13 +246,13 @@ export default function LandingPage() {
                       key={item.label}
                       className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium mb-0.5 transition-colors ${
                         item.active
-                          ? "bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300"
+                          ? "bg-[var(--brand-coral)]/10 text-[var(--brand-coral)]"
                           : "text-muted-foreground hover:bg-secondary"
                       }`}
                     >
                       <span
                         className={`w-1.5 h-1.5 rounded-full ${
-                          item.active ? "bg-blue-500" : "bg-muted-foreground/30"
+                          item.active ? "bg-[var(--brand-coral)]" : "bg-muted-foreground/30"
                         }`}
                       />
                       {item.label}
@@ -288,7 +265,7 @@ export default function LandingPage() {
                     </p>
                     <p className="text-2xl font-bold text-foreground">40%</p>
                     <div className="mt-2 h-1 rounded-full bg-secondary overflow-hidden">
-                      <div className="h-full w-[40%] rounded-full bg-blue-600" />
+                      <div className="h-full w-[40%] rounded-full bg-[var(--brand-coral)]" />
                     </div>
                   </div>
                 </aside>
@@ -302,7 +279,7 @@ export default function LandingPage() {
                         <h3 className="text-base font-semibold text-foreground">
                           Bali, Indonesia itinerary
                         </h3>
-                        <span className="text-[9px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-900">
+                        <span className="text-[9px] font-semibold text-[var(--brand-coral)] bg-[var(--brand-coral)]/10 border border-[var(--brand-coral)]/25 rounded-full px-2 py-0.5">
                           Active
                         </span>
                       </div>
@@ -310,7 +287,7 @@ export default function LandingPage() {
                         May 12 to 17 · 5 days · personalized plan
                       </p>
                     </div>
-                    <span className="text-[10px] font-semibold text-white bg-blue-600 rounded-full px-3 py-1.5 shadow-sm shrink-0">
+                    <span className="text-[10px] font-semibold text-white bg-[var(--brand-coral)] rounded-full px-3 py-1.5 shadow-sm shrink-0">
                       AI-generated plan
                     </span>
                   </div>
@@ -323,7 +300,7 @@ export default function LandingPage() {
                           key={d}
                           className={`text-[11px] rounded-full px-3.5 py-1.5 shrink-0 font-medium transition-colors ${
                             i === 1
-                              ? "bg-blue-600 text-white shadow-sm"
+                              ? "bg-[var(--brand-coral)] text-white shadow-sm"
                               : "bg-secondary text-secondary-foreground hover:bg-secondary/70"
                           }`}
                         >
@@ -365,7 +342,7 @@ export default function LandingPage() {
                         key={row.title}
                         className={`flex items-center gap-3 rounded-xl px-3.5 py-3 transition-colors ${
                           row.active
-                            ? "border border-blue-200 bg-blue-50/60 dark:bg-blue-950/30 dark:border-blue-900"
+                            ? "border border-[var(--brand-coral)]/25 bg-[var(--brand-coral)]/10"
                             : "bg-secondary/40 hover:bg-secondary/60"
                         }`}
                       >
@@ -381,7 +358,7 @@ export default function LandingPage() {
                           </p>
                         </div>
                         {row.active && (
-                          <span className="text-[9px] font-semibold text-white bg-blue-600 rounded-full px-2 py-0.5 shrink-0 shadow-sm">
+                          <span className="text-[9px] font-semibold text-white bg-[var(--brand-coral)] rounded-full px-2 py-0.5 shrink-0 shadow-sm">
                             NOW
                           </span>
                         )}
@@ -430,7 +407,7 @@ export default function LandingPage() {
       <section className="py-20 md:py-28 bg-card">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <FadeIn className="text-center mb-16">
-            <span className="text-xs font-bold tracking-widest uppercase text-blue-600">
+            <span className="text-xs font-bold tracking-widest uppercase text-[var(--brand-coral)]">
               Why SafarAI
             </span>
             <h2 className="mt-3 text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
@@ -490,7 +467,7 @@ export default function LandingPage() {
                 </p>
                 <div className="rounded-xl bg-secondary/30 p-5">
                   <div className="flex items-center gap-2.5 mb-4">
-                    <span className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
+                    <span className="w-7 h-7 rounded-lg bg-[var(--brand-coral)] text-white flex items-center justify-center text-xs font-bold">
                       S
                     </span>
                     <span className="text-sm font-semibold text-foreground">
@@ -525,7 +502,7 @@ export default function LandingPage() {
       <section className="py-20 md:py-28 bg-background">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <FadeIn className="text-center mb-16">
-            <span className="text-xs font-bold tracking-widest uppercase text-blue-600">
+            <span className="text-xs font-bold tracking-widest uppercase text-[var(--brand-coral)]">
               Testimonials
             </span>
             <h2 className="mt-3 text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
@@ -598,7 +575,7 @@ export default function LandingPage() {
       <section id="features" className="py-20 md:py-28 bg-background">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <FadeIn className="text-center mb-16">
-            <span className="text-xs font-bold tracking-widest uppercase text-blue-600">
+            <span className="text-xs font-bold tracking-widest uppercase text-[var(--brand-coral)]">
               Features
             </span>
             <h2 className="mt-3 text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
@@ -613,7 +590,7 @@ export default function LandingPage() {
           <FadeIn delay={0.1}>
             <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden grid md:grid-cols-2">
               <div className="p-8 md:p-10 flex flex-col justify-center">
-                <span className="text-[11px] font-bold tracking-widest text-blue-600 mb-4">
+                <span className="text-[11px] font-bold tracking-widest text-[var(--brand-coral)] mb-4">
                   Assist · Your AI trip companion
                 </span>
                 <h3 className="text-2xl font-semibold text-foreground mb-4">
@@ -641,7 +618,7 @@ export default function LandingPage() {
 
               <div className="bg-secondary/30 p-6 md:p-8">
                 <div className="flex flex-wrap items-center gap-2 mb-5">
-                  <span className="text-[10px] font-semibold text-white bg-blue-600 rounded-full px-3 py-1.5">
+                  <span className="text-[10px] font-semibold text-white bg-[var(--brand-coral)] rounded-full px-3 py-1.5">
                     Personalized itinerary
                   </span>
                   <span className="text-[10px] font-semibold text-muted-foreground bg-card border border-border rounded-full px-3 py-1.5">
@@ -652,7 +629,7 @@ export default function LandingPage() {
                   {[
                     {
                       icon: FaPlane,
-                      color: "bg-blue-50 text-blue-600",
+                      color: "bg-[var(--brand-coral)]/10 text-[var(--brand-coral)]",
                       title: "Morning flight",
                       sub: "GA 408, 08:40, Seat 14A",
                       tag: "Today",
@@ -672,7 +649,7 @@ export default function LandingPage() {
                   ].map((item) => (
                     <div
                       key={item.title}
-                      className="flex items-center gap-3.5 bg-card border border-border rounded-xl px-4 py-3.5 hover:border-blue-200 transition-colors group"
+                      className="flex items-center gap-3.5 bg-card border border-border rounded-xl px-4 py-3.5 hover:border-[var(--brand-coral)]/40 transition-colors group"
                     >
                       <div
                         className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${item.color}`}
@@ -688,7 +665,7 @@ export default function LandingPage() {
                         </p>
                       </div>
                       {item.tag && (
-                        <span className="ml-auto text-[10px] font-semibold text-white bg-blue-600 rounded-full px-2.5 py-1 shrink-0">
+                        <span className="ml-auto text-[10px] font-semibold text-white bg-[var(--brand-coral)] rounded-full px-2.5 py-1 shrink-0">
                           {item.tag}
                         </span>
                       )}
@@ -705,7 +682,7 @@ export default function LandingPage() {
       <section className="py-20 md:py-28 bg-card">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <FadeIn className="text-center mb-16">
-            <span className="text-xs font-bold tracking-widest uppercase text-blue-600">
+            <span className="text-xs font-bold tracking-widest uppercase text-[var(--brand-coral)]">
               What&apos;s included
             </span>
             <h2 className="mt-3 text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
@@ -769,9 +746,9 @@ export default function LandingPage() {
                 const Icon = item.icon;
                 return (
                   <FadeIn key={item.title} delay={i * 0.04}>
-                    <div className="flex items-start gap-4 p-5 rounded-xl border border-border bg-background hover:border-blue-200 hover:shadow-sm transition-all duration-300 h-full">
+                    <div className="flex items-start gap-4 p-5 rounded-xl border border-border bg-background hover:border-[var(--brand-coral)]/40 hover:shadow-sm transition-all duration-300 h-full">
                       <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0">
-                        <Icon className="text-sm text-primary-blue" />
+                        <Icon className="text-sm text-[var(--brand-coral)]" />
                       </div>
                       <div>
                         <h4 className="text-sm font-semibold text-foreground mb-1">
@@ -794,7 +771,7 @@ export default function LandingPage() {
       <section id="how-it-works" className="py-20 md:py-28 bg-card">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <FadeIn className="text-center mb-16">
-            <span className="text-xs font-bold tracking-widest uppercase text-blue-600">
+            <span className="text-xs font-bold tracking-widest uppercase text-[var(--brand-coral)]">
               How it works
             </span>
             <h2 className="mt-3 text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
@@ -838,10 +815,10 @@ export default function LandingPage() {
                 desc: "The AI builds a day-by-day itinerary with activities, costs, locations, and practical travel context.",
                 preview: (
                   <div className="mt-6 rounded-xl border border-border bg-background p-4 flex flex-col items-center justify-center h-[120px]">
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center animate-pulse bg-blue-50">
-                      <span className="w-5 h-5 rounded-full bg-blue-500" />
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center animate-pulse bg-[var(--brand-coral)]/10">
+                      <span className="w-5 h-5 rounded-full bg-[var(--brand-coral)]" />
                     </div>
-                    <span className="mt-3 text-[10px] font-semibold text-white bg-blue-600 rounded-full px-3 py-1">
+                    <span className="mt-3 text-[10px] font-semibold text-white bg-[var(--brand-coral)] rounded-full px-3 py-1">
                       Generating itinerary
                     </span>
                   </div>
@@ -875,7 +852,7 @@ export default function LandingPage() {
                         key={row.label}
                         className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
                           row.active
-                            ? "border border-blue-200 bg-blue-50/50"
+                            ? "border border-[var(--brand-coral)]/25 bg-[var(--brand-coral)]/10"
                             : "hover:bg-secondary/50"
                         }`}
                       >
@@ -886,7 +863,7 @@ export default function LandingPage() {
                           {row.label}
                         </span>
                         {row.active && (
-                          <span className="ml-auto text-[9px] font-semibold text-white bg-blue-600 rounded-full px-2 py-0.5">
+                          <span className="ml-auto text-[9px] font-semibold text-white bg-[var(--brand-coral)] rounded-full px-2 py-0.5">
                             NOW
                           </span>
                         )}
@@ -899,10 +876,10 @@ export default function LandingPage() {
               <FadeIn key={step.n} delay={i * 0.08}>
                 <div className="h-full rounded-2xl border border-border bg-background p-6 hover:shadow-lg transition-shadow duration-300">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                      <step.icon className="text-sm text-blue-600" />
+                    <div className="w-10 h-10 rounded-xl bg-[var(--brand-coral)]/10 flex items-center justify-center">
+                      <step.icon className="text-sm text-[var(--brand-coral)]" />
                     </div>
-                    <span className="text-2xl font-bold text-blue-600">
+                    <span className="text-2xl font-bold text-[var(--brand-coral)]">
                       {step.n}
                     </span>
                   </div>
@@ -933,7 +910,7 @@ export default function LandingPage() {
               />
               <div className="p-5">
                 <p className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-coral)]" />
                   Paris, May 2026
                 </p>
                 <p className="text-xs text-muted-foreground italic mt-1">
@@ -944,7 +921,7 @@ export default function LandingPage() {
           </FadeIn>
 
           <FadeIn delay={0.1}>
-            <span className="text-xs font-bold tracking-widest uppercase text-blue-600">
+            <span className="text-xs font-bold tracking-widest uppercase text-[var(--brand-coral)]">
               A note from the team
             </span>
             <h2 className="mt-4 text-3xl md:text-4xl font-semibold tracking-tight text-foreground leading-tight">
@@ -981,7 +958,7 @@ export default function LandingPage() {
                 </p>
               </div>
             </div>
-            <p className="mt-8 pl-5 border-l-2 border-blue-500 text-sm text-muted-foreground italic leading-relaxed">
+            <p className="mt-8 pl-5 border-l-2 border-[var(--brand-coral)] text-sm text-muted-foreground italic leading-relaxed">
               If you have ever lost your plans because a browser tab crashed
               before you could save them, we built this for you.
             </p>
@@ -993,7 +970,7 @@ export default function LandingPage() {
       <section id="faq" className="py-20 md:py-28 bg-card">
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
           <FadeIn className="text-center mb-14">
-            <span className="text-xs font-bold tracking-widest uppercase text-blue-600">
+            <span className="text-xs font-bold tracking-widest uppercase text-[var(--brand-coral)]">
               Questions
             </span>
             <h2 className="mt-3 text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
@@ -1002,21 +979,21 @@ export default function LandingPage() {
           </FadeIn>
 
           <FadeIn delay={0.1}>
-            {faqs.map((faq, i) => (
+            {FAQ_ITEMS.map((faq, i) => (
               <div key={faq.q} className="border-b border-border">
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   className="w-full flex items-center justify-between text-left gap-4 py-6 group"
                   aria-expanded={openFaq === i}
                 >
-                  <span className="text-base font-medium text-foreground group-hover:text-blue-600 transition-colors">
+                  <span className="text-base font-medium text-foreground group-hover:text-[var(--brand-coral)] transition-colors">
                     {faq.q}
                   </span>
-                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0 group-hover:bg-blue-50 transition-colors">
+                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0 group-hover:bg-[var(--brand-coral)]/10 transition-colors">
                     {openFaq === i ? (
-                      <FaMinus className="text-xs text-blue-600" />
+                      <FaMinus className="text-xs text-[var(--brand-coral)]" />
                     ) : (
-                      <FaPlus className="text-xs text-muted-foreground group-hover:text-blue-600 transition-colors" />
+                      <FaPlus className="text-xs text-muted-foreground group-hover:text-[var(--brand-coral)] transition-colors" />
                     )}
                   </div>
                 </button>
@@ -1037,7 +1014,7 @@ export default function LandingPage() {
               Still have a question?{" "}
               <a
                 href="mailto:zaryabkhan248@gmail.com"
-                className="font-semibold text-primary-blue underline underline-offset-2 hover:"
+                className="font-semibold text-[var(--brand-coral)] underline underline-offset-2 hover:"
               >
                 Reach out
               </a>{" "}
@@ -1049,11 +1026,11 @@ export default function LandingPage() {
 
       {/* ===== FINAL CTA ===== */}
       <section className="relative overflow-hidden py-24 md:py-32 bg-foreground">
-        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full blur-3xl opacity-10 bg-blue-500 pointer-events-none" />
-        <div className="absolute -bottom-40 -right-20 w-[450px] h-[450px] rounded-full blur-3xl opacity-8 bg-blue-500 pointer-events-none" />
+        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full blur-3xl opacity-10 bg-[var(--brand-coral)] pointer-events-none" />
+        <div className="absolute -bottom-40 -right-20 w-[450px] h-[450px] rounded-full blur-3xl opacity-8 bg-[var(--brand-coral)] pointer-events-none" />
         <div className="max-w-6xl mx-auto px-4 sm:px-6 grid md:grid-cols-2 gap-12 items-center relative">
           <FadeIn className="text-center md:text-left">
-            <span className="text-xs font-bold tracking-widest uppercase text-blue-400">
+            <span className="text-xs font-bold tracking-widest uppercase text-[var(--brand-orange)]">
               Ready when you are
             </span>
             <h2 className="mt-4 text-3xl md:text-4xl font-semibold tracking-tight text-white leading-tight">
@@ -1067,7 +1044,7 @@ export default function LandingPage() {
               <Button
                 asChild
                 size="lg"
-                className="text-base px-8 py-6 rounded-full font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors w-full sm:w-auto"
+                className="text-base px-8 py-6 rounded-full font-semibold bg-brand-gradient text-white hover:brightness-110 transition-all w-full sm:w-auto"
               >
                 <Link href="/app">Get started free</Link>
               </Button>
@@ -1106,7 +1083,7 @@ export default function LandingPage() {
                       key={d}
                       className={`text-[10px] rounded-full px-2.5 py-1 shrink-0 font-medium ${
                         i === 1
-                          ? "bg-blue-600 text-white"
+                          ? "bg-[var(--brand-coral)] text-white"
                           : "bg-secondary text-secondary-foreground"
                       }`}
                     >
@@ -1142,7 +1119,7 @@ export default function LandingPage() {
                       key={row.title}
                       className={`rounded-xl px-3 py-2.5 transition-colors ${
                         row.active
-                          ? "border border-blue-200 bg-blue-50/50"
+                          ? "border border-[var(--brand-coral)]/25 bg-[var(--brand-coral)]/10"
                           : "bg-secondary"
                       }`}
                     >

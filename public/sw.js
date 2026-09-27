@@ -1,13 +1,24 @@
-const CACHE_NAME = "safarai-v1";
+const CACHE_NAME = "safarai-v2";
 const OFFLINE_URL = "/app/trips";
+const PRECACHE_URLS = [
+  "/",
+  OFFLINE_URL,
+  "/manifest.json",
+  "/favicon.ico",
+  "/assets/pwa-icons/browser-tab-96x96.png",
+  "/assets/pwa-icons/pwa-android-192x192.png",
+  "/assets/pwa-icons/apple-homescreen-180x180.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches
-      .open(CACHE_NAME)
-      .then((cache) =>
-        cache.addAll(["/", OFFLINE_URL, "/favicon.png", "/icons/icon-192.png"]),
+    caches.open(CACHE_NAME).then((cache) =>
+      // Every entry is cached independently so a single failing request (an
+      // offline first run, for example) cannot abort the whole installation.
+      Promise.all(
+        PRECACHE_URLS.map((url) => cache.add(url).catch(() => undefined)),
       ),
+    ),
   );
   self.skipWaiting();
 });

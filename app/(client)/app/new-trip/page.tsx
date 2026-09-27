@@ -436,7 +436,7 @@ function ChatBubble({
         <div className="mt-1 size-8 shrink-0 overflow-hidden rounded-full border border-[var(--brand-coral)]/30 bg-white">
           {avatar ? (
             <Image
-              src={`/profile-avatars/${avatar}`}
+              src={`/assets/profile-avatars/${avatar}`}
               alt=""
               width={32}
               height={32}

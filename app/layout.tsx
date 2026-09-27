@@ -4,6 +4,18 @@ import { Inter, Roboto } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import SessionProviderWrapper from "@/lib/SessionProviderWrapper";
+import { JsonLd } from "@/app/_components/seo/JsonLd";
+import {
+  ICONS,
+  OG_IMAGE,
+  PAGE_SEO,
+  PWA_THEME_COLOR,
+  SITE_LOCALE,
+  SITE_NAME,
+  SITE_URL,
+  organizationJsonLd,
+  webSiteJsonLd,
+} from "@/seo.config";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -19,46 +31,75 @@ const roboto = Roboto({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#2563eb",
+  themeColor: PWA_THEME_COLOR,
   width: "device-width",
   initialScale: 1,
 };
 
+/**
+ * Site-wide defaults. Per-page title/description/OG/Twitter data lives in
+ * `seo.config.ts` and each page spreads it in with `buildMetadata()`.
+ */
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "SafarAI | Plan your next trip in under a minute",
-    template: "%s | SafarAI",
+    default: PAGE_SEO.home.absoluteTitle,
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    "SafarAI turns a few travel preferences into a complete, editable itinerary in seconds.",
-  keywords: [
-    "AI trip planner",
-    "travel itinerary planner",
-    "vacation planning",
-    "travel planning app",
-  ],
-  authors: [{ name: "SafarAI" }],
-  creator: "SafarAI",
+  description: PAGE_SEO.home.description,
+  keywords: PAGE_SEO.home.keywords,
+  applicationName: SITE_NAME,
+  authors: [{ name: SITE_NAME }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
-    title: "SafarAI | Plan your next trip in under a minute",
-    description: "Create a complete, editable travel itinerary with SafarAI.",
-    siteName: "SafarAI",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    locale: SITE_LOCALE,
+    title: PAGE_SEO.home.absoluteTitle,
+    description: PAGE_SEO.home.description,
+    images: [
+      {
+        url: OG_IMAGE.url,
+        width: OG_IMAGE.width,
+        height: OG_IMAGE.height,
+        alt: OG_IMAGE.alt,
+      },
+    ],
   },
   twitter: {
-    card: "summary",
-    title: "SafarAI | Plan your next trip in under a minute",
-    description: "Create a complete, editable travel itinerary with SafarAI.",
+    card: "summary_large_image",
+    title: PAGE_SEO.home.absoluteTitle,
+    description: PAGE_SEO.home.description,
+    images: [OG_IMAGE.url],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
   manifest: "/manifest.json",
   icons: {
-    icon: "/favicon-v2.ico",
-    apple: "/favicon.png",
+    icon: [
+      { url: ICONS.ico, sizes: "any" },
+      { url: ICONS.png, type: "image/png", sizes: "96x96" },
+      { url: ICONS.icon192, type: "image/png", sizes: "192x192" },
+      { url: ICONS.icon512, type: "image/png", sizes: "512x512" },
+    ],
+    shortcut: [ICONS.ico],
+    apple: [{ url: ICONS.apple, sizes: "180x180", type: "image/png" }],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "SafarAI",
+    title: SITE_NAME,
   },
 };
 
@@ -70,6 +111,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${roboto.variable} antialiased`}>
+        <JsonLd id="ld-organization" data={organizationJsonLd()} />
+        <JsonLd id="ld-website" data={webSiteJsonLd()} />
         <SessionProviderWrapper>{children}</SessionProviderWrapper>
         <Toaster position="top-center" />
         <script

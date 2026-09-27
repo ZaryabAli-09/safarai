@@ -1,8 +1,13 @@
+import type { Metadata } from "next";
 import Image from "next/image";
-import SignInBanner from "@/public/assets/signin-banner.png";
+import SignInBanner from "@/public/assets/auth/signin-banner.png";
 
-import Logo from "@/public/assets/logo.png";
+import Logo from "@/public/assets/logo/logo.png";
 import { LoginForm } from "@/app/_components/forms/login-form";
+import { buildMetadata } from "@/seo.config";
+
+export const metadata: Metadata = buildMetadata("signIn");
+
 export default function LoginPage() {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">

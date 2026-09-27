@@ -1,8 +1,13 @@
+import type { Metadata } from "next";
 import Image from "next/image";
-import ResetPasswordBanner from "@/public/assets/reset-password-banner.jpg";
+import ResetPasswordBanner from "@/public/assets/auth/reset-password-banner.jpg";
 
-import Logo from "@/public/assets/logo.png";
+import Logo from "@/public/assets/logo/logo.png";
 import { ForgotPasswordForm } from "@/app/_components/forms/forgot-password-form";
+import { buildMetadata } from "@/seo.config";
+
+export const metadata: Metadata = buildMetadata("forgotPassword");
+
 export default function ForgotPassword() {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
