@@ -168,6 +168,14 @@ export const PAGE_SEO = {
     keywords: ["travel profile", "account settings"],
     noindex: true,
   },
+  feed: {
+    path: "/app/feed",
+    title: "Feed",
+    description:
+      "Browse and share travel posts with the SafarAI community — photos, captions, likes and comments.",
+    keywords: ["travel feed", "share travel photos"],
+    noindex: true,
+  },
   tripDetail: {
     path: "/app/trips",
     title: "Trip itinerary",

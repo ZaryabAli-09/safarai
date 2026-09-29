@@ -22,6 +22,10 @@ export interface IUser {
   gender?: string;
   dob?: string;
   avatar?: string;
+  /** Cloudinary avatar uploaded through the feed (new). */
+  avatarUrl?: string;
+  /** Cloudinary public id of `avatarUrl`, kept so the asset can be replaced. */
+  avatarPublicId?: string;
   role?: "user" | "admin"; // Optional role field with default value
   isVerified?: boolean;
   verificationCode?: string;

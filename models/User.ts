@@ -65,6 +65,20 @@ const userSchema = new mongoose.Schema<IUser>(
       default: "",
       trim: true,
     },
+
+    // Avatar stored in Cloudinary (feed feature). `avatarPublicId` is what
+    // makes a safe replace/delete possible — Cloudinary assets can only be
+    // removed by public id, never by URL.
+    avatarUrl: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    avatarPublicId: {
+      type: String,
+      default: "",
+      trim: true,
+    },
   },
   {
     timestamps: true,

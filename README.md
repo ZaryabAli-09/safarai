@@ -187,6 +187,11 @@ GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-account.json"
 # Optional 3rd-party services referenced by flow:
 # NOMINATIM_USER_AGENT="safar-ai-your-email@example.com"
 # OPEN_METEO_BASE_URL="https://api.open-meteo.com"
+
+# Cloudinary (feed: post images + profile avatars)
+CLOUDINARY_CLOUD_NAME="<cloud name>"
+CLOUDINARY_API_KEY="<api key>"
+CLOUDINARY_API_SECRET="<api secret>"
 ```
 
 Notes:
