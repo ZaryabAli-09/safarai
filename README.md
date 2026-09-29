@@ -209,6 +209,25 @@ The project is compatible with Vercel (Next.js first-class). Common steps:
 
 If hosting elsewhere, ensure server-side environment variables and MongoDB access are configured.
 
+### Vercel Web Analytics
+
+Visitor and page-view tracking uses `@vercel/analytics`: the `<Analytics />` component
+lives in `app/layout.tsx`, so it follows both initial loads and client-side route
+changes.
+
+1. In the Vercel dashboard, open Analytics for the project and click Enable. This
+   adds the `/_vercel/insights/*` routes on the next deployment.
+2. Deploy (`vercel --prod`, or push to the connected Git branch).
+3. Load the deployed site and check DevTools → Network for a request to
+   `/<unique-path>/view`; the data then shows up under Analytics in the dashboard.
+
+Notes:
+- No environment variables are required — the script is served by Vercel itself.
+- Off Vercel the component is inert. In `next dev` it loads Vercel's debug script and
+  logs to the console instead of recording data (pass `mode="production"` / `"development"`
+  to `<Analytics />` to force a specific behaviour).
+- Custom events (`track()` from `@vercel/analytics`) require a Pro or Enterprise plan.
+
 ---
 
 ## Development notes & areas to check

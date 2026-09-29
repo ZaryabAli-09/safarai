@@ -23,6 +23,7 @@
     "@radix-ui/react-tabs": "^1.1.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/react-date-range": "^1.4.10",
+    "@vercel/analytics": "^2.0.1",
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.11.0",

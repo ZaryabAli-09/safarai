@@ -2,6 +2,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Roboto } from "next/font/google";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "react-hot-toast";
 import SessionProviderWrapper from "@/lib/SessionProviderWrapper";
 import { JsonLd } from "@/app/_components/seo/JsonLd";
@@ -115,6 +116,13 @@ export default function RootLayout({
         <JsonLd id="ld-website" data={webSiteJsonLd()} />
         <SessionProviderWrapper>{children}</SessionProviderWrapper>
         <Toaster position="top-center" />
+        {/*
+          Vercel Web Analytics — route-aware page views. Turn it on per project in
+          the Vercel dashboard; Vercel then serves the script from
+          /_vercel/insights/* on the next deployment. Off-Vercel it is a no-op and
+          in development it loads Vercel's debug script instead of reporting data.
+        */}
+        <Analytics />
         <script
           dangerouslySetInnerHTML={{
             __html: `
