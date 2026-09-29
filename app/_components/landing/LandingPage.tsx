@@ -26,7 +26,6 @@ import {
   LayoutDashboard,
   Layers,
   Lightbulb,
-  Mail,
   MapPin,
   MessageCircle,
   Minus,
@@ -190,10 +189,10 @@ export default function LandingPage({
             transition={{ duration: 0.4 }}
             className="mb-7 flex justify-center"
           >
-            <div className="inline-flex items-center gap-2.5 rounded-full border border-[var(--brand-coral)]/25 bg-accent/70 px-3.5 py-1.5 text-xs shadow-sm backdrop-blur">
+            <div className="inline-flex items-center gap-2.5 rounded-full border border-[var(--brand-coral)]/25 bg-brand-gradient-muted px-3.5 py-1.5 text-xs shadow-sm backdrop-blur">
               <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--brand-coral)] opacity-70" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--brand-coral)]" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-gradient opacity-70" />
+                <span className="relative inline-flex h-1.5 w-1.5 text-2xl bg-brand-gradient rounded-full" />
               </span>
               <span className="font-semibold text-accent-foreground">
                 {HERO.badge}
@@ -206,10 +205,12 @@ export default function LandingPage({
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.05 }}
-            className="text-4xl font-semibold leading-[1.06] tracking-tight text-foreground sm:text-5xl lg:text-7xl"
+            className="text-4xl font-extrabold leading-[1.06] tracking-tight text-foreground sm:text-5xl lg:text-7xl"
           >
             <span className="block">{HERO.titleLine1}</span>
-            <span className="block text-brand-gradient">{HERO.titleAccent}</span>
+            <span className="block text-brand-gradient">
+              {HERO.titleAccent}
+            </span>
           </motion.h1>
 
           {/* Subhead */}
@@ -217,7 +218,7 @@ export default function LandingPage({
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg"
+            className="mx-auto mt-6 max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-lg"
           >
             {HERO.subtitle}
           </motion.p>
@@ -277,7 +278,7 @@ export default function LandingPage({
           {/* Glow behind the card */}
           <div className="pointer-events-none absolute inset-x-16 -top-6 bottom-4 rounded-[3rem] bg-gradient-to-b from-[var(--brand-coral)]/20 via-[var(--brand-pink)]/8 to-transparent blur-3xl -z-10" />
 
-          <div className="overflow-hidden rounded-3xl border border-border bg-white shadow-[0_60px_120px_-40px_rgba(17,24,39,0.35)]">
+          <div className="overflow-hidden rounded-3xl border border-border bg-white ">
             {/* Browser chrome */}
             <div className="flex items-center gap-3 border-b border-border bg-secondary/60 px-4 py-2.5">
               <div className="flex items-center gap-1.5">
@@ -482,7 +483,6 @@ export default function LandingPage({
                   ))}
                 </div>
               </div>
-
             </div>
           </div>
 
@@ -590,7 +590,10 @@ export default function LandingPage({
       </section>
 
       {/* ===== FEATURES ===== */}
-      <section id="features" className="scroll-mt-20 bg-background py-20 md:py-28">
+      <section
+        id="features"
+        className="scroll-mt-20 bg-background py-20 md:py-28"
+      >
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <FadeIn className="mb-14 text-center md:mb-16">
             <span className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--brand-coral)]">
@@ -821,7 +824,7 @@ export default function LandingPage({
 
       {/* ===== FAQ ===== */}
       <section id="faq" className="scroll-mt-20 bg-background py-20 md:py-28">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6">
           <FadeIn className="mb-12 text-center">
             <span className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--brand-coral)]">
               {FAQ.eyebrow}
@@ -832,7 +835,7 @@ export default function LandingPage({
           </FadeIn>
 
           <FadeIn delay={0.1}>
-            <div className="rounded-3xl border border-border bg-card px-5 shadow-sm sm:px-7">
+            <div className="rounded-3xl  bg-card px-5 sm:px-7">
               {FAQ.items.map((faq, i) => (
                 <div
                   key={faq.q}
@@ -875,7 +878,7 @@ export default function LandingPage({
             </div>
 
             <p className="mt-8 text-center text-sm text-muted-foreground">
-              {FAQ.stillHaveAQuestion}{" "}
+              {FAQ.stillHaveAQuestion} {FAQ.replyNote}
               {email ? (
                 <a
                   href={mailHref}
@@ -888,70 +891,7 @@ export default function LandingPage({
                   {FAQ.reachOutLabel}
                 </span>
               )}{" "}
-              {FAQ.replyNote}
             </p>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* ===== CONTACT ===== */}
-      <section id="contact" className="scroll-mt-20 bg-secondary py-20 md:py-28">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6">
-          <FadeIn>
-            <div className="relative overflow-hidden rounded-3xl border border-border bg-background p-8 text-center shadow-sm md:p-10">
-              <div className="absolute inset-x-0 top-0 h-1 bg-brand-gradient" />
-              <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-[var(--brand-coral)]/10">
-                <Mail className="size-5 text-[var(--brand-coral)]" />
-              </span>
-              <span className="mt-5 block text-xs font-bold uppercase tracking-[0.18em] text-[var(--brand-coral)]">
-                {CONTACT.eyebrow}
-              </span>
-              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-                {CONTACT.title}
-              </h2>
-              <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
-                {CONTACT.body}
-              </p>
-
-              {email ? (
-                <>
-                  <p className="mt-6 text-sm text-muted-foreground">
-                    {CONTACT.addressLabel}{" "}
-                    <a
-                      href={mailHref}
-                      className="font-semibold text-foreground underline decoration-[var(--brand-coral)]/50 underline-offset-4 transition-colors hover:text-[var(--brand-coral)]"
-                    >
-                      {email}
-                    </a>
-                  </p>
-                  <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                    <Button
-                      asChild
-                      size="lg"
-                      className="h-12 rounded-full px-7 text-base font-semibold shadow-lg shadow-[var(--brand-coral)]/20"
-                    >
-                      <a href={mailHref}>
-                        <Mail className="size-4" />
-                        {CONTACT.buttonLabel}
-                      </a>
-                    </Button>
-                  </div>
-                  <p className="mt-4 text-xs text-muted-foreground">
-                    Opens your email app with a fresh message.
-                  </p>
-                </>
-              ) : (
-                <div className="mt-6">
-                  <Button
-                    asChild
-                    size="lg"
-                    className="h-12 rounded-full px-7 text-base font-semibold shadow-lg shadow-[var(--brand-coral)]/20"
-                  >
-                    <Link href="/app">{HERO.primaryCta.label}</Link>
-                  </Button>
-                </div>
-              )}
-            </div>
           </FadeIn>
         </div>
       </section>

@@ -342,8 +342,8 @@ export const FAQ = {
     },
   ] as FaqItem[],
   stillHaveAQuestion: "Still have a question?",
-  reachOutLabel: "Reach out",
-  replyNote: "and we will reply within a day.",
+  replyNote: "You can reach us directly at ",
+  reachOutLabel: "safaraitravel@gmail.com",
 };
 
 /* -------------------------------------------------------------------------- */
