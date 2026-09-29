@@ -241,3 +241,33 @@ h6 {
     @apply bg-background text-foreground;
   }
 }
+
+/* Landing Page Styles  */
+/* Anchor links on the landing page glide instead of jumping. */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Landing capability strip: slow horizontal crawl, duplicated once so the
+   loop is seamless. Pauses for users who prefer reduced motion. */
+@keyframes safarai-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: safarai-marquee 38s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-marquee {
+    animation: none;
+  }
+}

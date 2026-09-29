@@ -60,7 +60,7 @@ app/                      Next.js app directory (App Router)
 components/               Reusable UI components (project-specific)
 config/                   Runtime / infra configuration files (env-aware)
 lib/                      App helpers & services
-  faq.ts                  Marketing FAQ copy (shared by the page and its JSON-LD)
+  landing/content.ts      Landing page copy & data (nav, hero, features, FAQ, legal)
   helperFunctions.ts
   sanitization.ts         AI response JSON extraction & sanitization logic
   utils.ts
@@ -192,6 +192,9 @@ GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-account.json"
 CLOUDINARY_CLOUD_NAME="<cloud name>"
 CLOUDINARY_API_KEY="<api key>"
 CLOUDINARY_API_SECRET="<api secret>"
+
+# Contact address shown on the landing page (contact section, FAQ, footer mailto links)
+COMPANY_EMAIL="hello@safar.ai"
 ```
 
 Notes:

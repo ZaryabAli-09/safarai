@@ -1,30 +1,66 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+/**
+ * SafarAI landing page.
+ *
+ * Every piece of copy, card, FAQ and legal text comes from
+ * `@/lib/landing/content.ts`, so content edits happen there and this file only
+ * handles structure, motion and styling. The product preview mirrors the real
+ * trip screen in `app/(client)/app/trips/[tripid]` (day rail, trip tools,
+ * activity meta rows): keep the two in sync when the app UI changes.
+ */
+
+import { useEffect, useState, type ElementType, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  FaMapMarkerAlt,
-  FaCheck,
-  FaPlus,
-  FaMinus,
-  FaPlane,
-  FaHotel,
-  FaRegClock,
-  FaArrowRight,
-  FaCalendarAlt,
-  FaGlobe,
-  FaPencilAlt,
-  FaStar,
-  FaMap,
-  FaBolt,
-} from "react-icons/fa";
+  ArrowLeft,
+  ArrowRight,
+  Calendar,
+  Check,
+  CheckCircle2,
+  ChevronRight,
+  ClipboardList,
+  CloudSun,
+  LayoutDashboard,
+  Layers,
+  Lightbulb,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Minus,
+  Package,
+  Plus,
+  Smartphone,
+  Sparkles,
+  Wallet,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Logo from "@/public/assets/logo/logo.png";
-import { FAQ_ITEMS } from "@/lib/faq";
+import {
+  CAPABILITY_STRIP,
+  COMPARISON,
+  CONTACT,
+  FAQ,
+  FEATURES,
+  FINAL_CTA,
+  FOOTER,
+  HERO,
+  HOW_IT_WORKS,
+  LEGAL,
+  STEP_PREVIEWS,
+  TRIP_PREVIEW,
+  type LegalKind,
+  type Tint,
+} from "@/lib/landing/content";
 
-/* Lightweight reveal: only opacity + transform. No layout thrashing. */
+/* -------------------------------------------------------------------------- */
+/*  Helpers                                                                   */
+/* -------------------------------------------------------------------------- */
+
+/** Lightweight reveal: only opacity + transform. No layout thrashing. */
 function FadeIn({
   children,
   delay = 0,
@@ -47,64 +83,133 @@ function FadeIn({
   );
 }
 
-const destinationPills = ["Bali", "Lisbon", "Tokyo", "Marrakech"];
+/** Icon keys used in content.ts, mapped to lucide components. */
+const ICONS: Record<string, ElementType> = {
+  itinerary: Calendar,
+  budget: Wallet,
+  weather: CloudSun,
+  maps: MapPin,
+  packing: Package,
+  tips: Lightbulb,
+  trips: LayoutDashboard,
+  feed: MessageCircle,
+  phone: Smartphone,
+  form: ClipboardList,
+  generating: Sparkles,
+  review: CheckCircle2,
+};
 
-export default function LandingPage() {
+/** Brand tint per icon chip, matching the muted palette used inside the app. */
+const TINTS: Record<Tint, { chip: string; text: string }> = {
+  coral: {
+    chip: "bg-[var(--brand-coral-muted)]/70",
+    text: "text-[var(--brand-coral)]",
+  },
+  orange: {
+    chip: "bg-[var(--brand-orange-muted)]/70",
+    text: "text-[var(--brand-orange)]",
+  },
+  yellow: { chip: "bg-[var(--brand-yellow-muted)]/70", text: "text-[#8a6a05]" },
+  purple: {
+    chip: "bg-[var(--brand-purple-muted)]/70",
+    text: "text-[var(--brand-purple)]",
+  },
+  pink: {
+    chip: "bg-[var(--brand-pink-muted)]/70",
+    text: "text-[var(--brand-pink)]",
+  },
+};
+
+/** Time of day dots, same three beats the trip screen uses. */
+const TONE_DOT: Record<string, string> = {
+  morning: "bg-[var(--brand-yellow)]",
+  afternoon: "bg-[var(--brand-orange)]",
+  evening: "bg-[var(--brand-purple)]",
+};
+
+/* -------------------------------------------------------------------------- */
+/*  Page                                                                      */
+/* -------------------------------------------------------------------------- */
+
+export default function LandingPage({
+  companyEmail = "",
+}: {
+  companyEmail?: string;
+}) {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [legal, setLegal] = useState<LegalKind | null>(null);
+
+  const email = companyEmail.trim();
+  const mailHref = email
+    ? `mailto:${email}?subject=${encodeURIComponent(CONTACT.mailSubject)}`
+    : "#contact";
+
+  /* Lock scrolling and allow Escape while the legal popup is open. */
+  useEffect(() => {
+    if (!legal) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLegal(null);
+    };
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [legal]);
 
   return (
     <>
       {/* ===== HERO ===== */}
       <section className="relative overflow-hidden bg-background">
-        {/* Layered background */}
+        {/* Layered background: faint grid, coral glow, purple depth */}
         <div className="absolute inset-0 -z-10 overflow-hidden">
           <div
-            className="absolute inset-0 opacity-[0.18]"
+            className="absolute inset-0 opacity-[0.16]"
             style={{
               backgroundImage:
                 "linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)",
               backgroundSize: "56px 56px",
               maskImage:
-                "radial-gradient(ellipse 70% 55% at 50% 0%, #000 55%, transparent 100%)",
+                "radial-gradient(ellipse 75% 60% at 50% 0%, #000 55%, transparent 100%)",
               WebkitMaskImage:
-                "radial-gradient(ellipse 70% 55% at 50% 0%, #000 55%, transparent 100%)",
+                "radial-gradient(ellipse 75% 60% at 50% 0%, #000 55%, transparent 100%)",
             }}
           />
-          <div className="absolute -top-40 left-1/2 h-[700px] w-[1000px] -translate-x-1/2 rounded-full bg-[var(--brand-coral)]/10 blur-[130px]" />
-          <div className="absolute left-1/4 top-32 h-[420px] w-[420px] rounded-full bg-[var(--brand-orange)]/10 blur-[110px]" />
-          <div className="absolute right-1/4 top-32 h-[420px] w-[420px] rounded-full bg-[var(--brand-orange)]/10 blur-[110px]" />
+          <div className="absolute -top-48 left-1/2 h-[680px] w-[1040px] -translate-x-1/2 rounded-full bg-[var(--brand-coral)]/12 blur-[140px]" />
+          <div className="absolute -top-24 right-[-10%] h-[420px] w-[420px] rounded-full bg-[var(--brand-purple)]/10 blur-[120px]" />
+          <div className="absolute top-40 left-[-8%] h-[380px] w-[380px] rounded-full bg-[var(--brand-orange)]/10 blur-[120px]" />
         </div>
 
-        <div className="mx-auto max-w-5xl px-6 pt-20 text-center md:pt-28">
+        <div className="mx-auto max-w-5xl px-6 pt-16 text-center md:pt-24">
           {/* Announcement badge */}
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="mb-8 flex justify-center"
+            className="mb-7 flex justify-center"
           >
-            <div className="inline-flex items-center gap-2.5 rounded-full border border-border bg-card/70 px-3 py-1.5 text-xs shadow-sm backdrop-blur">
+            <div className="inline-flex items-center gap-2.5 rounded-full border border-[var(--brand-coral)]/25 bg-accent/70 px-3.5 py-1.5 text-xs shadow-sm backdrop-blur">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--brand-coral)] opacity-70" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--brand-coral)]" />
               </span>
-              <span className="font-medium text-muted-foreground">
-                Your AI trip planner companion is here.
+              <span className="font-semibold text-accent-foreground">
+                {HERO.badge}
               </span>
             </div>
           </motion.div>
 
-          {/* Headline */}
+          {/* Headline: one emphasis system, the brand gradient */}
           <motion.h1
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.05 }}
-            className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.04] text-foreground"
+            className="text-4xl font-semibold leading-[1.06] tracking-tight text-foreground sm:text-5xl lg:text-7xl"
           >
-            <span className="block font-extrabold">Plan your next trip</span>
-            <span className="block pb-1 font-extrabold">
-              in under a minute.
-            </span>
+            <span className="block">{HERO.titleLine1}</span>
+            <span className="block text-brand-gradient">{HERO.titleAccent}</span>
           </motion.h1>
 
           {/* Subhead */}
@@ -112,11 +217,9 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="mt-7 text-base sm:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed"
+            className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg"
           >
-            Answer a few quick questions about how you like to travel. SafarAI
-            turns your destination, dates, budget, and travel preferences into a
-            structured day-by-day itinerary with practical trip details.
+            {HERO.subtitle}
           </motion.p>
 
           {/* CTAs */}
@@ -124,1108 +227,936 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.15 }}
-            className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3"
+            className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row"
           >
             <Button
               asChild
               size="lg"
-              className="group text-base px-7 h-12 rounded-full font-semibold bg-brand-gradient text-white hover:brightness-110 shadow-lg shadow-[var(--brand-coral)]/25 hover:shadow-[var(--brand-coral)]/30 transition-all w-full sm:w-auto"
+              className="h-12 w-full rounded-full px-7 text-base font-semibold shadow-lg shadow-[var(--brand-coral)]/25 transition-all hover:shadow-[var(--brand-coral)]/30 sm:w-auto"
             >
-              <Link href="/app">
-                Start planning free
-                <FaArrowRight className="ml-2 text-xs transition-transform group-hover:translate-x-0.5" />
+              <Link href={HERO.primaryCta.href}>
+                {HERO.primaryCta.label}
+                <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
             </Button>
             <Button
               asChild
               size="lg"
               variant="outline"
-              className="text-base px-7 h-12 rounded-full font-semibold border-border hover:bg-secondary w-full sm:w-auto"
+              className="h-12 w-full rounded-full border-border bg-background px-7 text-base font-semibold hover:bg-secondary sm:w-auto"
             >
-              <Link href="#how-it-works">See how it works</Link>
+              <Link href={HERO.secondaryCta.href}>
+                {HERO.secondaryCta.label}
+              </Link>
             </Button>
           </motion.div>
 
-          {/* Lightweight value strip */}
-          <motion.div
+          {/* Trust points */}
+          <motion.ul
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.22 }}
-            className="mt-12 mx-auto grid max-w-xl grid-cols-1 gap-3 sm:grid-cols-3"
+            className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground"
           >
-            {[
-              "Built around your pace",
-              "Budget-aware planning",
-              "Useful trip details",
-            ].map((value) => (
-              <div
-                key={value}
-                className="flex items-center justify-center gap-2 rounded-xl border border-[var(--brand-coral)]/25 bg-accent/60 px-3 py-3 text-xs font-medium "
-              >
-                <FaCheck className="text-[10px] text-[var(--brand-coral)]" />
-                {value}
-              </div>
+            {HERO.trustPoints.map((point) => (
+              <li key={point} className="flex items-center gap-2">
+                <Check className="size-3.5 text-[var(--brand-coral)]" />
+                {point}
+              </li>
             ))}
-          </motion.div>
-
-          {/* Destination pills */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.28 }}
-            className="mt-10 flex flex-wrap items-center justify-center gap-2 text-xs"
-          >
-            <span className="text-muted-foreground">Popular destinations:</span>
-            {destinationPills.map((d, i) => (
-              <span
-                key={d}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium border transition-colors cursor-default ${
-                  i === 0
-                    ? "bg-accent border-[var(--brand-coral)]/30 "
-                    : "bg-card border-border text-muted-foreground hover:border-foreground/20"
-                }`}
-              >
-                {d}
-              </span>
-            ))}
-            <span className="text-muted-foreground">+120 more</span>
-          </motion.div>
+          </motion.ul>
         </div>
 
-        {/* ===== PRODUCT PREVIEW with layered depth ===== */}
+        {/* ===== PRODUCT PREVIEW: mirrors the real trip screen ===== */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="relative max-w-5xl mx-auto mt-20 px-6"
+          transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="relative mx-auto mt-14 max-w-5xl px-6 md:mt-16"
         >
           {/* Glow behind the card */}
-          <div className="absolute inset-x-12 top-12 bottom-0 rounded-[2rem] bg-gradient-to-b from-[var(--brand-coral)]/25 via-[var(--brand-coral)]/5 to-transparent blur-3xl -z-10 pointer-events-none" />
+          <div className="pointer-events-none absolute inset-x-16 -top-6 bottom-4 rounded-[3rem] bg-gradient-to-b from-[var(--brand-coral)]/20 via-[var(--brand-pink)]/8 to-transparent blur-3xl -z-10" />
 
-          <div className="relative">
-            <div className="rounded-2xl border border-border bg-card shadow-[0_50px_120px_-30px_rgba(0,0,0,0.25)] overflow-hidden ring-1 ring-black/[0.02]">
-              {/* Browser chrome */}
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-secondary/40">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-full bg-red-400" />
-                  <span className="w-3 h-3 rounded-full bg-yellow-400" />
-                  <span className="w-3 h-3 rounded-full bg-green-400" />
-                </div>
-                <div className="flex-1 flex justify-center">
-                  <span className="text-[11px] text-muted-foreground font-medium bg-background px-3 py-1 rounded-md border border-border/60 flex items-center gap-1.5">
-                    <svg
-                      className="w-2.5 h-2.5"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                    >
-                      <rect x="3" y="11" width="18" height="11" rx="2" />
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                    safarai.app/trip/bali
+          <div className="overflow-hidden rounded-3xl border border-border bg-white shadow-[0_60px_120px_-40px_rgba(17,24,39,0.35)]">
+            {/* Browser chrome */}
+            <div className="flex items-center gap-3 border-b border-border bg-secondary/60 px-4 py-2.5">
+              <div className="flex items-center gap-1.5">
+                <span className="size-2.5 rounded-full bg-[#f87171]" />
+                <span className="size-2.5 rounded-full bg-[#fbbf24]" />
+                <span className="size-2.5 rounded-full bg-[#4ade80]" />
+              </div>
+              <div className="flex flex-1 justify-center">
+                <span className="flex items-center gap-1.5 rounded-md border border-border/60 bg-background px-3 py-1 text-[11px] font-medium text-muted-foreground">
+                  <svg
+                    className="size-2.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    aria-hidden="true"
+                  >
+                    <rect x="3" y="11" width="18" height="11" rx="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                  {TRIP_PREVIEW.url}
+                </span>
+              </div>
+              <div className="w-12" />
+            </div>
+
+            {/* App top bar, same shape as the trip header */}
+            <div className="flex h-12 items-center gap-3 border-b border-border/70 bg-white px-4">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground">
+                <ArrowLeft className="size-3.5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="truncate text-xs font-medium text-foreground sm:text-sm">
+                    {TRIP_PREVIEW.name}
+                  </p>
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#dcfce7] px-2 py-0.5 text-[9px] font-semibold text-[#15803d]">
+                    <CheckCircle2 className="size-2.5" />
+                    {TRIP_PREVIEW.status}
                   </span>
                 </div>
-                <div className="w-14" />
               </div>
+              <div className="hidden items-center gap-3 text-[10px] text-muted-foreground sm:flex">
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="size-3 text-[var(--brand-coral)]" />
+                  <span className="max-w-[160px] truncate">
+                    {TRIP_PREVIEW.route}
+                  </span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="size-3 text-[var(--brand-orange)]" />
+                  {TRIP_PREVIEW.dates}
+                </span>
+              </div>
+            </div>
 
-              <div className="grid md:grid-cols-[220px_1fr]">
-                {/* Sidebar */}
-                <aside className="hidden md:flex flex-col border-r border-border bg-secondary/20 p-4">
-                  <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase mb-3">
-                    Your trip
-                  </p>
-                  {[
-                    { label: "Overview", active: false },
-                    { label: "Itinerary", active: true },
-                    { label: "Budget", active: false },
-                    { label: "Packing list", active: false },
-                    { label: "Travel tips", active: false },
-                  ].map((item) => (
-                    <div
-                      key={item.label}
-                      className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium mb-0.5 transition-colors ${
-                        item.active
-                          ? "bg-[var(--brand-coral)]/10 text-[var(--brand-coral)]"
-                          : "text-muted-foreground hover:bg-secondary"
-                      }`}
-                    >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          item.active ? "bg-[var(--brand-coral)]" : "bg-muted-foreground/30"
-                        }`}
-                      />
-                      {item.label}
-                    </div>
-                  ))}
-
-                  <div className="mt-6 p-3 rounded-xl bg-card border border-border">
-                    <p className="text-[10px] font-semibold text-muted-foreground mb-1">
-                      Trip progress
-                    </p>
-                    <p className="text-2xl font-bold text-foreground">40%</p>
-                    <div className="mt-2 h-1 rounded-full bg-secondary overflow-hidden">
-                      <div className="h-full w-[40%] rounded-full bg-[var(--brand-coral)]" />
-                    </div>
-                  </div>
-                </aside>
-
-                {/* Main content */}
-                <div className="p-5 sm:p-6">
-                  {/* Trip header */}
-                  <div className="flex items-start justify-between gap-3 mb-5">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-base font-semibold text-foreground">
-                          Bali, Indonesia itinerary
-                        </h3>
-                        <span className="text-[9px] font-semibold text-[var(--brand-coral)] bg-[var(--brand-coral)]/10 border border-[var(--brand-coral)]/25 rounded-full px-2 py-0.5">
-                          Active
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        May 12 to 17 · 5 days · personalized plan
+            {/* Body: sidebar + day panel, like the real layout */}
+            <div className="grid gap-3.5 bg-secondary p-3.5 sm:p-4 md:grid-cols-[236px_1fr]">
+              <aside className="hidden flex-col gap-3.5 md:flex">
+                {/* Day by day rail */}
+                <div className="rounded-3xl border border-border bg-white p-3 shadow-sm">
+                  <div className="flex items-center gap-2.5 px-1 pb-3">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-gradient text-white">
+                      <Layers className="size-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-foreground">
+                        Day by day
+                      </p>
+                      <p className="truncate text-[11px] text-muted-foreground">
+                        {TRIP_PREVIEW.summary.days} ·{" "}
+                        {TRIP_PREVIEW.summary.stops}
                       </p>
                     </div>
-                    <span className="text-[10px] font-semibold text-white bg-[var(--brand-coral)] rounded-full px-3 py-1.5 shadow-sm shrink-0">
-                      AI-generated plan
-                    </span>
                   </div>
-
-                  {/* Day tabs */}
-                  <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1 -mx-1 px-1">
-                    {["Day 1", "Day 2", "Day 3", "Day 4", "Day 5"].map(
-                      (d, i) => (
+                  <nav className="space-y-1">
+                    {TRIP_PREVIEW.days.map((day) => (
+                      <div
+                        key={day.n}
+                        className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors ${
+                          day.active ? "bg-brand-gradient-muted" : ""
+                        }`}
+                      >
                         <span
-                          key={d}
-                          className={`text-[11px] rounded-full px-3.5 py-1.5 shrink-0 font-medium transition-colors ${
-                            i === 1
-                              ? "bg-[var(--brand-coral)] text-white shadow-sm"
-                              : "bg-secondary text-secondary-foreground hover:bg-secondary/70"
+                          className={`flex size-7 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold ${
+                            day.active
+                              ? "bg-brand-gradient text-white"
+                              : "bg-brand-gradient-muted text-muted-foreground"
                           }`}
                         >
-                          {d}
+                          {day.n}
                         </span>
-                      ),
-                    )}
-                  </div>
+                        <span className="min-w-0 flex-1">
+                          <span
+                            className={`block truncate text-xs font-semibold ${
+                              day.active
+                                ? "text-[var(--brand-coral)]"
+                                : "text-foreground"
+                            }`}
+                          >
+                            {day.title}
+                          </span>
+                          <span className="block truncate text-[10px] text-muted-foreground">
+                            {day.meta}
+                          </span>
+                        </span>
+                      </div>
+                    ))}
+                  </nav>
+                </div>
 
-                  {/* Schedule */}
-                  <div className="space-y-2">
-                    {[
-                      {
-                        time: "08:00",
-                        title: "Breakfast at Cafe Lumia",
-                        sub: "Seminyak",
-                        active: false,
-                      },
-                      {
-                        time: "13:00",
-                        title: "Lunch at Locavore",
-                        sub: "Happening now",
-                        active: true,
-                      },
-                      {
-                        time: "15:30",
-                        title: "Sacred Monkey Forest",
-                        sub: "Padangtegal",
-                        active: false,
-                      },
-                      {
-                        time: "18:30",
-                        title: "Sunset at Uluwatu Temple",
-                        sub: "Pecatu",
-                        active: false,
-                      },
-                    ].map((row) => (
-                      <div
-                        key={row.title}
-                        className={`flex items-center gap-3 rounded-xl px-3.5 py-3 transition-colors ${
-                          row.active
-                            ? "border border-[var(--brand-coral)]/25 bg-[var(--brand-coral)]/10"
-                            : "bg-secondary/40 hover:bg-secondary/60"
-                        }`}
-                      >
-                        <span className="text-[10px] text-muted-foreground w-10 shrink-0 font-medium tabular-nums">
-                          {row.time}
+                {/* Trip tools */}
+                <div className="rounded-3xl border border-border bg-white p-3 shadow-sm">
+                  <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Trip tools
+                  </p>
+                  <div className="space-y-1">
+                    {TRIP_PREVIEW.tools.map((tool) => {
+                      const Icon = ICONS[tool.icon];
+                      const tint = TINTS[tool.tint];
+                      return (
+                        <div
+                          key={tool.label}
+                          className="flex items-center gap-2.5 rounded-xl px-2.5 py-2"
+                        >
+                          <span
+                            className={`flex size-7 shrink-0 items-center justify-center rounded-lg ${tint.chip}`}
+                          >
+                            <Icon className={`size-3.5 ${tint.text}`} />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-xs font-semibold text-foreground">
+                              {tool.label}
+                            </span>
+                            <span className="block truncate text-[10px] text-muted-foreground">
+                              {tool.meta}
+                            </span>
+                          </span>
+                          <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/60" />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </aside>
+
+              {/* Day panel */}
+              <div className="min-w-0 rounded-3xl border border-border bg-white p-4 shadow-sm sm:p-5">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      {TRIP_PREVIEW.day.heading}
+                    </p>
+                    <h3 className="mt-0.5 truncate text-sm font-bold text-foreground sm:text-base">
+                      {TRIP_PREVIEW.day.title}
+                    </h3>
+                  </div>
+                  <span className="shrink-0 text-[10px] font-medium text-muted-foreground">
+                    {TRIP_PREVIEW.day.date}
+                  </span>
+                </div>
+
+                <div className="space-y-2.5">
+                  {TRIP_PREVIEW.day.activities.map((activity) => (
+                    <div
+                      key={activity.title}
+                      className={`rounded-2xl border px-3.5 py-3 transition-colors ${
+                        activity.active
+                          ? "border-[var(--brand-coral)]/30 bg-[var(--brand-coral)]/5"
+                          : "border-border bg-secondary/50"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="mt-1 w-9 shrink-0 text-[10px] font-medium tabular-nums text-muted-foreground">
+                          {activity.time}
                         </span>
+                        <span
+                          className={`mt-1.5 size-2 shrink-0 rounded-full ${TONE_DOT[activity.tone]}`}
+                          aria-hidden="true"
+                        />
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-semibold text-foreground truncate">
-                            {row.title}
+                          <p className="truncate text-xs font-semibold text-foreground sm:text-sm">
+                            {activity.title}
                           </p>
-                          <p className="text-[10px] text-muted-foreground truncate">
-                            {row.sub}
+                          <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
+                            {activity.place} · {activity.weather}
                           </p>
                         </div>
-                        {row.active && (
-                          <span className="text-[9px] font-semibold text-white bg-[var(--brand-coral)] rounded-full px-2 py-0.5 shrink-0 shadow-sm">
-                            NOW
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom gradient fade into next section */}
-            <div className="absolute inset-x-0 -bottom-1 h-24 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none" />
-          </div>
-        </motion.div>
-
-        {/* Extra spacing so the fade blends before next section */}
-        <div className="h-16 md:h-20" />
-      </section>
-
-      {/* ===== STATS BAR ===== */}
-      <section className="py-14 border-y border-border bg-card/50">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <FadeIn>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-              {[
-                { value: "10K+", label: "Trips planned" },
-                { value: "120+", label: "Destinations" },
-                { value: "4.9/5", label: "User rating" },
-                { value: "<1 min", label: "Plan generation" },
-              ].map((stat) => (
-                <div key={stat.label}>
-                  <p className="text-2xl md:text-3xl font-extrabold text-foreground">
-                    {stat.value}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1 font-medium">
-                    {stat.label}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* ===== WHY SAFARAI ===== */}
-      <section className="py-20 md:py-28 bg-card">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <FadeIn className="text-center mb-16">
-            <span className="text-xs font-bold tracking-widest uppercase text-[var(--brand-coral)]">
-              Why SafarAI
-            </span>
-            <h2 className="mt-3 text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
-              Trip planning, two ways.
-            </h2>
-            <p className="mt-4 text-base text-muted-foreground max-w-lg mx-auto">
-              One feels like work. The other feels like the trip already
-              started.
-            </p>
-          </FadeIn>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <FadeIn>
-              <div className="h-full rounded-2xl border border-border bg-background p-8 hover:shadow-lg transition-shadow duration-300">
-                <span className="inline-block text-[10px] font-bold tracking-widest uppercase bg-red-50 text-red-600 rounded-full px-3 py-1 mb-6">
-                  The old way
-                </span>
-                <h3 className="text-lg font-semibold text-foreground mb-3">
-                  Planning a trip should not feel like managing a project.
-                </h3>
-                <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
-                  Notes in one app. Bookings in your inbox. A spreadsheet you
-                  forgot to update. Your itinerary ends up scattered across
-                  tools that were never built to work together.
-                </p>
-                <div className="rounded-xl bg-secondary/30 p-5 flex flex-wrap gap-2.5">
-                  {[
-                    "Notion",
-                    "Google Calendar",
-                    "Email threads",
-                    "Saved map pins",
-                    "TripAdvisor",
-                    "A spreadsheet",
-                  ].map((tag) => (
-                    <span
-                      key={tag}
-                      className="text-[11px] rounded-full border border-border bg-card px-3 py-1.5 text-muted-foreground"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </FadeIn>
-
-            <FadeIn delay={0.1}>
-              <div className="h-full rounded-2xl border border-border bg-background p-8 hover:shadow-lg transition-shadow duration-300">
-                <span className="inline-block text-[10px] font-bold tracking-widest uppercase bg-green-50 text-green-600 rounded-full px-3 py-1 mb-6">
-                  The SafarAI way
-                </span>
-                <h3 className="text-lg font-semibold text-foreground mb-3">
-                  One place for your entire itinerary.
-                </h3>
-                <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
-                  Your whole trip lives in a single, structured plan. You always
-                  know what is next without digging through five different apps.
-                </p>
-                <div className="rounded-xl bg-secondary/30 p-5">
-                  <div className="flex items-center gap-2.5 mb-4">
-                    <span className="w-7 h-7 rounded-lg bg-[var(--brand-coral)] text-white flex items-center justify-center text-xs font-bold">
-                      S
-                    </span>
-                    <span className="text-sm font-semibold text-foreground">
-                      SafarAI
-                    </span>
-                    <span className="ml-auto text-[10px] flex items-center gap-1 text-green-600 font-medium">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                      All in sync
-                    </span>
-                  </div>
-                  {[
-                    "Itinerary, AI-generated",
-                    "Day by day plan, visual",
-                    "Budget, packing list, and tips",
-                  ].map((line) => (
-                    <p
-                      key={line}
-                      className="flex items-center gap-2.5 text-xs text-muted-foreground py-1.5"
-                    >
-                      <FaCheck className="text-green-500 text-[10px] shrink-0" />
-                      {line}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            </FadeIn>
-          </div>
-        </div>
-      </section>
-
-      {/* ===== TESTIMONIALS ===== */}
-      <section className="py-20 md:py-28 bg-background">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <FadeIn className="text-center mb-16">
-            <span className="text-xs font-bold tracking-widest uppercase text-[var(--brand-coral)]">
-              Testimonials
-            </span>
-            <h2 className="mt-3 text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
-              Loved by travelers.
-            </h2>
-            <p className="mt-4 text-base text-muted-foreground max-w-lg mx-auto">
-              See how people are using SafarAI to plan better trips.
-            </p>
-          </FadeIn>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                name: "Ayesha Khan",
-                role: "Solo traveler",
-                avatar:
-                  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=96&q=80",
-                rating: 5,
-                text: "I used to spend hours researching itineraries. SafarAI gave me a complete Bali plan in minutes — activities, costs, timing, everything. It felt like magic.",
-              },
-              {
-                name: "Bilal Ahmed",
-                role: "Family traveler",
-                avatar:
-                  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=96&q=80",
-                rating: 5,
-                text: "Planning a family trip used to mean juggling five apps. Now the whole itinerary is in one place and my wife actually trusts it.",
-              },
-              {
-                name: "Sara Malik",
-                role: "Budget traveler",
-                avatar:
-                  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=96&q=80",
-                rating: 5,
-                text: "The budget breakdown was a game changer. I knew exactly how much I would spend before I even booked a flight. Highly recommend.",
-              },
-            ].map((t, i) => (
-              <FadeIn key={t.name} delay={i * 0.1}>
-                <div className="h-full rounded-2xl border border-border bg-card p-6 hover:shadow-lg transition-shadow duration-300">
-                  <div className="flex gap-1 mb-4">
-                    {Array.from({ length: t.rating }).map((_, s) => (
-                      <FaStar key={s} className="w-4 h-4 text-yellow-400" />
-                    ))}
-                  </div>
-                  <p className="text-sm text-foreground/80 leading-relaxed mb-6">
-                    &ldquo;{t.text}&rdquo;
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={t.avatar}
-                      alt={t.name}
-                      className="w-10 h-10 rounded-full object-cover"
-                      loading="lazy"
-                    />
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">
-                        {t.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{t.role}</p>
-                    </div>
-                  </div>
-                </div>
-              </FadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== FEATURES ===== */}
-      <section id="features" className="py-20 md:py-28 bg-background">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <FadeIn className="text-center mb-16">
-            <span className="text-xs font-bold tracking-widest uppercase text-[var(--brand-coral)]">
-              Features
-            </span>
-            <h2 className="mt-3 text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
-              Everything you need to travel with clarity.
-            </h2>
-            <p className="mt-4 text-base text-muted-foreground max-w-lg mx-auto">
-              SafarAI combines trip preferences, itinerary activities, costs,
-              weather, packing, and travel tips in one generated plan.
-            </p>
-          </FadeIn>
-
-          <FadeIn delay={0.1}>
-            <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden grid md:grid-cols-2">
-              <div className="p-8 md:p-10 flex flex-col justify-center">
-                <span className="text-[11px] font-bold tracking-widest text-[var(--brand-coral)] mb-4">
-                  Assist · Your AI trip companion
-                </span>
-                <h3 className="text-2xl font-semibold text-foreground mb-4">
-                  A complete plan built around your trip.
-                </h3>
-                <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
-                  SafarAI turns your answers into a day-by-day itinerary with
-                  useful details for each activity and a clear view of your
-                  estimated trip costs.
-                </p>
-                {[
-                  "Personalized activities by day and time",
-                  "Estimated costs, weather, and locations",
-                  "Packing list and practical travel tips",
-                ].map((line) => (
-                  <p
-                    key={line}
-                    className="flex items-center gap-3 text-sm text-foreground/80 py-1.5"
-                  >
-                    <FaCheck className="text-green-500 text-xs shrink-0" />
-                    {line}
-                  </p>
-                ))}
-              </div>
-
-              <div className="bg-secondary/30 p-6 md:p-8">
-                <div className="flex flex-wrap items-center gap-2 mb-5">
-                  <span className="text-[10px] font-semibold text-white bg-[var(--brand-coral)] rounded-full px-3 py-1.5">
-                    Personalized itinerary
-                  </span>
-                  <span className="text-[10px] font-semibold text-muted-foreground bg-card border border-border rounded-full px-3 py-1.5">
-                    Budget included
-                  </span>
-                </div>
-                <div className="space-y-3">
-                  {[
-                    {
-                      icon: FaPlane,
-                      color: "bg-[var(--brand-coral)]/10 text-[var(--brand-coral)]",
-                      title: "Morning flight",
-                      sub: "GA 408, 08:40, Seat 14A",
-                      tag: "Today",
-                    },
-                    {
-                      icon: FaHotel,
-                      color: "bg-secondary text-secondary-foreground",
-                      title: "Lunch at Locavore",
-                      sub: "Seminyak, 13:00",
-                    },
-                    {
-                      icon: FaMapMarkerAlt,
-                      color: "bg-secondary text-secondary-foreground",
-                      title: "Sacred Monkey Forest",
-                      sub: "Padangtegal, 15:30",
-                    },
-                  ].map((item) => (
-                    <div
-                      key={item.title}
-                      className="flex items-center gap-3.5 bg-card border border-border rounded-xl px-4 py-3.5 hover:border-[var(--brand-coral)]/40 transition-colors group"
-                    >
-                      <div
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${item.color}`}
-                      >
-                        <item.icon className="text-sm" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">
-                          {item.title}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {item.sub}
-                        </p>
-                      </div>
-                      {item.tag && (
-                        <span className="ml-auto text-[10px] font-semibold text-white bg-[var(--brand-coral)] rounded-full px-2.5 py-1 shrink-0">
-                          {item.tag}
+                        <span className="shrink-0 rounded-full border border-border bg-white px-2 py-0.5 text-[10px] font-semibold text-foreground">
+                          {activity.cost}
                         </span>
+                      </div>
+                      {activity.active && (
+                        <div className="mt-2.5 flex justify-end">
+                          <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-white px-2.5 py-1.5 text-[10px] font-medium text-foreground">
+                            <MapPin className="size-3 text-[var(--brand-coral)]" />
+                            View on Google Maps
+                          </span>
+                        </div>
                       )}
                     </div>
                   ))}
                 </div>
               </div>
+
             </div>
-          </FadeIn>
-        </div>
+          </div>
+
+          {/* Bottom gradient fade into the next section */}
+          <div className="pointer-events-none absolute inset-x-0 -bottom-1 h-20 bg-gradient-to-t from-background via-background/70 to-transparent" />
+        </motion.div>
+
+        <div className="h-14 md:h-16" />
       </section>
 
-      {/* ===== WHAT'S INCLUDED ===== */}
-      <section className="py-20 md:py-28 bg-card">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <FadeIn className="text-center mb-16">
-            <span className="text-xs font-bold tracking-widest uppercase text-[var(--brand-coral)]">
-              What&apos;s included
-            </span>
-            <h2 className="mt-3 text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
-              Every trip comes with full details.
-            </h2>
-            <p className="mt-4 text-base text-muted-foreground max-w-lg mx-auto">
-              No guessing. Each generated plan includes everything you need
-              before you go.
-            </p>
-          </FadeIn>
-
-          <FadeIn delay={0.1}>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                {
-                  icon: FaMapMarkerAlt,
-                  title: "Activities with descriptions",
-                  desc: "Each stop includes what to expect, opening hours, and tips from locals.",
-                },
-                {
-                  icon: FaRegClock,
-                  title: "Day-by-day timing",
-                  desc: "Activities are scheduled with realistic travel time between locations.",
-                },
-                {
-                  icon: FaCheck,
-                  title: "Estimated costs",
-                  desc: "Per-activity and per-day cost estimates in your chosen currency.",
-                },
-                {
-                  icon: FaHotel,
-                  title: "Accommodation options",
-                  desc: "Recommended stays matched to your budget and travel style.",
-                },
-                {
-                  icon: FaPlane,
-                  title: "Transport guidance",
-                  desc: "Best ways to get between destinations with time and cost estimates.",
-                },
-                {
-                  icon: FaBolt,
-                  title: "Packing list",
-                  desc: "A tailored checklist based on destination, season, and activities.",
-                },
-                {
-                  icon: FaGlobe,
-                  title: "Weather outlook",
-                  desc: "Expected conditions during your travel dates for each destination.",
-                },
-                {
-                  icon: FaMap,
-                  title: "Map links",
-                  desc: "Every location includes a direct link to view it on the map.",
-                },
-                {
-                  icon: FaStar,
-                  title: "Travel tips",
-                  desc: "Practical advice for your destination — visa, currency, and more.",
-                },
-              ].map((item, i) => {
-                const Icon = item.icon;
-                return (
-                  <FadeIn key={item.title} delay={i * 0.04}>
-                    <div className="flex items-start gap-4 p-5 rounded-xl border border-border bg-background hover:border-[var(--brand-coral)]/40 hover:shadow-sm transition-all duration-300 h-full">
-                      <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0">
-                        <Icon className="text-sm text-[var(--brand-coral)]" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-semibold text-foreground mb-1">
-                          {item.title}
-                        </h4>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          {item.desc}
-                        </p>
-                      </div>
-                    </div>
-                  </FadeIn>
-                );
-              })}
+      {/* ===== CAPABILITY STRIP ===== */}
+      <section
+        aria-label="What every trip includes"
+        className="border-y border-border bg-card/50 py-5"
+      >
+        <div className="relative">
+          <div className="flex overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
+            <div className="animate-marquee flex w-max shrink-0 items-center gap-10 pr-10 will-change-transform">
+              {[...CAPABILITY_STRIP, ...CAPABILITY_STRIP].map((item, i) => (
+                <span
+                  key={`${item}-${i}`}
+                  className="flex shrink-0 items-center gap-2.5 whitespace-nowrap text-sm font-medium text-muted-foreground"
+                >
+                  <span className="size-1.5 rounded-full bg-brand-gradient" />
+                  {item}
+                </span>
+              ))}
             </div>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* ===== HOW IT WORKS ===== */}
-      <section id="how-it-works" className="py-20 md:py-28 bg-card">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <FadeIn className="text-center mb-16">
-            <span className="text-xs font-bold tracking-widest uppercase text-[var(--brand-coral)]">
-              How it works
-            </span>
-            <h2 className="mt-3 text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
-              From idea to itinerary in minutes.
-            </h2>
-            <p className="mt-4 text-base text-muted-foreground max-w-lg mx-auto">
-              No spreadsheets. No switching apps. Just tell us where you want to
-              go.
-            </p>
-          </FadeIn>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                n: "01",
-                icon: FaGlobe,
-                title: "Where, when, and how you travel.",
-                desc: "A few lines about where, when, and how you like to travel. We take care of the rest.",
-                preview: (
-                  <div className="mt-6 rounded-xl border border-border bg-background p-4">
-                    <div className="flex gap-2 mb-3">
-                      {["Bali", "Tokyo", "Lisbon"].map((d) => (
-                        <span
-                          key={d}
-                          className="text-[10px] rounded-full border border-border px-2.5 py-1 text-muted-foreground"
-                        >
-                          {d}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="rounded-lg bg-secondary px-3 py-2 text-[11px] text-foreground/80">
-                      5 days in Bali, relaxed pace
-                    </div>
-                  </div>
-                ),
-              },
-              {
-                n: "02",
-                icon: FaCalendarAlt,
-                title: "SafarAI generates your plan.",
-                desc: "The AI builds a day-by-day itinerary with activities, costs, locations, and practical travel context.",
-                preview: (
-                  <div className="mt-6 rounded-xl border border-border bg-background p-4 flex flex-col items-center justify-center h-[120px]">
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center animate-pulse bg-[var(--brand-coral)]/10">
-                      <span className="w-5 h-5 rounded-full bg-[var(--brand-coral)]" />
-                    </div>
-                    <span className="mt-3 text-[10px] font-semibold text-white bg-[var(--brand-coral)] rounded-full px-3 py-1">
-                      Generating itinerary
-                    </span>
-                  </div>
-                ),
-              },
-              {
-                n: "03",
-                icon: FaPencilAlt,
-                title: "Review the details before you go.",
-                desc: "Open each day to see activity descriptions, timing, estimated cost, weather, images, and map links.",
-                preview: (
-                  <div className="mt-6 rounded-xl border border-border bg-background p-4 space-y-2">
-                    {[
-                      {
-                        time: "09:30",
-                        label: "Sacred Monkey Forest",
-                        active: false,
-                      },
-                      {
-                        time: "13:00",
-                        label: "Lunch at Locavore",
-                        active: true,
-                      },
-                      {
-                        time: "16:30",
-                        label: "Sunset at Uluwatu",
-                        active: false,
-                      },
-                    ].map((row) => (
-                      <div
-                        key={row.label}
-                        className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
-                          row.active
-                            ? "border border-[var(--brand-coral)]/25 bg-[var(--brand-coral)]/10"
-                            : "hover:bg-secondary/50"
-                        }`}
-                      >
-                        <span className="text-[10px] text-muted-foreground w-9 shrink-0">
-                          {row.time}
-                        </span>
-                        <span className="text-[11px] text-foreground/80 truncate">
-                          {row.label}
-                        </span>
-                        {row.active && (
-                          <span className="ml-auto text-[9px] font-semibold text-white bg-[var(--brand-coral)] rounded-full px-2 py-0.5">
-                            NOW
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ),
-              },
-            ].map((step, i) => (
-              <FadeIn key={step.n} delay={i * 0.08}>
-                <div className="h-full rounded-2xl border border-border bg-background p-6 hover:shadow-lg transition-shadow duration-300">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-[var(--brand-coral)]/10 flex items-center justify-center">
-                      <step.icon className="text-sm text-[var(--brand-coral)]" />
-                    </div>
-                    <span className="text-2xl font-bold text-[var(--brand-coral)]">
-                      {step.n}
-                    </span>
-                  </div>
-                  <h3 className="text-base font-semibold text-foreground mb-2">
-                    {step.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {step.desc}
-                  </p>
-                  {step.preview}
-                </div>
-              </FadeIn>
-            ))}
           </div>
         </div>
       </section>
 
-      {/* ===== FOUNDER NOTE ===== */}
-      <section className="py-20 md:py-28 bg-background">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 grid md:grid-cols-2 gap-12 items-center">
+      {/* ===== OLD WAY vs SAFARAI WAY ===== */}
+      <section className="scroll-mt-20 bg-secondary py-20 md:py-28">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <FadeIn className="mb-14 text-center md:mb-16">
+            <span className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--brand-coral)]">
+              {COMPARISON.eyebrow}
+            </span>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-5xl">
+              {COMPARISON.title}
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
+              {COMPARISON.subtitle}
+            </p>
+          </FadeIn>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* The old way */}
+            <FadeIn>
+              <div className="h-full rounded-3xl border border-border bg-background p-7 shadow-sm md:p-8">
+                <span className="inline-block rounded-full bg-red-50 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-red-600">
+                  {COMPARISON.oldWay.tag}
+                </span>
+                <h3 className="mt-5 text-lg font-semibold text-foreground">
+                  {COMPARISON.oldWay.title}
+                </h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                  {COMPARISON.oldWay.description}
+                </p>
+                <div className="mt-7 flex flex-wrap gap-2 rounded-2xl bg-secondary/60 p-4">
+                  {COMPARISON.oldWay.tools.map((tool) => (
+                    <span
+                      key={tool}
+                      className="rounded-full border border-border bg-background px-3 py-1.5 text-[11px] text-muted-foreground"
+                    >
+                      {tool}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </FadeIn>
+
+            {/* The SafarAI way, wrapped in a thin brand gradient frame */}
+            <FadeIn delay={0.1}>
+              <div className="h-full rounded-3xl bg-brand-gradient p-px shadow-xl shadow-[var(--brand-coral)]/10">
+                <div className="flex h-full flex-col rounded-[calc(1.875rem-1px)] bg-background p-7 md:p-8">
+                  <span className="inline-block w-fit rounded-full bg-brand-gradient px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
+                    {COMPARISON.newWay.tag}
+                  </span>
+                  <h3 className="mt-5 text-lg font-semibold text-foreground">
+                    {COMPARISON.newWay.title}
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                    {COMPARISON.newWay.description}
+                  </p>
+                  <ul className="mt-6 space-y-3">
+                    {COMPARISON.newWay.points.map((point) => (
+                      <li
+                        key={point}
+                        className="flex items-start gap-3 text-sm text-foreground/85"
+                      >
+                        <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--brand-coral)]/12">
+                          <Check className="size-3 text-[var(--brand-coral)]" />
+                        </span>
+                        {point}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== FEATURES ===== */}
+      <section id="features" className="scroll-mt-20 bg-background py-20 md:py-28">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <FadeIn className="mb-14 text-center md:mb-16">
+            <span className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--brand-coral)]">
+              {FEATURES.eyebrow}
+            </span>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-5xl">
+              {FEATURES.title}
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
+              {FEATURES.subtitle}
+            </p>
+          </FadeIn>
+
+          {/* Highlight card */}
           <FadeIn>
-            <div className="rounded-2xl overflow-hidden border border-border bg-card shadow-sm">
-              <img
-                src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80"
-                alt="Paris"
-                className="w-full h-72 md:h-80 object-cover"
-                loading="lazy"
-              />
-              <div className="p-5">
-                <p className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-coral)]" />
-                  Paris, May 2026
+            <div className="mb-6 grid overflow-hidden rounded-3xl border border-border bg-card shadow-sm md:mb-8 md:grid-cols-2">
+              <div className="flex flex-col justify-center p-7 md:p-10">
+                <span className="w-fit rounded-full border border-[var(--brand-coral)]/25 bg-[var(--brand-coral)]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[var(--brand-coral)]">
+                  {FEATURES.highlight.tag}
+                </span>
+                <h3 className="mt-5 text-2xl font-semibold text-foreground">
+                  {FEATURES.highlight.title}
+                </h3>
+                <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                  {FEATURES.highlight.description}
                 </p>
-                <p className="text-xs text-muted-foreground italic mt-1">
-                  Where the idea started.
-                </p>
+                <ul className="mt-6 space-y-3">
+                  {FEATURES.highlight.bullets.map((bullet) => (
+                    <li
+                      key={bullet}
+                      className="flex items-start gap-3 text-sm text-foreground/85"
+                    >
+                      <Check className="mt-0.5 size-4 shrink-0 text-[var(--brand-coral)]" />
+                      {bullet}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="flex flex-col justify-center gap-3 bg-secondary/60 p-6 md:p-8">
+                {FEATURES.highlight.miniCards.map((card) => {
+                  const Icon = ICONS[card.icon];
+                  const tint = TINTS[card.tint];
+                  return (
+                    <div
+                      key={card.label}
+                      className="flex items-center gap-3.5 rounded-2xl border border-border bg-white px-4 py-3.5 shadow-sm"
+                    >
+                      <span
+                        className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${tint.chip}`}
+                      >
+                        <Icon className={`size-4 ${tint.text}`} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-foreground">
+                          {card.label}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {card.meta}
+                        </p>
+                      </div>
+                      <CheckCircle2 className="size-4 shrink-0 text-green-500" />
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </FadeIn>
 
-          <FadeIn delay={0.1}>
-            <span className="text-xs font-bold tracking-widest uppercase text-[var(--brand-coral)]">
-              A note from the team
+          {/* Feature grid */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {FEATURES.cards.map((card, i) => {
+              const Icon = ICONS[card.icon];
+              const tint = TINTS[card.tint];
+              return (
+                <FadeIn key={card.title} delay={(i % 4) * 0.05}>
+                  <div className="h-full rounded-2xl border border-border bg-card p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-[var(--brand-coral)]/40 hover:shadow-md">
+                    <span
+                      className={`flex size-10 items-center justify-center rounded-xl ${tint.chip}`}
+                    >
+                      <Icon className={`size-4 ${tint.text}`} />
+                    </span>
+                    <h3 className="mt-4 text-sm font-semibold text-foreground">
+                      {card.title}
+                    </h3>
+                    <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                      {card.description}
+                    </p>
+                  </div>
+                </FadeIn>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== HOW IT WORKS ===== */}
+      <section
+        id="how-it-works"
+        className="scroll-mt-20 bg-secondary py-20 md:py-28"
+      >
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <FadeIn className="mb-14 text-center md:mb-16">
+            <span className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--brand-coral)]">
+              {HOW_IT_WORKS.eyebrow}
             </span>
-            <h2 className="mt-4 text-3xl md:text-4xl font-semibold tracking-tight text-foreground leading-tight">
-              We are not finished, but here is what we built so far.
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-5xl">
+              {HOW_IT_WORKS.title}
             </h2>
-            <p className="mt-6 text-sm text-muted-foreground leading-relaxed">
-              We started SafarAI after wasting three weeks planning a five day
-              trip across notes apps and a dozen browser tabs that never talked
-              to each other. None of them cared about the trip. They only cared
-              about the next click.
+            <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
+              {HOW_IT_WORKS.subtitle}
             </p>
-            <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
-              We are building the calmer version we wished existed: one place
-              for a day-by-day plan shaped by your budget, pace, and interests.
-            </p>
-            <p className="mt-4 text-sm font-medium text-foreground">
-              SafarAI is a pure AI trip planner, not a booking aggregator. It
-              generates and structures your itinerary with the practical details
-              you need before you go.
-            </p>
-            <div className="mt-8 flex items-center gap-3">
-              <img
-                src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=64&q=80"
-                alt=""
-                className="w-10 h-10 rounded-full object-cover"
-                loading="lazy"
-              />
-              <div>
-                <p className="text-sm font-semibold text-foreground">
-                  The SafarAI team
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Currently drafting v1
-                </p>
-              </div>
+          </FadeIn>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            {HOW_IT_WORKS.steps.map((step, i) => {
+              const Icon = ICONS[step.icon];
+              return (
+                <FadeIn key={step.n} delay={i * 0.08}>
+                  <div className="flex h-full flex-col rounded-3xl border border-border bg-background p-6 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="flex size-10 items-center justify-center rounded-xl bg-brand-gradient-muted">
+                        <Icon className="size-4 text-[var(--brand-coral)]" />
+                      </span>
+                      <span className="text-2xl font-bold text-brand-gradient">
+                        {step.n}
+                      </span>
+                    </div>
+                    <h3 className="mt-4 text-base font-semibold text-foreground">
+                      {step.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                      {step.description}
+                    </p>
+
+                    {/* Mini preview of the real screen for this step */}
+                    <div className="mt-auto rounded-2xl border border-border bg-card p-4 pt-4">
+                      <p className="sr-only">Preview of step {step.n}</p>
+                      {step.preview === "form" && (
+                        <div>
+                          <div className="flex flex-wrap gap-2">
+                            {STEP_PREVIEWS.form.chips.map((chip) => (
+                              <span
+                                key={chip}
+                                className="rounded-full border border-border bg-secondary px-2.5 py-1 text-[10px] font-medium text-foreground/80"
+                              >
+                                {chip}
+                              </span>
+                            ))}
+                          </div>
+                          <p className="mt-3 rounded-lg bg-secondary px-3 py-2 text-[11px] text-muted-foreground">
+                            {STEP_PREVIEWS.form.summary}
+                          </p>
+                        </div>
+                      )}
+
+                      {step.preview === "generating" && (
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="flex size-6 items-center justify-center rounded-full bg-[var(--brand-coral)]/12">
+                              <Sparkles className="size-3 animate-pulse text-[var(--brand-coral)]" />
+                            </span>
+                            <p className="text-xs font-semibold text-foreground">
+                              {STEP_PREVIEWS.generating.label}
+                            </p>
+                          </div>
+                          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary">
+                            <div
+                              className="h-full rounded-full bg-brand-gradient"
+                              style={{
+                                width: `${STEP_PREVIEWS.generating.progress}%`,
+                              }}
+                            />
+                          </div>
+                          <ul className="mt-3 space-y-1.5">
+                            {STEP_PREVIEWS.generating.steps.map((line) => (
+                              <li
+                                key={line}
+                                className="flex items-center gap-2 text-[11px] text-muted-foreground"
+                              >
+                                <Check className="size-3 text-green-500" />
+                                {line}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {step.preview === "review" && (
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            {STEP_PREVIEWS.review.date}
+                          </p>
+                          <div className="mt-2 space-y-2">
+                            {STEP_PREVIEWS.review.rows.map((row) => (
+                              <div
+                                key={row.label}
+                                className={`flex items-center gap-3 rounded-xl px-3 py-2 ${
+                                  row.active
+                                    ? "border border-[var(--brand-coral)]/30 bg-[var(--brand-coral)]/5"
+                                    : "bg-secondary/60"
+                                }`}
+                              >
+                                <span className="w-8 shrink-0 text-[10px] tabular-nums text-muted-foreground">
+                                  {row.time}
+                                </span>
+                                <span className="truncate text-[11px] text-foreground/85">
+                                  {row.label}
+                                </span>
+                                {row.active && (
+                                  <span className="ml-auto shrink-0 rounded-full bg-[var(--brand-coral)] px-2 py-0.5 text-[9px] font-semibold text-white">
+                                    Next
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </FadeIn>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== FAQ ===== */}
+      <section id="faq" className="scroll-mt-20 bg-background py-20 md:py-28">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6">
+          <FadeIn className="mb-12 text-center">
+            <span className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--brand-coral)]">
+              {FAQ.eyebrow}
+            </span>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-5xl">
+              {FAQ.title}
+            </h2>
+          </FadeIn>
+
+          <FadeIn delay={0.1}>
+            <div className="rounded-3xl border border-border bg-card px-5 shadow-sm sm:px-7">
+              {FAQ.items.map((faq, i) => (
+                <div
+                  key={faq.q}
+                  className={i === 0 ? "" : "border-t border-border"}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                    aria-expanded={openFaq === i}
+                    className="group flex w-full items-center justify-between gap-4 py-5 text-left"
+                  >
+                    <span className="text-[15px] font-medium text-foreground transition-colors group-hover:text-[var(--brand-coral)]">
+                      {faq.q}
+                    </span>
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary transition-colors group-hover:bg-[var(--brand-coral)]/10">
+                      {openFaq === i ? (
+                        <Minus className="size-3.5 text-[var(--brand-coral)]" />
+                      ) : (
+                        <Plus className="size-3.5 text-muted-foreground transition-colors group-hover:text-[var(--brand-coral)]" />
+                      )}
+                    </span>
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {openFaq === i && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.25, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                      >
+                        <p className="pb-5 pr-10 text-sm leading-relaxed text-muted-foreground">
+                          {faq.a}
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ))}
             </div>
-            <p className="mt-8 pl-5 border-l-2 border-[var(--brand-coral)] text-sm text-muted-foreground italic leading-relaxed">
-              If you have ever lost your plans because a browser tab crashed
-              before you could save them, we built this for you.
+
+            <p className="mt-8 text-center text-sm text-muted-foreground">
+              {FAQ.stillHaveAQuestion}{" "}
+              {email ? (
+                <a
+                  href={mailHref}
+                  className="font-semibold text-[var(--brand-coral)] underline underline-offset-4 hover:text-[var(--brand-pink)]"
+                >
+                  {FAQ.reachOutLabel}
+                </a>
+              ) : (
+                <span className="font-semibold text-foreground">
+                  {FAQ.reachOutLabel}
+                </span>
+              )}{" "}
+              {FAQ.replyNote}
             </p>
           </FadeIn>
         </div>
       </section>
 
-      {/* ===== FAQ ===== */}
-      <section id="faq" className="py-20 md:py-28 bg-card">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <FadeIn className="text-center mb-14">
-            <span className="text-xs font-bold tracking-widest uppercase text-[var(--brand-coral)]">
-              Questions
-            </span>
-            <h2 className="mt-3 text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
-              Frequently asked questions
-            </h2>
-          </FadeIn>
+      {/* ===== CONTACT ===== */}
+      <section id="contact" className="scroll-mt-20 bg-secondary py-20 md:py-28">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6">
+          <FadeIn>
+            <div className="relative overflow-hidden rounded-3xl border border-border bg-background p-8 text-center shadow-sm md:p-10">
+              <div className="absolute inset-x-0 top-0 h-1 bg-brand-gradient" />
+              <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-[var(--brand-coral)]/10">
+                <Mail className="size-5 text-[var(--brand-coral)]" />
+              </span>
+              <span className="mt-5 block text-xs font-bold uppercase tracking-[0.18em] text-[var(--brand-coral)]">
+                {CONTACT.eyebrow}
+              </span>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+                {CONTACT.title}
+              </h2>
+              <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
+                {CONTACT.body}
+              </p>
 
-          <FadeIn delay={0.1}>
-            {FAQ_ITEMS.map((faq, i) => (
-              <div key={faq.q} className="border-b border-border">
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between text-left gap-4 py-6 group"
-                  aria-expanded={openFaq === i}
-                >
-                  <span className="text-base font-medium text-foreground group-hover:text-[var(--brand-coral)] transition-colors">
-                    {faq.q}
-                  </span>
-                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0 group-hover:bg-[var(--brand-coral)]/10 transition-colors">
-                    {openFaq === i ? (
-                      <FaMinus className="text-xs text-[var(--brand-coral)]" />
-                    ) : (
-                      <FaPlus className="text-xs text-muted-foreground group-hover:text-[var(--brand-coral)] transition-colors" />
-                    )}
+              {email ? (
+                <>
+                  <p className="mt-6 text-sm text-muted-foreground">
+                    {CONTACT.addressLabel}{" "}
+                    <a
+                      href={mailHref}
+                      className="font-semibold text-foreground underline decoration-[var(--brand-coral)]/50 underline-offset-4 transition-colors hover:text-[var(--brand-coral)]"
+                    >
+                      {email}
+                    </a>
+                  </p>
+                  <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                    <Button
+                      asChild
+                      size="lg"
+                      className="h-12 rounded-full px-7 text-base font-semibold shadow-lg shadow-[var(--brand-coral)]/20"
+                    >
+                      <a href={mailHref}>
+                        <Mail className="size-4" />
+                        {CONTACT.buttonLabel}
+                      </a>
+                    </Button>
                   </div>
-                </button>
-                {openFaq === i && (
-                  <motion.p
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.25, ease: "easeInOut" }}
-                    className="pb-6 text-sm text-muted-foreground leading-relaxed"
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    Opens your email app with a fresh message.
+                  </p>
+                </>
+              ) : (
+                <div className="mt-6">
+                  <Button
+                    asChild
+                    size="lg"
+                    className="h-12 rounded-full px-7 text-base font-semibold shadow-lg shadow-[var(--brand-coral)]/20"
                   >
-                    {faq.a}
-                  </motion.p>
-                )}
-              </div>
-            ))}
-            <p className="mt-8 text-sm text-muted-foreground text-center">
-              Still have a question?{" "}
-              <a
-                href="mailto:zaryabkhan248@gmail.com"
-                className="font-semibold text-[var(--brand-coral)] underline underline-offset-2 hover:"
-              >
-                Reach out
-              </a>{" "}
-              and we will reply within a day.
-            </p>
+                    <Link href="/app">{HERO.primaryCta.label}</Link>
+                  </Button>
+                </div>
+              )}
+            </div>
           </FadeIn>
         </div>
       </section>
 
       {/* ===== FINAL CTA ===== */}
-      <section className="relative overflow-hidden py-24 md:py-32 bg-foreground">
-        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full blur-3xl opacity-10 bg-[var(--brand-coral)] pointer-events-none" />
-        <div className="absolute -bottom-40 -right-20 w-[450px] h-[450px] rounded-full blur-3xl opacity-8 bg-[var(--brand-coral)] pointer-events-none" />
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 grid md:grid-cols-2 gap-12 items-center relative">
-          <FadeIn className="text-center md:text-left">
-            <span className="text-xs font-bold tracking-widest uppercase text-[var(--brand-orange)]">
-              Ready when you are
+      <section className="relative overflow-hidden bg-foreground py-24 md:py-28">
+        <div className="pointer-events-none absolute -left-32 -top-32 h-[460px] w-[460px] rounded-full bg-[var(--brand-coral)] opacity-15 blur-[120px]" />
+        <div className="pointer-events-none absolute -bottom-40 -right-16 h-[420px] w-[420px] rounded-full bg-[var(--brand-purple)] opacity-20 blur-[120px]" />
+
+        <div className="relative mx-auto max-w-3xl px-6 text-center">
+          <FadeIn>
+            <span className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--brand-orange)]">
+              {FINAL_CTA.eyebrow}
             </span>
-            <h2 className="mt-4 text-3xl md:text-4xl font-semibold tracking-tight text-white leading-tight">
-              Travel planning, without the chaos.
+            <h2 className="mt-4 text-3xl font-semibold leading-tight tracking-tight text-white md:text-5xl">
+              {FINAL_CTA.title}
             </h2>
-            <p className="mt-5 text-white/60 text-sm max-w-md mx-auto md:mx-0 leading-relaxed">
-              SafarAI turns a few quick questions into a full itinerary with
-              activities, estimated costs, weather, maps, packing, and tips.
+            <p className="mx-auto mt-5 max-w-xl text-sm leading-relaxed text-white/60 md:text-base">
+              {FINAL_CTA.subtitle}
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row items-center md:justify-start justify-center gap-4">
+            <div className="mt-8 flex flex-col items-center justify-center gap-4">
               <Button
                 asChild
                 size="lg"
-                className="text-base px-8 py-6 rounded-full font-semibold bg-brand-gradient text-white hover:brightness-110 transition-all w-full sm:w-auto"
+                className="h-12 rounded-full px-8 text-base font-semibold text-white shadow-xl shadow-black/20"
               >
-                <Link href="/app">Get started free</Link>
+                <Link href={HERO.primaryCta.href}>
+                  {FINAL_CTA.buttonLabel}
+                  <ArrowRight className="size-4" />
+                </Link>
               </Button>
-              <p className="text-xs text-white/40">
-                Start with your destination and travel dates.
-              </p>
-            </div>
-            <div className="mt-6 flex flex-wrap items-center justify-center md:justify-start gap-3">
-              <span className="inline-flex items-center gap-1.5 text-[11px] text-white/40">
-                <FaCheck className="text-[9px] text-green-400" />
-                Free to start
-              </span>
-              <span className="inline-flex items-center gap-1.5 text-[11px] text-white/40">
-                <FaCheck className="text-[9px] text-green-400" />
-                No credit card
-              </span>
-              <span className="inline-flex items-center gap-1.5 text-[11px] text-white/40">
-                <FaCheck className="text-[9px] text-green-400" />
-                Cancel anytime
-              </span>
-            </div>
-          </FadeIn>
-
-          <FadeIn delay={0.1} className="hidden md:flex justify-center">
-            <div className="w-[280px] rounded-[2rem] border-4 border-white/10 bg-background p-3 shadow-2xl">
-              <div className="rounded-[1.5rem] bg-card overflow-hidden">
-                <div className="px-4 pt-4 pb-3 border-b border-border">
-                  <p className="text-sm font-semibold text-foreground">
-                    Bali, Indonesia
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">5 days</p>
-                </div>
-                <div className="flex gap-1.5 px-4 py-2.5 overflow-x-auto">
-                  {["Day 1", "Day 2", "Day 3", "Day 4", "Day 5"].map((d, i) => (
-                    <span
-                      key={d}
-                      className={`text-[10px] rounded-full px-2.5 py-1 shrink-0 font-medium ${
-                        i === 1
-                          ? "bg-[var(--brand-coral)] text-white"
-                          : "bg-secondary text-secondary-foreground"
-                      }`}
-                    >
-                      {d}
-                    </span>
-                  ))}
-                </div>
-                <div className="px-4 pb-4 space-y-2.5">
-                  <p className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1.5">
-                    <FaRegClock className="text-[9px]" /> Tuesday, May 13
-                  </p>
-                  {[
-                    {
-                      time: "08:00",
-                      title: "Breakfast at Cafe Lumia",
-                      sub: "Seminyak",
-                      active: false,
-                    },
-                    {
-                      time: "13:00",
-                      title: "Lunch at Locavore To Go",
-                      sub: "Happening now",
-                      active: true,
-                    },
-                    {
-                      time: "15:00",
-                      title: "Sacred Monkey Forest",
-                      sub: "Padangtegal",
-                      active: false,
-                    },
-                  ].map((row) => (
-                    <div
-                      key={row.title}
-                      className={`rounded-xl px-3 py-2.5 transition-colors ${
-                        row.active
-                          ? "border border-[var(--brand-coral)]/25 bg-[var(--brand-coral)]/10"
-                          : "bg-secondary"
-                      }`}
-                    >
-                      <p className="text-[10px] text-muted-foreground">
-                        {row.time}
-                      </p>
-                      <p className="text-xs font-semibold text-foreground mt-0.5">
-                        {row.title}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {row.sub}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <ul className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+                {FINAL_CTA.notes.map((note) => (
+                  <li
+                    key={note}
+                    className="flex items-center gap-1.5 text-xs text-white/50"
+                  >
+                    <Check className="size-3 text-green-400" />
+                    {note}
+                  </li>
+                ))}
+              </ul>
             </div>
           </FadeIn>
         </div>
       </section>
 
       {/* ===== FOOTER ===== */}
-      <footer className="border-t border-border bg-card/30">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16">
-          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-10">
-            <div className="sm:col-span-2 md:col-span-1">
-              <Link href="/" className="flex items-center shrink-0">
+      <footer className="border-t border-border bg-card">
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+          <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-4">
+            <div>
+              <Link href="/" className="flex items-center">
                 <Image
-                  className="w-auto h-10"
+                  className="h-10 w-auto"
                   src={Logo}
                   alt="SafarAI"
                   priority
                 />
-                <div className="font-bold text-black">SAFAR AI.</div>
+                <span className="font-bold text-foreground">SAFAR AI.</span>
               </Link>
-              <p className="mt-4 text-sm text-muted-foreground max-w-xs">
-                Travel planning, without the chaos.
+              <p className="mt-4 max-w-xs text-sm text-muted-foreground">
+                {FOOTER.tagline}
               </p>
             </div>
-            <div>
-              <p className="text-xs font-bold tracking-widest uppercase text-muted-foreground mb-4">
-                Product
-              </p>
-              <div className="space-y-2.5">
-                {[
-                  { label: "Features", href: "#features" },
-                  { label: "How it works", href: "#how-it-works" },
-                  { label: "Pricing", href: "#" },
-                ].map((link) => (
-                  <Link
-                    key={link.label}
-                    href={link.href}
-                    className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+
+            {FOOTER.columns.map((column) => (
+              <div key={column.title}>
+                <p className="mb-4 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                  {column.title}
+                </p>
+                <div className="space-y-2.5">
+                  {column.links.map((link) => {
+                    const action = link.action;
+                    if (action === "privacy" || action === "terms") {
+                      return (
+                        <button
+                          key={link.label}
+                          type="button"
+                          onClick={() => setLegal(action)}
+                          className="block cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          {link.label}
+                        </button>
+                      );
+                    }
+                    if (action === "email") {
+                      if (!email) return null;
+                      return (
+                        <a
+                          key={link.label}
+                          href={mailHref}
+                          className="block text-sm text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          {link.label}
+                        </a>
+                      );
+                    }
+                    return (
+                      <Link
+                        key={link.label}
+                        href={link.href ?? "#"}
+                        className="block text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        {link.label}
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-            <div>
-              <p className="text-xs font-bold tracking-widest uppercase text-muted-foreground mb-4">
-                Company
-              </p>
-              <div className="space-y-2.5">
-                {[
-                  { label: "About", href: "#" },
-                  { label: "Blog", href: "#" },
-                  { label: "Contact", href: "mailto:zaryabkhan248@gmail.com" },
-                ].map((link) => (
-                  <Link
-                    key={link.label}
-                    href={link.href}
-                    className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-bold tracking-widest uppercase text-muted-foreground mb-4">
-                Legal
-              </p>
-              <div className="space-y-2.5">
-                {["Privacy", "Terms"].map((label) => (
-                  <Link
-                    key={label}
-                    href="#"
-                    className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {label}
-                  </Link>
-                ))}
-              </div>
-            </div>
+            ))}
           </div>
-          <div className="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
+
+          <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-border pt-6 sm:flex-row">
             <p className="text-xs text-muted-foreground">
               &copy; {new Date().getFullYear()} SafarAI. All rights reserved.
             </p>
             <p className="text-xs text-muted-foreground">
-              Engineered by Zaryab Ali
+              {FOOTER.engineeredBy}
             </p>
           </div>
         </div>
       </footer>
+
+      {/* ===== LEGAL POPUP (privacy / terms) ===== */}
+      <AnimatePresence>
+        {legal && (
+          <motion.div
+            key="legal-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:items-center sm:p-6"
+          >
+            <div
+              className="absolute inset-0 bg-foreground/50 backdrop-blur-sm"
+              onClick={() => setLegal(null)}
+              aria-hidden="true"
+            />
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="legal-modal-title"
+              initial={{ opacity: 0, y: 24, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.98 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="relative max-h-[85dvh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-border bg-card p-6 shadow-2xl sm:p-8"
+            >
+              <div className="mb-5 flex items-start justify-between gap-4 border-b border-border pb-4">
+                <div>
+                  <h2
+                    id="legal-modal-title"
+                    className="text-xl font-semibold text-foreground"
+                  >
+                    {LEGAL[legal].title}
+                  </h2>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {LEGAL[legal].updated}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setLegal(null)}
+                  aria-label="Close"
+                  className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {LEGAL[legal].intro}
+              </p>
+
+              <div className="mt-6 space-y-5">
+                {LEGAL[legal].sections.map((section) => (
+                  <section key={section.heading}>
+                    <h3 className="text-sm font-semibold text-foreground">
+                      {section.heading}
+                    </h3>
+                    <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                      {section.body}
+                    </p>
+                  </section>
+                ))}
+              </div>
+
+              {email && (
+                <p className="mt-8 border-t border-border pt-4 text-xs text-muted-foreground">
+                  Questions about this?{" "}
+                  <a
+                    href={mailHref}
+                    className="font-semibold text-[var(--brand-coral)] underline underline-offset-4"
+                  >
+                    Email us
+                  </a>
+                  .
+                </p>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
