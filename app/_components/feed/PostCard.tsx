@@ -27,10 +27,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/loader";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CAPTION_TRUNCATE_LENGTH } from "@/config/feed";
+import { CAPTION_TRUNCATE_LENGTH } from "@/lib/feed/config";
 import { formatTimeAgo } from "@/lib/feed/time-ago";
 import { cn } from "@/lib/utils";
-import type { FeedPost } from "@/types/feed-types";
+import type { FeedPost } from "@/types/app-types";
 
 interface PostCardProps {
   post: FeedPost;
@@ -87,6 +87,8 @@ export default function PostCard({
   const lastTapRef = useRef(0);
 
   const isLongCaption = post.description.length > CAPTION_TRUNCATE_LENGTH;
+  // Same fallback as the profile page: no avatar picked → show initials.
+  const authorInitials = post.author.username.slice(0, 2).toUpperCase();
   const visibleCaption =
     isCaptionExpanded || !isLongCaption
       ? post.description
@@ -152,13 +154,19 @@ export default function PostCard({
       {/* ─── Header: avatar + username (+ owner delete) ─────────────── */}
       <div className="flex items-center gap-3 px-4 py-3">
         <span className="shrink-0 rounded-full bg-brand-gradient p-[2px]">
-          {/* Plain <img>: Cloudinary URLs are not in next.config remotePatterns. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={post.author.avatarUrl}
-            alt={post.author.username}
-            className="h-9 w-9 rounded-full bg-white object-cover"
-          />
+          {post.author.avatarUrl ? (
+            // Plain <img>: the profile avatar is a static /public asset.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={post.author.avatarUrl}
+              alt={post.author.username}
+              className="h-9 w-9 rounded-full bg-white object-cover"
+            />
+          ) : (
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground">
+              {authorInitials}
+            </span>
+          )}
         </span>
 
         <p className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">

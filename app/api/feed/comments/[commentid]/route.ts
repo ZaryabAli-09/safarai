@@ -1,8 +1,9 @@
 import mongoose from "mongoose";
+import { getServerSession } from "next-auth";
 import { NextRequest } from "next/server";
 
+import { authOptions } from "@/config/authOptions";
 import { dbConnect } from "@/config/db";
-import { requireFeedUser } from "@/lib/feed/auth";
 import { response } from "@/lib/helperFunctions";
 import { Comment } from "@/models/Comment";
 import { Post } from "@/models/Post";
@@ -17,8 +18,12 @@ export async function DELETE(
   params: { params: Promise<{ commentid: string }> },
 ) {
   try {
-    const auth = await requireFeedUser();
-    if (!auth.ok) return auth.unauthorized;
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?._id;
+
+    if (!userId) {
+      return response(false, 401, "Please sign in");
+    }
 
     const { commentid } = await params.params;
     if (!mongoose.Types.ObjectId.isValid(commentid)) {
@@ -35,7 +40,7 @@ export async function DELETE(
       return response(false, 404, "Comment not found");
     }
 
-    if (String(comment.authorId) !== auth.userId) {
+    if (String(comment.authorId) !== userId) {
       return response(false, 403, "You can only delete your own comment");
     }
 

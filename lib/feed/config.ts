@@ -1,12 +1,12 @@
-import type { FeedFilters, FeedSort } from "@/types/feed-types";
+import type { FeedFilters, FeedSort } from "@/types/app-types";
 
 /**
- * Single source of truth for every limit, folder and label used by the feed
- * feature (API routes, validation and UI all import from here).
+ * Single source of truth for every limit, label and option used by the feed
+ * feature (schemas, API routes, validation and UI all import from here).
  *
  * This file must stay free of server-only imports — it is imported by client
- * components too, so the Cloudinary SDK lives in `config/cloudinary.ts`
- * instead.
+ * components too, so the Cloudinary SDK (and its folder settings) live in
+ * `config/cloudinary.ts` instead.
  */
 
 /** Posts fetched per feed page (infinite scroll loads one page at a time). */
@@ -32,17 +32,13 @@ export const CAPTION_TRUNCATE_LENGTH = 140;
 export const MAX_COMMENTS_PER_POST = 200;
 
 /**
- * Static, never-uploaded fallback avatar. Anything served from `/public` is
- * never deleted from Cloudinary because it does not exist there.
+ * Where the static profile avatars live.
+ *
+ * The feed does not manage avatars: it renders the same `user.avatar`
+ * filename the profile page stores, so both screens always show the same
+ * picture (and a user without an avatar falls back to their initials).
  */
-export const DEFAULT_AVATAR_PATH = "/assets/pwa-icons/browser-tab-96x96.png";
-
-/** Where the pre-feed profile avatars live (legacy `user.avatar` filenames). */
-export const LEGACY_AVATAR_DIR = "/assets/profile-avatars";
-
-/** Cloudinary folders. */
-export const POST_IMAGES_FOLDER = "safarai/posts-img";
-export const PROFILE_IMAGES_FOLDER = "safarai/profile-img";
+export const PROFILE_AVATARS_DIR = "/assets/profile-avatars";
 
 /** Feed filters exposed in the sidebar and the mobile filter sheet. */
 export const FEED_SORT_OPTIONS: { value: FeedSort; label: string }[] = [

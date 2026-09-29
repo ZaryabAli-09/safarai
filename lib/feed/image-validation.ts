@@ -2,7 +2,7 @@ import {
   MAX_IMAGE_SIZE_BYTES,
   MAX_IMAGE_SIZE_LABEL,
   MAX_IMAGES_PER_POST,
-} from "@/config/feed";
+} from "@/lib/feed/config";
 
 /**
  * Image rules shared by the client (instant feedback) and the API (the check

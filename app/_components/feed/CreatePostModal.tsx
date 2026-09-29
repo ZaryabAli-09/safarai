@@ -12,13 +12,13 @@ import {
   MAX_DESCRIPTION_LENGTH,
   MAX_IMAGES_PER_POST,
   MAX_IMAGE_SIZE_LABEL,
-} from "@/config/feed";
+} from "@/lib/feed/config";
 import {
   formatFileSize,
   validateImageFile,
   validateImageFiles,
 } from "@/lib/feed/image-validation";
-import type { FeedPost } from "@/types/feed-types";
+import type { FeedPost } from "@/types/app-types";
 
 interface CreatePostModalProps {
   open: boolean;
@@ -51,6 +51,18 @@ export function CreatePostModal({
 
   const inputRef = useRef<HTMLInputElement>(null);
   const imagesRef = useRef<SelectedImage[]>([]);
+
+  // Below `md` the composer is a bottom sheet that slides up, exactly like the
+  // mobile filter sheet; wider screens keep the centred dialog.
+  const [isBottomSheet, setIsBottomSheet] = useState(true);
+
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 767px)");
+    const sync = () => setIsBottomSheet(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
 
   useEffect(() => {
     imagesRef.current = images;
@@ -169,23 +181,30 @@ export function CreatePostModal({
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto p-4 sm:items-center">
+        <div className="fixed inset-0 z-[60] flex items-end justify-center md:items-center md:p-4">
           <div
-            className="fixed inset-0 bg-black/60"
+            className="absolute inset-0 bg-black/60"
             onClick={() => {
               if (!isSubmitting) handleClose();
             }}
           />
 
           <motion.div
-            initial={{ opacity: 0, y: 24, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 24, scale: 0.98 }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
+            initial={
+              isBottomSheet ? { y: "100%" } : { opacity: 0, y: 24, scale: 0.98 }
+            }
+            animate={isBottomSheet ? { y: 0 } : { opacity: 1, y: 0, scale: 1 }}
+            exit={
+              isBottomSheet ? { y: "100%" } : { opacity: 0, y: 24, scale: 0.98 }
+            }
+            transition={{
+              duration: isBottomSheet ? 0.28 : 0.22,
+              ease: "easeOut",
+            }}
             role="dialog"
             aria-modal="true"
             aria-label="Create a new post"
-            className="relative my-8 w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl"
+            className="relative max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl md:max-h-[88vh] md:rounded-2xl"
           >
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-foreground">

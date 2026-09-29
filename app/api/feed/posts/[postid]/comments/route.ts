@@ -1,9 +1,10 @@
 import mongoose from "mongoose";
+import { getServerSession } from "next-auth";
 import { NextRequest } from "next/server";
 
+import { authOptions } from "@/config/authOptions";
 import { dbConnect } from "@/config/db";
-import { MAX_COMMENT_LENGTH, MAX_COMMENTS_PER_POST } from "@/config/feed";
-import { requireFeedUser } from "@/lib/feed/auth";
+import { MAX_COMMENT_LENGTH, MAX_COMMENTS_PER_POST } from "@/lib/feed/config";
 import { FEED_POST_AUTHOR_FIELDS } from "@/lib/feed/feed-queries";
 import {
   toFeedCommentItem,
@@ -23,8 +24,12 @@ export async function GET(
   params: { params: Promise<{ postid: string }> },
 ) {
   try {
-    const auth = await requireFeedUser();
-    if (!auth.ok) return auth.unauthorized;
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?._id;
+
+    if (!userId) {
+      return response(false, 401, "Please sign in");
+    }
 
     const { postid } = await params.params;
     if (!mongoose.Types.ObjectId.isValid(postid)) {
@@ -51,7 +56,7 @@ export async function GET(
       comments.map((comment) =>
         toFeedCommentItem(
           comment as unknown as PopulatedCommentInput,
-          auth.userId,
+          userId,
         ),
       ),
     );
@@ -70,8 +75,12 @@ export async function POST(
   params: { params: Promise<{ postid: string }> },
 ) {
   try {
-    const auth = await requireFeedUser();
-    if (!auth.ok) return auth.unauthorized;
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?._id;
+
+    if (!userId) {
+      return response(false, 401, "Please sign in");
+    }
 
     const { postid } = await params.params;
     if (!mongoose.Types.ObjectId.isValid(postid)) {
@@ -97,7 +106,7 @@ export async function POST(
 
     const comment = await Comment.create({
       postId: postid,
-      authorId: auth.userId,
+      authorId: userId,
       text,
     });
 
@@ -123,7 +132,7 @@ export async function POST(
       true,
       201,
       "Comment added successfully",
-      toFeedCommentItem(payload, auth.userId),
+      toFeedCommentItem(payload, userId),
     );
   } catch (error) {
     console.error("Add comment error:", error);

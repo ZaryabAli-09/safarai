@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/loader";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MAX_COMMENTS_PER_POST, MAX_COMMENT_LENGTH } from "@/config/feed";
+import { MAX_COMMENTS_PER_POST, MAX_COMMENT_LENGTH } from "@/lib/feed/config";
 import { formatTimeAgo } from "@/lib/feed/time-ago";
-import type { FeedCommentItem } from "@/types/feed-types";
+import type { FeedCommentItem } from "@/types/app-types";
 
 interface CommentsPanelProps {
   postId: string;
@@ -147,12 +147,18 @@ export function CommentsPanel({
           {comments.map((comment) => (
             <li key={comment._id} className="flex gap-2.5">
               <span className="shrink-0 self-start rounded-full bg-brand-gradient p-[1.5px]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={comment.author.avatarUrl}
-                  alt={comment.author.username}
-                  className="h-7 w-7 rounded-full bg-white object-cover"
-                />
+                {comment.author.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={comment.author.avatarUrl}
+                    alt={comment.author.username}
+                    className="h-7 w-7 rounded-full bg-white object-cover"
+                  />
+                ) : (
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-foreground">
+                    {comment.author.username.slice(0, 2).toUpperCase()}
+                  </span>
+                )}
               </span>
 
               <div className="min-w-0 flex-1">

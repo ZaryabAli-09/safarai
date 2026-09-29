@@ -2,12 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ImagePlus, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
+import {
+  ImagePlus,
+  RotateCcw,
+  Search,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FEED_SORT_OPTIONS } from "@/config/feed";
-import type { FeedFilters, FeedSort } from "@/types/feed-types";
+import { FEED_SORT_OPTIONS } from "@/lib/feed/config";
+import type { FeedFilters, FeedSort } from "@/types/app-types";
 
 interface MobileFeedControlsProps {
   filters: FeedFilters;
@@ -77,7 +83,7 @@ export function MobileFeedControls({
           <button
             onClick={onCreatePost}
             aria-label="Create a new post"
-            className="flex items-center justify-center w-10 h-10 rounded-lg bg-brand-gradient text-white shadow-md active:scale-95 transition-transform"
+            className="flex items-center justify-center w-10 h-10 rounded-lg border border-border shadow-md active:scale-95 transition-transform"
           >
             <ImagePlus className="w-4 h-4" />
           </button>

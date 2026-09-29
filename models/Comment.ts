@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
-import { MAX_COMMENT_LENGTH } from "@/config/feed";
-import type { IComment } from "@/types/feed-types";
+import { MAX_COMMENT_LENGTH } from "@/lib/feed/config";
+import type { IComment } from "@/types/app-types";
 
 export type { IComment };
 

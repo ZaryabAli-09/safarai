@@ -1,4 +1,4 @@
-import type { FeedSort, IPost } from "@/types/feed-types";
+import type { FeedSort, IPost } from "@/types/app-types";
 
 /**
  * Query/projection builders for the feed list.
@@ -16,8 +16,11 @@ import type { FeedSort, IPost } from "@/types/feed-types";
 export const FEED_POST_LIST_PROJECTION =
   "description images likeCount commentCount authorId createdAt";
 
-/** Author fields embedded in every feed payload. */
-export const FEED_POST_AUTHOR_FIELDS = "username avatarUrl avatar";
+/**
+ * Author fields embedded in every feed payload. `avatar` is the same filename
+ * the profile page stores, so the feed shows the user's chosen picture.
+ */
+export const FEED_POST_AUTHOR_FIELDS = "username avatar";
 
 /** Escapes user input so it is safe inside a regex literal. */
 export function escapeRegex(value: string): string {

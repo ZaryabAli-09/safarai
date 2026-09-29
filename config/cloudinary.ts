@@ -1,9 +1,7 @@
 import { v2 as cloudinary, type UploadApiResponse } from "cloudinary";
 
-import { POST_IMAGES_FOLDER } from "@/config/feed";
-
 /**
- * Cloudinary integration for the feed feature.
+ * Cloudinary integration for the feed's post images.
  *
  * Credentials come from `.env` (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`,
  * `CLOUDINARY_API_SECRET`) — they are read lazily so importing this module
@@ -16,14 +14,12 @@ interface CloudinaryCredentials {
   api_secret: string;
 }
 
+/** Folder every feed post image is uploaded to. */
+export const POST_IMAGES_FOLDER = "safarai/posts-img";
+
 /** Image transformations applied on upload (never cropping, only limiting). */
 export const POST_IMAGE_TRANSFORMATION = [
   { width: 1440, height: 1440, crop: "limit", quality: "auto" },
-];
-
-/** Square, face-aware avatar crop keeps the profile picture consistent. */
-export const AVATAR_TRANSFORMATION = [
-  { width: 400, height: 400, crop: "fill", gravity: "face", quality: "auto" },
 ];
 
 const ALLOWED_IMAGE_FORMATS = [
@@ -77,21 +73,17 @@ export interface UploadedImage {
  * Keeping the public id on every record is what makes safe deletion possible —
  * Cloudinary assets can only be removed by id, never by URL.
  */
-export async function uploadImageFile(
-  file: File,
-  folder: string = POST_IMAGES_FOLDER,
-  transformation = POST_IMAGE_TRANSFORMATION,
-): Promise<UploadedImage> {
+export async function uploadImageFile(file: File): Promise<UploadedImage> {
   const sdk = getCloudinary();
   const buffer = Buffer.from(await file.arrayBuffer());
 
   const result = await new Promise<UploadApiResponse>((resolve, reject) => {
     const stream = sdk.uploader.upload_stream(
       {
-        folder,
+        folder: POST_IMAGES_FOLDER,
         resource_type: "image",
         allowed_formats: ALLOWED_IMAGE_FORMATS,
-        transformation,
+        transformation: POST_IMAGE_TRANSFORMATION,
         // Deterministic, human readable asset names (Cloudinary appends a
         // short random suffix, so collisions are impossible).
         use_filename: true,

@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input";
 import {
   DEFAULT_FEED_FILTERS,
   FEED_SORT_OPTIONS as SORT_OPTIONS,
-} from "@/config/feed";
-import type { FeedFilters, FeedSort } from "@/types/feed-types";
+} from "@/lib/feed/config";
+import type { FeedFilters, FeedSort } from "@/types/app-types";
 
 interface FeedSidebarProps {
   filters: FeedFilters;

@@ -1,10 +1,10 @@
-import { resolveAvatarUrl } from "@/lib/feed/avatar";
+import { PROFILE_AVATARS_DIR } from "@/lib/feed/config";
 import type {
   FeedAuthor,
   FeedCommentItem,
   FeedPost,
   IPostImage,
-} from "@/types/feed-types";
+} from "@/types/app-types";
 
 /**
  * Turns lean Mongoose documents into the exact payloads the feed UI expects.
@@ -19,7 +19,6 @@ import type {
 export interface PopulatedAuthorInput {
   _id: unknown;
   username?: string | null;
-  avatarUrl?: string | null;
   avatar?: string | null;
 }
 
@@ -46,8 +45,20 @@ export interface PopulatedCommentInput {
 const UNKNOWN_AUTHOR: FeedAuthor = {
   _id: "",
   username: "SafarAI traveller",
-  avatarUrl: resolveAvatarUrl(null),
+  avatarUrl: "",
 };
+
+/**
+ * The feed never uploads or stores avatars — it renders the same `user.avatar`
+ * filename the profile page uses, so both screens always show the same picture.
+ * An empty result means "no avatar chosen": components show initials instead.
+ */
+function resolveAvatarUrl(avatar?: string | null): string {
+  const value = avatar?.trim();
+  if (!value) return "";
+  if (value.startsWith("http") || value.startsWith("/")) return value;
+  return `${PROFILE_AVATARS_DIR}/${value}`;
+}
 
 /** ObjectId (or populated document) → string id. */
 function toId(value: unknown): string {
@@ -76,7 +87,7 @@ export function toFeedAuthor(
   return {
     _id: toId(author._id),
     username: author.username?.trim() || UNKNOWN_AUTHOR.username,
-    avatarUrl: resolveAvatarUrl(author),
+    avatarUrl: resolveAvatarUrl(author.avatar),
   };
 }
 

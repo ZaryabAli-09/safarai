@@ -1,9 +1,10 @@
 import mongoose from "mongoose";
+import { getServerSession } from "next-auth";
 import { NextRequest } from "next/server";
 
+import { authOptions } from "@/config/authOptions";
 import { deleteImages } from "@/config/cloudinary";
 import { dbConnect } from "@/config/db";
-import { requireFeedUser } from "@/lib/feed/auth";
 import {
   FEED_POST_AUTHOR_FIELDS,
   FEED_POST_LIST_PROJECTION,
@@ -20,8 +21,12 @@ export async function GET(
   params: { params: Promise<{ postid: string }> },
 ) {
   try {
-    const auth = await requireFeedUser();
-    if (!auth.ok) return auth.unauthorized;
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?._id;
+
+    if (!userId) {
+      return response(false, 401, "Please sign in");
+    }
 
     const { postid } = await params.params;
     if (!mongoose.Types.ObjectId.isValid(postid)) {
@@ -39,14 +44,14 @@ export async function GET(
       return response(false, 404, "Post not found");
     }
 
-    const likedByMe = await Post.exists({ _id: postid, likes: auth.userId });
+    const likedByMe = await Post.exists({ _id: postid, likes: userId });
     const likedPostIds = new Set(likedByMe ? [postid] : []);
 
     return response(
       true,
       200,
       "Post retrieved successfully",
-      toFeedPost(post as unknown as PopulatedPostInput, auth.userId, likedPostIds),
+      toFeedPost(post as unknown as PopulatedPostInput, userId, likedPostIds),
     );
   } catch (error) {
     console.error("Get post error:", error);
@@ -65,8 +70,12 @@ export async function DELETE(
   params: { params: Promise<{ postid: string }> },
 ) {
   try {
-    const auth = await requireFeedUser();
-    if (!auth.ok) return auth.unauthorized;
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?._id;
+
+    if (!userId) {
+      return response(false, 401, "Please sign in");
+    }
 
     const { postid } = await params.params;
     if (!mongoose.Types.ObjectId.isValid(postid)) {
@@ -80,7 +89,7 @@ export async function DELETE(
       return response(false, 404, "Post not found");
     }
 
-    if (String(post.authorId) !== auth.userId) {
+    if (String(post.authorId) !== userId) {
       return response(false, 403, "You can only delete your own post");
     }
 

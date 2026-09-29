@@ -1,15 +1,15 @@
 import mongoose from "mongoose";
+import { getServerSession } from "next-auth";
 import { NextRequest } from "next/server";
 
+import { authOptions } from "@/config/authOptions";
 import { deleteImagesSafely, uploadImageFile } from "@/config/cloudinary";
 import { dbConnect } from "@/config/db";
 import {
   FEED_MAX_PAGE_SIZE,
   FEED_PAGE_SIZE,
   MAX_DESCRIPTION_LENGTH,
-  POST_IMAGES_FOLDER,
-} from "@/config/feed";
-import { requireFeedUser } from "@/lib/feed/auth";
+} from "@/lib/feed/config";
 import {
   FEED_POST_AUTHOR_FIELDS,
   FEED_POST_LIST_PROJECTION,
@@ -22,7 +22,7 @@ import { toFeedPost, type PopulatedPostInput } from "@/lib/feed/post-serializers
 import { response } from "@/lib/helperFunctions";
 import { sanitizeString } from "@/lib/sanitization";
 import { Post } from "@/models/Post";
-import type { FeedSort, IPostImage } from "@/types/feed-types";
+import type { FeedSort, IPostImage } from "@/types/app-types";
 
 /**
  * GET /api/feed/posts
@@ -32,8 +32,12 @@ import type { FeedSort, IPostImage } from "@/types/feed-types";
  */
 export async function GET(req: NextRequest) {
   try {
-    const auth = await requireFeedUser();
-    if (!auth.ok) return auth.unauthorized;
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?._id;
+
+    if (!userId) {
+      return response(false, 401, "Please sign in");
+    }
 
     const { searchParams } = new URL(req.url);
     const page = Math.max(
@@ -87,7 +91,7 @@ export async function GET(req: NextRequest) {
     if (postIds.length > 0) {
       const liked = await Post.find({
         _id: { $in: postIds },
-        likes: auth.userId,
+        likes: userId,
       })
         .select("_id")
         .lean();
@@ -97,7 +101,7 @@ export async function GET(req: NextRequest) {
     const posts = rawPosts.map((post) =>
       toFeedPost(
         post as unknown as PopulatedPostInput,
-        auth.userId,
+        userId,
         likedPostIds,
       ),
     );
@@ -128,8 +132,12 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const auth = await requireFeedUser();
-    if (!auth.ok) return auth.unauthorized;
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?._id;
+
+    if (!userId) {
+      return response(false, 401, "Please sign in");
+    }
 
     const formData = await req.formData().catch(() => null);
     if (!formData) {
@@ -161,11 +169,11 @@ export async function POST(req: NextRequest) {
 
     try {
       for (const image of images) {
-        uploaded.push(await uploadImageFile(image, POST_IMAGES_FOLDER));
+        uploaded.push(await uploadImageFile(image));
       }
 
       const created = await Post.create({
-        authorId: auth.userId,
+        authorId: userId,
         description,
         images: uploaded,
       });
@@ -182,7 +190,7 @@ export async function POST(req: NextRequest) {
         true,
         201,
         "Post created successfully",
-        toFeedPost(payload, auth.userId),
+        toFeedPost(payload, userId),
       );
     } catch (error) {
       // The post never made it to the database, so its images must not stay.

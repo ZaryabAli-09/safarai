@@ -17,8 +17,8 @@ import {
   DEFAULT_FEED_FILTERS,
   FEED_PAGE_SIZE,
   FEED_SKELETON_COUNT,
-} from "@/config/feed";
-import type { FeedFilters, FeedPagination, FeedPost } from "@/types/feed-types";
+} from "@/lib/feed/config";
+import type { FeedFilters, FeedPagination, FeedPost } from "@/types/app-types";
 
 export default function FeedPage() {
   const { status } = useSession();

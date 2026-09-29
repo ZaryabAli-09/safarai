@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
-import { MAX_DESCRIPTION_LENGTH } from "@/config/feed";
-import type { IPost, IPostImage } from "@/types/feed-types";
+import { MAX_DESCRIPTION_LENGTH } from "@/lib/feed/config";
+import type { IPost, IPostImage } from "@/types/app-types";
 
 export type { IPost, IPostImage };
 
