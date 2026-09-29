@@ -65,8 +65,6 @@ export const NAV_LINKS: NavLink[] = [
   { label: "Contact", href: "#contact" },
 ];
 
-export const NAV_AUTH_LINK: NavLink = { label: "Sign in", href: "/sign-in" };
-
 export const NAV_CTA_LINK: NavLink = {
   label: "Start planning free",
   href: "/app",
@@ -77,7 +75,7 @@ export const NAV_CTA_LINK: NavLink = {
 /* -------------------------------------------------------------------------- */
 
 export const HERO = {
-  badge: "Now live. Free AI trip planner.",
+  badge: "Your free AI travel companion is live.",
   titleLine1: "Plan your next trip",
   titleAccent: "in under a minute.",
   subtitle:
@@ -509,9 +507,24 @@ export const TRIP_PREVIEW = {
     { n: 5, title: "Flying home", meta: "2 stops, May 16" },
   ],
   tools: [
-    { icon: "budget", tint: "coral" as Tint, label: "Budget breakdown", meta: "$1,240 total" },
-    { icon: "packing", tint: "orange" as Tint, label: "Packing list", meta: "8 of 22 packed" },
-    { icon: "tips", tint: "yellow" as Tint, label: "Travel tips", meta: "12 saved" },
+    {
+      icon: "budget",
+      tint: "coral" as Tint,
+      label: "Budget breakdown",
+      meta: "$1,240 total",
+    },
+    {
+      icon: "packing",
+      tint: "orange" as Tint,
+      label: "Packing list",
+      meta: "8 of 22 packed",
+    },
+    {
+      icon: "tips",
+      tint: "yellow" as Tint,
+      label: "Travel tips",
+      meta: "12 saved",
+    },
   ],
   day: {
     heading: "Day 2 of 5",

@@ -12,23 +12,18 @@ import { AnimatePresence, motion } from "framer-motion";
 import { FaBars, FaTimes } from "react-icons/fa";
 import Logo from "@/public/assets/logo/logo.png";
 import { Button } from "@/components/ui/button";
-import { NAV_AUTH_LINK, NAV_CTA_LINK, NAV_LINKS } from "@/lib/landing/content";
+import { NAV_CTA_LINK, NAV_LINKS } from "@/lib/landing/content";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/85 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/75 backdrop-blur-xl">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex shrink-0 items-center">
-            <Image
-              className="h-10 w-auto"
-              src={Logo}
-              alt="SafarAI"
-              priority
-            />
+            <Image className="h-10 w-auto" src={Logo} alt="SafarAI" priority />
             <span className="font-bold text-foreground">SAFAR AI.</span>
           </Link>
 
@@ -38,7 +33,7 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
+                className="rounded-full px-4 py-2 text-sm  text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
               >
                 {link.label}
               </Link>
@@ -49,15 +44,6 @@ export function Navbar() {
           <div className="hidden items-center gap-2 lg:flex">
             <Button
               asChild
-              variant="ghost"
-              size="sm"
-              className="rounded-full px-4 font-semibold text-muted-foreground hover:text-foreground"
-            >
-              <Link href={NAV_AUTH_LINK.href}>{NAV_AUTH_LINK.label}</Link>
-            </Button>
-            <Button
-              asChild
-              size="sm"
               className="rounded-full px-5 font-semibold shadow-sm transition-all hover:shadow-md"
             >
               <Link href={NAV_CTA_LINK.href}>{NAV_CTA_LINK.label}</Link>
@@ -95,18 +81,12 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setOpen(false)}
-                  className="rounded-lg px-3 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
+                  className="rounded-lg px-3 py-3 text-sm  text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
                 >
                   {link.label}
                 </Link>
               ))}
-              <Link
-                href={NAV_AUTH_LINK.href}
-                onClick={() => setOpen(false)}
-                className="rounded-lg px-3 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
-              >
-                {NAV_AUTH_LINK.label}
-              </Link>
+
               <Button
                 asChild
                 className="mt-3 w-full rounded-full font-semibold"
@@ -121,4 +101,3 @@ export function Navbar() {
     </header>
   );
 }
-
