@@ -1,169 +1,121 @@
 # Safar AI
 
-AI-powered travel planner that generates personalized, editable itineraries in seconds. Users describe their destination, duration, interests and budget, and Safar AI creates a ready-to-use trip with locations, images, estimated times, and weather — all enriched and saved for later editing or sharing.
+AI-powered travel planner that turns a few trip preferences into a complete,
+editable itinerary in seconds. Describe your destination, dates, budget and
+interests, and Safar AI builds a day-by-day plan with activities, images,
+weather and maps — ready to review, adjust and share.
 
 ---
 
-## Key features
+## Features
 
-- AI-generated itineraries tailored to user preferences
-- Automatic JSON extraction & normalization of AI output
-- Geocoding of venues and fallback strategies for robust coordinates
-- Automatic image lookup (Wikipedia thumbnails) for venues
-- Weather lookup for trip dates (first activity coordinates)
-- Editable itineraries with real-time AI re-generation when the user updates a plan
-- Authentication (NextAuth) and email notifications (nodemailer)
-- MongoDB persistence via mongoose
-
----
-
-## Stack
-
-- Language(s): TypeScript
-- Framework / runtime: Next.js (App Router, Next 15) + React 19
-- Notable libraries/services:
-  - @google/generative-ai (AI generation)
-  - mongoose (MongoDB)
-  - next-auth (authentication)
-  - tailwindcss (styling)
-  - nodemailer (email)
-  - date-fns, framer-motion, radix-ui (UX / utility)
+- **AI-generated itineraries** — day-by-day plans tailored to destination,
+  dates, travelers, pace, style, interests and budget, with automatic
+  fallback across models.
+- **Editing with AI re-generation** — tweak any activity and let the AI
+  suggest replacements that fit the rest of the plan.
+- **Trip enrichment** — geocoding (Nominatim), venue images (Wikipedia),
+  daily weather (Open-Meteo) and live currency conversion with offline
+  fallback rates.
+- **Authentication** — email/password with verification and password reset,
+  plus Google sign-in (NextAuth).
+- **Community feed** — share posts with images (Cloudinary), comments and
+  likes.
+- **Profiles & dashboard** — manage your account and saved trips.
+- **SEO & PWA** — centralized metadata, sitemap, robots, structured data and
+  generated app icons.
 
 ---
 
-## How it's organized
+## Tech stack
 
-Top-level layout (annotated):
+| Layer      | Choice                                             |
+| ---------- | -------------------------------------------------- |
+| Framework  | Next.js 15 (App Router) + React 19                 |
+| Language   | TypeScript                                         |
+| Styling    | Tailwind CSS 4, Radix UI, Framer Motion            |
+| Database   | MongoDB via Mongoose                               |
+| Auth       | NextAuth (credentials + Google OAuth)              |
+| AI         | OpenRouter chat completions (multi-model fallback) |
+| Email      | Nodemailer (Gmail SMTP)                            |
+| Validation | Zod                                                |
+
+---
+
+## Project structure
 
 ```
-README.md                 Project readme (this file)
-package.json              npm scripts + dependencies
-next.config.ts            Next.js configuration
-seo.config.ts             Central SEO/PWA metadata (titles, OG, JSON-LD, sitemap entries)
-tsconfig.json             TypeScript config
-.eslint.config.mjs        ESLint config
-postcss.config.mjs        PostCSS / Tailwind integration
-scripts/
-  generate-icons.mjs      Regenerates favicon/icons/og-image from the navbar logo
-
-app/                      Next.js app directory (App Router)
-  _components/
-    landing/              Landing page components (Hero, steps)
-    navigation/           Navbar and navigation components
-    seo/                  JsonLd helper for schema.org structured data
-  (client)/app/           Client-side app entry (redirects)
-  page.tsx                Root landing page (imports landing + navbar)
-  robots.ts               Generates /robots.txt
-  sitemap.ts              Generates /sitemap.xml
-  favicon.ico             Favicon (generated from the navbar logo)
-
-components/               Reusable UI components (project-specific)
-config/                   Runtime / infra configuration files (env-aware)
-lib/                      App helpers & services
-  landing/content.ts      Landing page copy & data (nav, hero, features, FAQ, legal)
-  helperFunctions.ts
-  sanitization.ts         AI response JSON extraction & sanitization logic
-  utils.ts
-  SessionProviderWrapper.tsx
-  services/               API integrations and service helpers
-
-models/                   Mongoose models (persistence layer)
-types/                    Type definitions used throughout the app
-public/                   Static assets (logos, destination photos, generated PWA icons)
+app/
+  _components/        Landing, navigation, forms, feed and SEO components
+  (client)/           Client-rendered screens: auth, app, admin, feed, trips
+  api/                Route handlers: auth, trip, feed, profile, geocode, fx
+  page.tsx            Landing page
+  robots.ts, sitemap.ts
+components/           Reusable UI components
+config/               Infra config: ai, auth, db, email, cloudinary,
+                      location, weather, images
+lib/
+  services/           AI pipeline, geocoding, images, weather, FX
+  landing/            Landing page content
+  feed/               Feed queries and serializers
+  emailTemplates/     Verification & password-reset emails
+  sanitization.ts     AI response JSON extraction & cleanup
+models/               Mongoose models (User, Trip, Post, Comment)
+types/                Shared type definitions
+hooks/                Shared React hooks
+public/               Static assets and PWA icons
+seo.config.ts         Site URL, brand metadata and per-route SEO table
+middleware.ts         Auth-aware route protection
 ```
 
-How it fits together (runtime shape):
-- The Next.js App Router serves the landing and the app UI. Users create trips via the UI which triggers an AI generation request (server-side).
-- AI response is sanitized & JSON-extracted (lib/sanitization.ts), normalized (venue/city/country), then enriched: geocoding (Nominatim or similar), image lookup (Wikipedia), and weather (Open‑Meteo).
-- The enriched trip is stored in MongoDB through mongoose models and surfaced to the UI for display and editing.
+---
+
+## How it works
+
+1. The user creates a trip: destination(s), dates, travelers, budget,
+   interests and pace.
+2. The server prompts the AI (OpenRouter) for a JSON-only itinerary and
+   extracts/normalizes the JSON from the response, robust to stray text.
+3. Each location is geocoded to coordinates (venue-level first, city-level
+   fallback).
+4. Activities are enriched with images (Wikipedia), weather for the trip
+   dates (Open-Meteo) and converted budget figures (live FX rates).
+5. The finished trip is stored in MongoDB and shown in the UI, where it can
+   be edited — activity changes are re-generated by the AI.
 
 ---
 
-## How it works (core flow)
+## Getting started
 
-1. User creates a trip: destination, duration, budget, interests.
-2. AI generates an itinerary (AI returns text with JSON payload describing activities).
-3. Extract & sanitize JSON from AI response (robust to formatting/text noise).
-4. Normalize activities into structured fields (venue, city, country).
-5. Geocode each location → lat/lon (primary: "venue, city, country", fallback: "city, country").
-6. Fetch images (Wikipedia thumbnail) for venue; fallback to city image.
-7. Get weather for trip dates from a weather API (first activity coordinates used).
-8. Save the fully enriched trip to the database.
-9. Display itinerary in UI with images, weather, and map links.
+**Prerequisites**
 
-The flow and decisions are implemented in the repository helper files (see lib/ and safar ai flow outline).
+- Node.js 20 (LTS recommended)
+- npm
+- A MongoDB database (local or hosted)
 
----
-
-## Getting started (local development)
-
-Prerequisites
-- Node.js (v18+ recommended; project aligns with Node 20 typings)
-- npm (or yarn / pnpm)
-- MongoDB (local or hosted)
-
-Install & run locally:
+**Install and run**
 
 ```bash
-# install dependencies
 npm install
-
-# development server (uses turborpack flag shown in package.json)
-npm run dev
-# → opens at http://localhost:3000
+npm run dev    # http://localhost:3000
 ```
 
-Available scripts (from package.json)
-- dev: next dev --turbopack
-- build: next build
-- start: next start
-- lint: next lint
+**Available scripts**
+
+| Script          | Command               | Description            |
+| --------------- | --------------------- | ---------------------- |
+| `npm run dev`   | `next dev --turbopack` | Start dev server       |
+| `npm run build` | `next build`          | Production build       |
+| `npm run start` | `next start`          | Serve production build |
+| `npm run lint`  | `next lint`           | Run ESLint             |
 
 ---
 
-## SEO, branding and PWA assets
+## Environment variables
 
-**One place for all page metadata.** `seo.config.ts` holds the site URL (from
-`NEXT_PUBLIC_BASE_URL`), the brand/PWA colours, the icon paths and a `PAGE_SEO`
-table with the title, description, keywords, canonical path and index policy for
-every route. Pages spread those values in with `buildMetadata("signIn")`, and the
-same table feeds `app/sitemap.ts` (routes flagged `sitemap: true`) and
-`app/robots.ts` (routes flagged `noindex` plus `ROBOTS_DISALLOW`). Client-rendered
-screens under `app/(client)/app/*` get their metadata from the small server
-`layout.tsx` files next to them.
+Create a `.env.local` in the project root:
 
-Structured data is rendered by `app/_components/seo/JsonLd.tsx`: `Organization`
-and `WebSite` site-wide (which tell Google your official site name and logo for
-search results), plus `SoftwareApplication` on the landing page (which declares
-the app category and free tier). Low-value markup (`FAQPage`, `BreadcrumbList`,
-`WebPage`) was omitted to keep the server output lean.
-
-**Brand colours.** Interactive design tokens in `app/globals.css` (`--primary`,
-`--ring`, `--accent`, `--sidebar-*`, `--chart-*`) point at the brand coral, so
-focus rings, hovers and primary surfaces are on-brand without per-component
-overrides. The gradient itself is exposed as `bg-brand-gradient`,
-`bg-brand-gradient-diagonal`, `bg-brand-gradient-muted` and `text-brand-gradient`
-utilities, and the shared `Button` default variant uses it.
-
-**Icons and social card.** Pre-rendered PNG/ICO/JPG assets derived from the
-vector-drawn logo pin mark are structured under `public/assets/pwa-icons/`:
-- `app/favicon.ico` (multi-resolution 16/32/48 browser tab icon)
-- `public/assets/pwa-icons/browser-tab-96x96.png` (high-DPI tab icon)
-- `public/assets/pwa-icons/apple-homescreen-180x180.png` (iOS Safari home screen icon)
-- `public/assets/pwa-icons/pwa-android-192x192.png` (Android launcher icon)
-- `public/assets/pwa-icons/pwa-splash-512x512.png` (PWA splash screen icon)
-- `public/assets/pwa-icons/pwa-maskable-512x512.png` (Android adaptive maskable icon)
-- `public/assets/pwa-icons/social-share-og-1200x630.jpg` (OpenGraph/Twitter sharing banner)
-
-`public/manifest.json`, `public/sw.js`, and `seo.config.ts` mirror these exact asset locations.
-
----
-
-## Required environment variables
-
-Create a `.env.local` in the project root with at least the following entries (names are suggestions based on code & dependencies — adjust to match your deployment):
-
-```
+```bash
 # Database
 MONGODB_URI="mongodb+srv://<user>:<pass>@cluster.example.mongodb.net/safarai"
 
@@ -171,106 +123,66 @@ MONGODB_URI="mongodb+srv://<user>:<pass>@cluster.example.mongodb.net/safarai"
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="<a long random value>"
 
-# Email (nodemailer)
-SMTP_HOST=smtp.example.com
-SMTP_PORT=587
-SMTP_USER=username
-SMTP_PASS=password
-EMAIL_FROM="no-reply@safar.ai"
+# Google OAuth (sign-in with Google)
+OAUTH_CLIENT_ID="<google oauth client id>"
+OAUTH_CLIENT_SECRET="<google oauth client secret>"
 
-# Google / AI credentials
-# Either a key or set GOOGLE_APPLICATION_CREDENTIALS to a JSON key file
-GOOGLE_API_KEY="<key or leave unset if using service account>"
-# or
-GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-account.json"
+# Email — Gmail account and app password (verification, password reset)
+GMAIL_SMTP_EMAIL="you@gmail.com"
+GMAIL_SMTP_APP_PASSWORD="<gmail app password>"
 
-# Optional 3rd-party services referenced by flow:
-# NOMINATIM_USER_AGENT="safar-ai-your-email@example.com"
-# OPEN_METEO_BASE_URL="https://api.open-meteo.com"
+# AI itinerary generation (OpenRouter)
+OPENROUTER_API_KEY="<openrouter api key>"
 
-# Cloudinary (feed: post images)
+# Site URL — used for SEO metadata and links in emails
+NEXT_PUBLIC_BASE_URL="http://localhost:3000"
+
+# Cloudinary — feed image uploads
 CLOUDINARY_CLOUD_NAME="<cloud name>"
 CLOUDINARY_API_KEY="<api key>"
 CLOUDINARY_API_SECRET="<api secret>"
 
-# Contact address shown on the landing page (contact section, FAQ, footer mailto links)
-COMPANY_EMAIL="hello@safar.ai"
+# Contact address shown on the landing page
+COMPANY_EMAIL="hello@example.com"
 ```
 
-Notes:
-- Double-check which variable names the application actually reads (search for process.env.* in server code).
-- Do not commit secrets to version control.
+> Never commit secrets. Keep `.env.local` out of version control (already
+> covered by `.gitignore`).
 
 ---
 
 ## Deployment
 
-The project is compatible with Vercel (Next.js first-class). Common steps:
-1. Connect the repository to Vercel.
-2. Add environment variables in Vercel dashboard (same names as in .env.local).
-3. Deploy; Vercel will run `npm run build` and `npm start`.
+The project deploys on Vercel out of the box:
 
-If hosting elsewhere, ensure server-side environment variables and MongoDB access are configured.
+1. Import the repository into Vercel.
+2. Add the environment variables above (set `NEXT_PUBLIC_BASE_URL` to your
+   production URL).
+3. Deploy — Vercel runs `npm run build` and serves the app.
 
-### Vercel Web Analytics
-
-Visitor and page-view tracking uses `@vercel/analytics`: the `<Analytics />` component
-lives in `app/layout.tsx`, so it follows both initial loads and client-side route
-changes.
-
-1. In the Vercel dashboard, open Analytics for the project and click Enable. This
-   adds the `/_vercel/insights/*` routes on the next deployment.
-2. Deploy (`vercel --prod`, or push to the connected Git branch).
-3. Load the deployed site and check DevTools → Network for a request to
-   `/<unique-path>/view`; the data then shows up under Analytics in the dashboard.
-
-Notes:
-- No environment variables are required — the script is served by Vercel itself.
-- Off Vercel the component is inert. In `next dev` it loads Vercel's debug script and
-  logs to the console instead of recording data (pass `mode="production"` / `"development"`
-  to `<Analytics />` to force a specific behaviour).
-- Custom events (`track()` from `@vercel/analytics`) require a Pro or Enterprise plan.
-
----
-
-## Development notes & areas to check
-
-- AI pipeline: make sure the generative AI credentials are configured and that rate limits are monitored.
-- JSON extraction: sanitization logic is in lib/sanitization.ts — test with a range of AI outputs.
-- Geocoding: code falls back to city-level queries when venue-level geocoding fails.
-- Images: Wikipedia thumbnails are used where available; images are lazy-loaded in the UI.
-- Authentication & emails: next-auth + nodemailer used for auth flows and notifications — requires working SMTP and NEXTAUTH_SECRET.
+For other hosts, ensure the same environment variables are set and that
+MongoDB is reachable from the server.
 
 ---
 
 ## Contributing
 
-1. Fork the repository.
-2. Create a feature branch: git checkout -b feat/my-change
-3. Commit changes and open a PR with a clear description of the change.
-4. Follow the existing code style (TypeScript + Tailwind). Run linters before submitting.
-
-If you plan to work on an area not obvious from the code:
-- Check lib/ (AI + sanitization), models/ (DB schema), and app/_components for UI behavior.
-- Open an issue describing the change or feature if it is non-trivial.
-
----
-
-## Troubleshooting
-
-- App not starting: ensure MONGODB_URI is reachable and NEXTAUTH_SECRET is set.
-- AI generation failures: confirm Google generative AI credentials and that the project has quota.
-- Geocoding/image/weather failures: check external API availability and any required API keys.
+1. Fork the repository and create a feature branch:
+   `git checkout -b feat/my-change`
+2. Make your changes following the existing TypeScript + Tailwind style.
+3. Run `npm run lint` and `npm run build` before opening a PR.
+4. Describe the change clearly; open an issue first for non-trivial work.
 
 ---
 
 ## License
 
-No license specified. If you want to make this open-source, add a LICENSE (MIT, Apache-2.0, etc.) to the repository.
+No license is specified. Add a `LICENSE` file (MIT, Apache-2.0, etc.) if you
+plan to open-source the project.
 
 ---
 
-## Maintainer / Contact
+## Contact
 
-Repository owner: ZaryabAli-09  
-For questions, open an issue or PR on this repository.
+Repository owner: [ZaryabAli-09](https://github.com/ZaryabAli-09)
+For questions or bug reports, open an issue or PR on this repository.
