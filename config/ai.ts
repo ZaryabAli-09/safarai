@@ -13,6 +13,7 @@ interface OpenRouterResponse {
     message: {
       content: string;
     };
+    finish_reason?: string;
   }[];
   error?: {
     message: string;
@@ -21,16 +22,17 @@ interface OpenRouterResponse {
 }
 
 /**
- * Verified free models on OpenRouter (tested 2025-07).
- * Ordered by quality/reliability for JSON generation tasks.
+ * Free models on OpenRouter, verified available with JSON output (tested
+ * 2026-10). Ordered by quality/reliability for JSON generation tasks.
+ * Free models rate-limit often — the fallback chain + retries are essential.
  */
 const FREE_MODELS = [
-  "nvidia/nemotron-3-ultra-550b-a55b:free",
-  "z-ai/glm-5.2:free", // Instruction-tuned fallback with clean JSON output
-  "nvidia/nemotron-3-super-120b-a12b:free", // 120B, 1M ctx, reasoning model
-  "nvidia/nemotron-3-ultra-550b-a55b:free", // Largest: 550B, 1M ctx
-  "nvidia/nemotron-3-nano-30b-a3b:free", // Fallback: 30B, 256K ctx
-  "qwen/qwen3-next-80b-a3b-instruct:free", // Qwen fallback
+  "nvidia/nemotron-3-ultra-550b-a55b:free", // 550B, 1M ctx — verified JSON
+  "nvidia/nemotron-3-super-120b-a12b:free", // 120B, 1M ctx — verified JSON
+  "nvidia/nemotron-3.5-lightning:free", // 1M ctx, fast — may need JSON extraction
+  "google/gemma-4-31b-it:free", // strong instruct fallback (transient 429s)
+  "poolside/laguna-s-2.1:free", // 262K ctx fallback
+  "openrouter/free", // auto-router: whatever free model is up right now
 ];
 
 async function callOpenRouter(
@@ -88,6 +90,13 @@ async function callOpenRouter(
       return null;
     }
 
+    const finishReason = data.choices?.[0]?.finish_reason;
+    if (finishReason && finishReason !== "stop") {
+      console.warn(
+        `OpenRouter returned ${finishReason} completion (${model}); JSON may be incomplete`,
+      );
+    }
+
     return content;
   } catch (error) {
     if (error instanceof Error) {
@@ -109,10 +118,13 @@ async function callOpenRouter(
 export async function generateAICompletion(
   messages: OpenRouterMessage[],
   maxTokens = 8000,
+  options: { skipModels?: readonly string[] } = {},
 ): Promise<string> {
   const errors: string[] = [];
+  const skippedModels = new Set(options.skipModels ?? []);
 
   for (const model of FREE_MODELS) {
+    if (skippedModels.has(model)) continue;
     console.log(`[AI] Trying model: ${model}`);
 
     const result = await callOpenRouter(messages, model, maxTokens);
@@ -126,8 +138,9 @@ export async function generateAICompletion(
     console.warn(`[AI] Model ${model} failed (${reason}), trying next...`);
     errors.push(`${model}: ${reason}`);
 
-    // Small delay between model attempts to avoid rate limiting
-    await new Promise((r) => setTimeout(r, 1000));
+    // Small delay between model attempts — free models rate-limit in
+    // per-minute windows, so give the window a chance to recover.
+    await new Promise((r) => setTimeout(r, 2500));
   }
 
   throw new Error(

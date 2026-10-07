@@ -20,6 +20,7 @@ import {
   CloudSun,
   DollarSign,
   Home,
+  Landmark,
   Layers,
   Lightbulb,
   MapIcon,
@@ -80,6 +81,7 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
   food: Utensils,
   adventure: Star,
   culture: Star,
+  museum: Landmark,
   shopping: Package,
   nature: MapPin,
   accommodation: Home,
@@ -157,9 +159,11 @@ function activityPlace(activity: Activity, fallback: string) {
 
 /** One-line weather summary, always shown so the card never looks empty. */
 function weatherSummary(activity: Activity) {
-  const { condition, temp } = activity.weather || {};
+  const { condition, temp, tempMin, isTypical } = activity.weather || {};
   if (!condition && !temp) return "Not available";
-  return [condition, temp].filter(Boolean).join(" · ");
+  const temps = [temp, tempMin].filter(Boolean).join("/");
+  const base = [condition, temps].filter(Boolean).join(" · ");
+  return isTypical ? `${base} (typical)` : base;
 }
 
 /** Which beat of the day an activity belongs to, defaulting to the morning. */
@@ -1186,6 +1190,18 @@ export default function TripDetailPage() {
     if (activeView === "budget") {
       const breakdown = trip.budgetBreakdown;
       const categories = [
+        // Flights only appear when a flight expense was reserved, so a
+        // zero row never confuses the reader.
+        ...(Number(breakdown?.flights) > 0
+          ? [
+              {
+                label: "Flights",
+                amount: Number(breakdown.flights),
+                icon: Plane,
+                barCls: "bg-[#64748b]",
+              },
+            ]
+          : []),
         {
           label: "Accommodation",
           amount: breakdown?.accommodation || 0,

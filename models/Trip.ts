@@ -34,8 +34,10 @@ const ActivitySchema = new mongoose.Schema(
     category: { type: String, default: "" },
     weather: {
       temp: { type: String },
+      tempMin: { type: String },
       condition: { type: String },
       icon: { type: String },
+      isTypical: { type: Boolean },
     },
     image: {
       url: { type: String },
@@ -63,6 +65,7 @@ const BudgetBreakdownSchema = new mongoose.Schema(
     transport: { type: Number, default: 0 },
     activities: { type: Number, default: 0 },
     miscellaneous: { type: Number, default: 0 },
+    flights: { type: Number, default: 0 },
     total: { type: Number, default: 0 },
     currency: { type: String, default: "USD" },
   },

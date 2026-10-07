@@ -48,8 +48,10 @@ export interface IActivity {
   category?: string;
   weather?: {
     temp?: string;
+    tempMin?: string;
     condition?: string;
     icon?: string;
+    isTypical?: boolean;
   };
   image?: {
     url: string;
@@ -73,6 +75,7 @@ export interface IBudgetBreakdown {
   transport: number;
   activities: number;
   miscellaneous: number;
+  flights: number;
   total: number;
   currency: string;
 }
@@ -377,7 +380,13 @@ export interface Activity {
   estimatedCost: string;
   duration?: string;
   category?: string;
-  weather?: { temp?: string; condition?: string; icon?: string };
+  weather?: {
+    temp?: string;
+    tempMin?: string;
+    condition?: string;
+    icon?: string;
+    isTypical?: boolean;
+  };
   coordinates?: { lat: number; lng: number };
   image?: { url: string; attribution?: string };
 }
@@ -398,6 +407,7 @@ export interface BudgetBreakdown {
   transport: number;
   activities: number;
   miscellaneous: number;
+  flights?: number;
   total: number;
   currency: string;
 }

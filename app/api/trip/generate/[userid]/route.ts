@@ -8,6 +8,10 @@ import { generateTripItinerary } from "@/lib/services/ai-pipeline";
 import { attachItineraryLocations } from "@/lib/services/location-service";
 import { attachItineraryImages } from "@/lib/services/location-images-service";
 import { attachItineraryWeather } from "@/lib/services/weather-service";
+import {
+  reconcileBudget,
+  totalActivityCosts,
+} from "@/lib/services/budget-service";
 
 export async function POST(
   req: NextRequest,
@@ -74,19 +78,18 @@ export async function POST(
       };
 
       const breakdown = aiResult.budgetBreakdown || {};
-      trip.budgetBreakdown = {
-        accommodation:
-          Number(breakdown.accommodation) || Math.round(tripData.budget * 0.35),
-        food: Number(breakdown.food) || Math.round(tripData.budget * 0.25),
-        transport:
-          Number(breakdown.transport) || Math.round(tripData.budget * 0.15),
-        activities:
-          Number(breakdown.activities) || Math.round(tripData.budget * 0.15),
-        miscellaneous:
-          Number(breakdown.miscellaneous) || Math.round(tripData.budget * 0.1),
-        total: Number(breakdown.total) || tripData.budget,
+      // The AI's split is only a suggestion: reconcileBudget guarantees
+      // flights + categories === the user's budget, and that every listed
+      // activity cost is covered by the activities line.
+      trip.budgetBreakdown = reconcileBudget({
+        budget: tripData.budget,
         currency: tripData.currency,
-      };
+        flights: tripData.includesFlights
+          ? Math.min(tripData.flightBudget || 0, tripData.budget)
+          : 0,
+        ai: breakdown,
+        activityCostTotal: totalActivityCosts(enrichedItinerary),
+      });
       trip.packingList = aiResult.packingList || [];
       trip.travelTips = aiResult.travelTips || [];
       trip.aiNotes = aiResult.aiNotes || "";
@@ -95,14 +98,18 @@ export async function POST(
 
       return response(true, 201, "Trip generated successfully", trip);
     } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "AI generation failed. Please try again.";
-      trip.status = "draft";
-      trip.aiNotes = `Generation failed: ${errorMessage}`;
-      await trip.save();
+      // Keep raw model/network details in the server log only — clients get
+      // a friendly message (and the full text lands in trip.aiNotes above).
       console.error("[Generate] Trip generation failed:", error);
+      const errorMessage =
+        error instanceof Error && error.message.startsWith("All AI models")
+          ? "Our travel planner is busy right now. Please try again in a moment."
+          : "We couldn't build your itinerary this time. Please try again.";
+      trip.status = "draft";
+      trip.aiNotes = `Generation failed: ${
+        error instanceof Error ? error.message : String(error)
+      }`;
+      await trip.save();
       return response(false, 500, errorMessage);
     }
   } catch (error) {
