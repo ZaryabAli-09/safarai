@@ -1,6 +1,6 @@
 import { dbConnect } from "@/config/db";
 import { NextRequest } from "next/server";
-import { User } from "@/models/User";
+import { DEFAULT_AVATAR, User } from "@/models/User";
 import { sendEmail } from "@/config/email";
 import { generateOtp, response } from "@/lib/helperFunctions";
 import { verificationEmailTemplate } from "@/lib/emailTemplates/VerificationEmailTemplate";
@@ -73,6 +73,7 @@ export async function POST(req: NextRequest) {
       email,
       password,
       isVerified: false,
+      avatar: DEFAULT_AVATAR,
       verificationCode: verificationOtp?.otp,
       verificationCodeExpiry: verificationOtp?.expiry,
     });

@@ -4,6 +4,8 @@ import type { IUser } from "@/types/app-types";
 
 export type { IUser };
 
+export const DEFAULT_AVATAR = "male-1.jpeg";
+
 const userSchema = new mongoose.Schema<IUser>(
   {
     username: {
@@ -62,7 +64,7 @@ const userSchema = new mongoose.Schema<IUser>(
     },
     avatar: {
       type: String,
-      default: "",
+      default: DEFAULT_AVATAR,
       trim: true,
     },
   },

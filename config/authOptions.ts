@@ -1,7 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { dbConnect } from "./db";
-import { User } from "@/models/User";
+import { DEFAULT_AVATAR, User } from "@/models/User";
 import bcrypt from "bcryptjs";
 import GoogleProvider from "next-auth/providers/google";
 import crypto from "crypto";
@@ -71,6 +71,7 @@ export const authOptions: NextAuthOptions = {
             password: randomPassword,
             isVerified: true,
             role: "user",
+            avatar: DEFAULT_AVATAR,
           }).save();
         }
 
