@@ -1494,11 +1494,29 @@ export default function NewTripPage() {
               <CalendarPicker
                 mode="range"
                 selected={dateRange}
-                onSelect={(range) =>
-                  setDateRange(range ?? { from: undefined, to: undefined })
-                }
+                onSelect={(range) => {
+                  if (
+                    range?.from &&
+                    range.to &&
+                    differenceInDays(range.to, range.from) + 1 >
+                      LIMITS.maxDays
+                  ) {
+                    toast.error(
+                      `Trips can be at most ${LIMITS.maxDays} days`,
+                    );
+                    return;
+                  }
+                  setDateRange(
+                    range ?? { from: undefined, to: undefined },
+                  );
+                }}
                 numberOfMonths={calendarMonths}
-                disabled={{ before: startOfToday() }}
+                disabled={(date) =>
+                  date < startOfToday() ||
+                  (!!dateRange.from &&
+                    differenceInDays(date, dateRange.from) + 1 >
+                      LIMITS.maxDays)
+                }
               />
             </PopoverContent>
           </Popover>

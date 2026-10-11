@@ -123,7 +123,7 @@ export const FALLBACK_RATES: Record<string, number> = {
 };
 
 export const LIMITS = {
-  maxDays: 30,
+  maxDays: 7,
   maxDestinations: 10,
   maxStyles: 3,
   maxInterests: 15,
