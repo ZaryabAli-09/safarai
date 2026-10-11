@@ -20,6 +20,15 @@ const LOCATION_API = {
   requestDelayMs: 1050,
 };
 
+/**
+ * Photon (OpenStreetMap data served by komoot) — primary geocoder. It has
+ * no per-second throttle, so trip geocoding can run in parallel.
+ */
+const PHOTON_API = {
+  baseUrl: "https://photon.komoot.io/api/",
+  timeoutMs: 4000,
+};
+
 /** Result classes that are never a sensible match for a place search. */
 const BAD_CLASSES = new Set([
   "emergency",
@@ -120,11 +129,38 @@ function primarySegment(value: string): string {
   return sanitizeQuery(first.split(",")[0]);
 }
 
-// ─── Throttled, cached Nominatim search ───────────────────────────────────────
+// ─── Cached place search — Photon first, Nominatim fallback ──────────────────
 
 const searchCache = new Map<string, NominatimResult[]>();
 let lastRequestAt = 0;
+/** Timestamp until which Photon is skipped after a transport failure. */
+let photonDownUntil = 0;
 
+/** Minimal shape of a Photon feature. */
+interface PhotonFeature {
+  properties?: {
+    name?: string;
+    street?: string;
+    district?: string;
+    city?: string;
+    locality?: string;
+    state?: string;
+    country?: string;
+    osm_key?: string;
+    osm_value?: string;
+    type?: string;
+  };
+  geometry?: { coordinates?: [number, number] };
+}
+
+/**
+ * Search for a place.
+ *
+ * Photon is the primary provider: no 1-request/second throttle, so trip
+ * geocoding finishes in seconds instead of minutes. Nominatim (same OSM
+ * data, stricter usage policy) is only touched when Photon itself fails,
+ * and then keeps its fair-use throttle.
+ */
 async function search(
   query: string,
   options: { viewbox?: number[] } = {},
@@ -136,12 +172,97 @@ async function search(
   const cached = searchCache.get(key);
   if (cached) return cached;
 
-  // Global throttle: never exceed ~1 request/second.
+  // `null` means "provider unreachable" (fall back to Nominatim); `[]` is a
+  // real "no matches" answer that doesn't deserve a second provider.
+  const results =
+    (await photonSearch(cleaned, options)) ??
+    (await nominatimSearch(cleaned, options));
+
+  // Cache negatives too — a query that fails once will fail again.
+  searchCache.set(key, results);
+  return results;
+}
+
+async function photonSearch(
+  cleaned: string,
+  options: { viewbox?: number[] },
+): Promise<NominatimResult[] | null> {
+  if (Date.now() < photonDownUntil) return null;
+  try {
+    const params = new URLSearchParams({ q: cleaned, limit: "5", lang: "en" });
+    if (options.viewbox) {
+      // viewbox = [left, top, right, bottom] → bias toward its centre.
+      const [left, top, right, bottom] = options.viewbox;
+      params.set("lat", ((top + bottom) / 2).toFixed(4));
+      params.set("lon", ((left + right) / 2).toFixed(4));
+    }
+    const response = await fetch(`${PHOTON_API.baseUrl}?${params}`, {
+      signal: AbortSignal.timeout(PHOTON_API.timeoutMs),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const payload = await response.json();
+    const features: PhotonFeature[] = Array.isArray(payload?.features)
+      ? payload.features
+      : [];
+    return features
+      .map(toPhotonResult)
+      .filter((result) => result.lat !== "" && Number.isFinite(Number(result.lat)));
+  } catch {
+    // Circuit-open for a minute: the rest of this generation goes straight
+    // to Nominatim instead of paying Photon's timeout on every query.
+    photonDownUntil = Date.now() + 60_000;
+    return null;
+  }
+}
+
+/** Map a Photon feature onto the Nominatim result shape used everywhere else. */
+function toPhotonResult(feature: PhotonFeature, index: number): NominatimResult {
+  const properties = feature.properties || {};
+  const coordinates = feature.geometry?.coordinates;
+  const displayName = Array.from(
+    new Set(
+      [
+        properties.name,
+        properties.street,
+        properties.district,
+        properties.city,
+        properties.locality,
+        properties.state,
+        properties.country,
+      ].filter((value): value is string => Boolean(value)),
+    ),
+  ).join(", ");
+
+  return {
+    lat: String(coordinates?.[1] ?? ""),
+    lon: String(coordinates?.[0] ?? ""),
+    display_name: displayName,
+    name: properties.name,
+    class: properties.osm_key || "",
+    type: properties.osm_value || properties.type || "",
+    // Photon returns relevance-ordered results; mirror that ranking into
+    // Nominatim's `importance` field so downstream "best match" sorts agree.
+    importance: 1 / (index + 1),
+    address: Object.fromEntries(
+      Object.entries({
+        country: properties.country,
+        state: properties.state,
+        city: properties.city || properties.district || properties.locality,
+      }).filter(([, value]) => typeof value === "string"),
+    ) as Record<string, string>,
+  };
+}
+
+async function nominatimSearch(
+  cleaned: string,
+  options: { viewbox?: number[] },
+): Promise<NominatimResult[]> {
+  // Nominatim's fair-use policy allows max 1 request/second. This path only
+  // runs when Photon is down, so the trip flow normally never waits here.
   const wait = lastRequestAt + LOCATION_API.requestDelayMs - Date.now();
   if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
   lastRequestAt = Date.now();
 
-  let results: NominatimResult[] = [];
   try {
     const params = new URLSearchParams({
       q: cleaned,
@@ -162,14 +283,12 @@ async function search(
     });
     if (response.ok) {
       const data = await response.json();
-      if (Array.isArray(data)) results = data as NominatimResult[];
+      if (Array.isArray(data)) return data as NominatimResult[];
     }
   } catch {
-    results = [];
+    // Fall through to an empty result.
   }
-  // Cache negatives too — a query that fails once will fail again.
-  searchCache.set(key, results);
-  return results;
+  return [];
 }
 
 // ─── Validation ───────────────────────────────────────────────────────────────

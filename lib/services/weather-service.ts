@@ -3,6 +3,7 @@ import { getWeatherForLocation, type WeatherForecast } from "@/config/weather";
 
 /** Safety cap so huge itineraries can't hammer the weather API. */
 const MAX_UNIQUE_LOOKUPS = 8;
+const MAX_WEATHER_CONCURRENCY = 4;
 
 function coordKey(lat: number, lng: number): string {
   return `${lat.toFixed(3)},${lng.toFixed(3)}`;
@@ -62,22 +63,29 @@ export async function attachItineraryWeather(
 
   // One forecast per unique coordinate, cached for the whole call.
   const forecasts = new Map<string, WeatherForecast[] | null>();
-  const lookup = async (lat: number, lng: number) => {
-    const key = coordKey(lat, lng);
-    if (forecasts.has(key)) return forecasts.get(key) || null;
-    if (forecasts.size >= MAX_UNIQUE_LOOKUPS) return null;
-    const result = await getWeatherForLocation(lat, lng, start, end);
-    forecasts.set(key, result);
-    return result;
-  };
-
-  // Resolve each day's coordinates (dominant city of the day).
+  const pending: Array<{ key: string; lat: number; lng: number }> = [];
   const dayCoords: Array<{ lat: number; lng: number } | undefined> = [];
+
+  // Resolve each day's coordinates (dominant city of the day), then fetch the
+  // unique forecasts in parallel. Open-Meteo is not request-per-second gated.
   for (const day of itinerary) {
     const resolved = pickDayCoords(day, coordinates);
     dayCoords.push(resolved);
-    if (resolved) await lookup(resolved.lat, resolved.lng);
+    if (!resolved) continue;
+
+    const key = coordKey(resolved.lat, resolved.lng);
+    if (forecasts.has(key) || pending.length >= MAX_UNIQUE_LOOKUPS) continue;
+    forecasts.set(key, null);
+    pending.push({ key, lat: resolved.lat, lng: resolved.lng });
   }
+
+  await mapWithConcurrency(
+    pending,
+    MAX_WEATHER_CONCURRENCY,
+    async ({ key, lat, lng }) => {
+      forecasts.set(key, await getWeatherForLocation(lat, lng, start, end));
+    },
+  );
 
   if (coordinates && forecasts.size === 0) return itinerary;
 
@@ -113,5 +121,23 @@ function lookupSync(
   forecasts: Map<string, WeatherForecast[] | null>,
 ): WeatherForecast[] | null {
   return forecasts.get(coordKey(coords.lat, coords.lng)) || null;
+}
+
+async function mapWithConcurrency<T>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T) => Promise<void>,
+) {
+  let cursor = 0;
+  async function run() {
+    while (cursor < items.length) {
+      const index = cursor++;
+      await worker(items[index]);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, run),
+  );
 }
 

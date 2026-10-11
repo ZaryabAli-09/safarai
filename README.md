@@ -131,7 +131,8 @@ OAUTH_CLIENT_SECRET="<google oauth client secret>"
 GMAIL_SMTP_EMAIL="you@gmail.com"
 GMAIL_SMTP_APP_PASSWORD="<gmail app password>"
 
-# AI itinerary generation (OpenRouter)
+# AI itinerary generation (Groq primary, OpenRouter fallback)
+GROK_API_KEY="<groq api key from console.groq.com>"
 OPENROUTER_API_KEY="<openrouter api key>"
 
 # Site URL — used for SEO metadata and links in emails

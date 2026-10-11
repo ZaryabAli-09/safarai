@@ -12,6 +12,48 @@ import {
   reconcileBudget,
   totalActivityCosts,
 } from "@/lib/services/budget-service";
+import type { GeneratedDay } from "@/types/app-types";
+import type { LocationImageData } from "@/config/locationImage";
+
+function isLocationImageData(value: unknown): value is LocationImageData {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "url" in value &&
+    typeof value.url === "string"
+  );
+}
+
+function mergeItineraryImages(
+  target: GeneratedDay[],
+  imageSource: GeneratedDay[],
+): GeneratedDay[] {
+  const byId = new Map<string, LocationImageData>();
+  const byPlace = new Map<string, LocationImageData>();
+
+  imageSource.forEach((day) =>
+    day.activities?.forEach((activity) => {
+      const image = isLocationImageData(activity.image)
+        ? activity.image
+        : undefined;
+      if (!image) return;
+      if (activity.id) byId.set(String(activity.id), image);
+      const place = String(activity.location || day.location || "").trim();
+      if (place) byPlace.set(place.toLowerCase(), image);
+    }),
+  );
+
+  return target.map((day) => ({
+    ...day,
+    activities: (day.activities || []).map((activity) => {
+      const place = String(activity.location || day.location || "").trim();
+      const image =
+        (activity.id ? byId.get(String(activity.id)) : undefined) ||
+        (place ? byPlace.get(place.toLowerCase()) : undefined);
+      return image ? { ...activity, image } : activity;
+    }),
+  }));
+}
 
 export async function POST(
   req: NextRequest,
@@ -45,27 +87,31 @@ export async function POST(
 
     try {
       const aiResult = await generateTripItinerary(tripData);
+      const imagesPromise = attachItineraryImages(aiResult.itinerary).catch(
+        (error) => {
+          console.warn("[Generate] Image enrichment failed:", error);
+          return aiResult.itinerary;
+        },
+      );
       const located = await attachItineraryLocations(aiResult.itinerary).catch(
         (error) => {
           console.warn("[Generate] Location enrichment failed:", error);
           return { itinerary: aiResult.itinerary, coordinates: undefined };
         },
       );
-      const withImages = await attachItineraryImages(located.itinerary).catch(
-        (error) => {
-          console.warn("[Generate] Image enrichment failed:", error);
-          return located.itinerary;
-        },
-      );
-      const enrichedItinerary = await attachItineraryWeather(
-        withImages,
+      const withWeather = await attachItineraryWeather(
+        located.itinerary,
         located.coordinates,
         tripData.startDate,
         tripData.endDate,
       ).catch((error) => {
         console.warn("[Generate] Weather enrichment failed:", error);
-        return withImages;
+        return located.itinerary;
       });
+      const enrichedItinerary = mergeItineraryImages(
+        withWeather,
+        await imagesPromise,
+      );
 
       trip.itinerary = enrichedItinerary;
       trip.summary = aiResult.summary || {
@@ -103,7 +149,7 @@ export async function POST(
       console.error("[Generate] Trip generation failed:", error);
       const errorMessage =
         error instanceof Error && error.message.startsWith("All AI models")
-          ? "Our travel planner is busy right now. Please try again in a moment."
+          ? "We're currently experiencing heavy load right now. Please try again later."
           : "We couldn't build your itinerary this time. Please try again.";
       trip.status = "draft";
       trip.aiNotes = `Generation failed: ${

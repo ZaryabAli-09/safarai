@@ -21,8 +21,8 @@ export async function dbConnect() {
   if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
-    mongoose.connect(MONGODB_URI).then((mongoose) => {
-      return mongoose;
+    cached.promise = mongoose.connect(MONGODB_URI).then((mongoose) => {
+      return mongoose.connection;
     });
   }
 
@@ -33,6 +33,5 @@ export async function dbConnect() {
     throw new Error(`MongoDB connection failed: ${(error as Error).message}`);
   }
 
-  console.log(cached.conn);
   return cached.conn;
 }

@@ -6,9 +6,33 @@ import {
 } from "@/config/location";
 
 interface VenueQuery {
-  venue?: string;
+  venue: string;
   city?: string;
   country?: string;
+}
+
+/** Photon (the geocoder) has no per-second cap — small parallel batches. */
+const GEOCODE_CONCURRENCY = 4;
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+
+  async function run() {
+    while (cursor < items.length) {
+      const index = cursor++;
+      results[index] = await worker(items[index]);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, run),
+  );
+  return results;
 }
 
 /** City keys ("city||country") this itinerary needs geocoded. */
@@ -51,10 +75,17 @@ export async function attachItineraryLocations(itinerary: any[]) {
     }
   }
 
+  // Geocode every unique city in parallel (Photon has no 1 req/s cap).
+  const cityEntries = Array.from(cityQueries.entries());
+  const cityResults = await mapWithConcurrency(
+    cityEntries,
+    GEOCODE_CONCURRENCY,
+    ([, query]) => geocodeCity(query.city, query.country),
+  );
   const cityCenters = new Map<string, LocationData | null>();
-  for (const [key, { city, country }] of cityQueries) {
-    cityCenters.set(key, await geocodeCity(city, country));
-  }
+  cityEntries.forEach(([key], index) =>
+    cityCenters.set(key, cityResults[index]),
+  );
 
   // ── Geocode each unique venue once (inside its city) ──
   const venueQueries = new Map<string, VenueQuery>();
@@ -79,20 +110,26 @@ export async function attachItineraryLocations(itinerary: any[]) {
     }),
   );
 
-  const venueResults = new Map<string, LocationData | null>();
-  for (const [key, query] of venueQueries) {
-    if (!query.venue) continue;
-    const center = cityCenters.get(cityKey(query.city, query.country));
-    venueResults.set(
-      key,
-      await geocodeVenue(
+  // Venues need their city centre first — geocode them in parallel now that
+  // the cities are known. Every unique venue gets a detailed lookup.
+  const venueEntries = Array.from(venueQueries.entries());
+  const venueValues = await mapWithConcurrency(
+    venueEntries,
+    GEOCODE_CONCURRENCY,
+    ([, query]) => {
+      const center = cityCenters.get(cityKey(query.city, query.country));
+      return geocodeVenue(
         query.venue,
         query.city || "",
         query.country,
         center ? { lat: center.lat, lng: center.lng } : undefined,
-      ),
-    );
-  }
+      );
+    },
+  );
+  const venueResults = new Map<string, LocationData | null>();
+  venueEntries.forEach(([key], index) =>
+    venueResults.set(key, venueValues[index]),
+  );
 
   // ── Attach, with city-centre fallback ──
   let coordinates: { lat: number; lng: number } | undefined;

@@ -310,12 +310,10 @@ Rules: return costs in ${trip.currency} as realistic local prices, include 8-10 
   for (let attempt = 1; attempt <= 2; attempt += 1) {
     try {
       const response = await generateAICompletion(ctx.messages, 8000, {
-        // Do not spend another full fallback cycle on the model that already
-        // returned an unparseable response.
+        // Attempt 1 most likely came from the primary (Groq) — on the retry,
+        // skip it so the fallback model gets the corrective-chance instead.
         skipModels:
-          attempt > 1
-            ? ["nvidia/nemotron-3-ultra-550b-a55b:free"]
-            : [],
+          attempt > 1 ? ["openai/gpt-oss-120b"] : [],
       });
       parsedResult = extractJSON(response);
     } catch (error) {
@@ -325,6 +323,9 @@ Rules: return costs in ${trip.currency} as realistic local prices, include 8-10 
         soft: [],
       };
       ctx.logger.error(`[AI] attempt ${attempt}: ${problems.severe[0]}`);
+      // Every model was already consumed — a second attempt would just
+      // replay the same failures. Surface the "busy" error immediately.
+      if ((error as Error).message.startsWith("All AI models")) break;
     }
 
     if (parsedResult) {

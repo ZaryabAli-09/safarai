@@ -7,12 +7,36 @@ const LOCATION_IMAGE_API = {
   apiUrl: "https://en.wikipedia.org/w/api.php",
   userAgent: "SafarAI/1.0 (travel-planning-app)",
   timeoutMs: 5000,
-  requestDelayMs: 500,
 };
+const MAX_IMAGE_CONCURRENCY = 6;
 
 interface ThumbnailHit {
   title: string;
   thumb: string;
+}
+
+const thumbnailCache = new Map<string, ThumbnailHit[]>();
+const imageCache = new Map<string, LocationImageData | null>();
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+
+  async function run() {
+    while (cursor < items.length) {
+      const index = cursor++;
+      results[index] = await worker(items[index]);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, run),
+  );
+  return results;
 }
 
 /** Minimal shape of a MediaWiki `query.pages` entry we care about. */
@@ -28,57 +52,61 @@ interface WikiPage {
  * rate versus the old search-then-summary flow and halves the API calls.
  */
 async function searchThumbnails(query: string): Promise<ThumbnailHit[]> {
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const params = new URLSearchParams({
-        action: "query",
-        generator: "search",
-        gsrsearch: query,
-        gsrlimit: "4",
-        gsrnamespace: "0",
-        prop: "pageimages",
-        piprop: "thumbnail",
-        pithumbsize: "800",
-        format: "json",
-        origin: "*",
-      });
-      const response = await fetch(`${LOCATION_IMAGE_API.apiUrl}?${params}`, {
-        headers: { "User-Agent": LOCATION_IMAGE_API.userAgent },
-        signal: AbortSignal.timeout(LOCATION_IMAGE_API.timeoutMs),
-      });
-      if (response.ok) {
-        const payload = await response.json();
-        const pages = payload?.query?.pages as
-          | Record<string, WikiPage>
-          | undefined;
-        if (pages) {
-          const ordered = Object.values(pages).sort(
-            (a, b) => (a.index ?? 0) - (b.index ?? 0),
-          );
-          const hits = ordered
-            .filter((page) => page?.thumbnail?.source)
-            .map((page) => ({
-              title: String(page.title),
-              thumb: String(page.thumbnail?.source),
-            }));
-          if (hits.length > 0) return hits;
+  const cached = thumbnailCache.get(query);
+  if (cached) return cached;
+
+  // One attempt only — images are decorative, so a failed lookup just
+  // moves on instead of retrying after a pause.
+  try {
+    const params = new URLSearchParams({
+      action: "query",
+      generator: "search",
+      gsrsearch: query,
+      gsrlimit: "4",
+      gsrnamespace: "0",
+      prop: "pageimages",
+      piprop: "thumbnail",
+      pithumbsize: "800",
+      format: "json",
+      origin: "*",
+    });
+    const response = await fetch(`${LOCATION_IMAGE_API.apiUrl}?${params}`, {
+      headers: { "User-Agent": LOCATION_IMAGE_API.userAgent },
+      signal: AbortSignal.timeout(LOCATION_IMAGE_API.timeoutMs),
+    });
+    if (response.ok) {
+      const payload = await response.json();
+      const pages = payload?.query?.pages as
+        | Record<string, WikiPage>
+        | undefined;
+      if (pages) {
+        const ordered = Object.values(pages).sort(
+          (a, b) => (a.index ?? 0) - (b.index ?? 0),
+        );
+        const hits = ordered
+          .filter((page) => page?.thumbnail?.source)
+          .map((page) => ({
+            title: String(page.title),
+            thumb: String(page.thumbnail?.source),
+          }));
+        if (hits.length > 0) {
+          thumbnailCache.set(query, hits);
+          return hits;
         }
       }
-    } catch {
-      // fall through to retry
     }
-    // Transient failure (rate limit / timeout) → one retry after a pause.
-    if (attempt === 0)
-      await new Promise((resolve) =>
-        setTimeout(resolve, LOCATION_IMAGE_API.requestDelayMs * 2),
-      );
+  } catch {
+    // Transient failure — no retries.
   }
+  thumbnailCache.set(query, []);
   return [];
 }
 
 export async function getLocationImage(
   placeName: string,
 ): Promise<LocationImageData | null> {
+  if (imageCache.has(placeName)) return imageCache.get(placeName) || null;
+
   // Try the full label first ("Louvre Museum, Paris"), then the bare venue
   // name ("Louvre Museum") — the city suffix often breaks the search match.
   const variants = [placeName];
@@ -94,12 +122,12 @@ export async function getLocationImage(
         hits.find((hit) =>
           hit.title.toLowerCase().replace(/[^a-z0-9]/g, "").includes(norm),
         ) || hits[0];
-      return { url: best.thumb, attribution: "Wikipedia" };
+      const image = { url: best.thumb, attribution: "Wikipedia" };
+      imageCache.set(placeName, image);
+      return image;
     }
-    await new Promise((resolve) =>
-      setTimeout(resolve, LOCATION_IMAGE_API.requestDelayMs),
-    );
   }
+  imageCache.set(placeName, null);
   return null;
 }
 
@@ -107,12 +135,15 @@ export async function getLocationImages(
   placeNames: string[],
 ): Promise<Map<string, LocationImageData>> {
   const results = new Map<string, LocationImageData>();
-  for (const name of Array.from(new Set(placeNames))) {
-    const image = await getLocationImage(name);
+  const uniqueNames = Array.from(new Set(placeNames)).filter(Boolean);
+  const entries = await mapWithConcurrency(
+    uniqueNames,
+    MAX_IMAGE_CONCURRENCY,
+    async (name) => [name, await getLocationImage(name)] as const,
+  );
+
+  for (const [name, image] of entries) {
     if (image) results.set(name, image);
-    await new Promise((resolve) =>
-      setTimeout(resolve, LOCATION_IMAGE_API.requestDelayMs),
-    );
   }
   return results;
 }
