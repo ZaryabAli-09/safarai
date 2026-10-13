@@ -1,48 +1,58 @@
-┌─────────────────────────────────────────────────────────────────┐
-│ 1. USER CREATES TRIP                                            │
-│    Input: Destination, Duration, Budget, Interests              │
-└────────────────────────┬────────────────────────────────────────┘
-                         ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ 2. AI GENERATES ITINERARY                                       │
-│    Output: JSON with venue, city, country for each activity     │
-└────────────────────────┬────────────────────────────────────────┘
-                         ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ 3. JSON EXTRACTION                                              │
-│    Extracts valid JSON from AI response (handles text/escapes)  │
-└────────────────────────┬────────────────────────────────────────┘
-                         ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ 4. NORMALIZE ACTIVITIES                                         │
-│    Derive location field: "venue, city"                         │
-│    Store venue, city, country separately                        │
-└────────────────────────┬────────────────────────────────────────┘
-                         ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ 5. GEOCODE LOCATIONS                                            │
-│    Query: "venue, city, country" → Nominatim → Coordinates     │
-│    Fallback: "city, country" if venue not found                 │
-└────────────────────────┬────────────────────────────────────────┘
-                         ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ 6. FETCH IMAGES                                                 │
-│    Search Wikipedia for venue → Get article → Fetch thumbnail   │
-│    Fallback: Search by city if venue not found                  │
-└────────────────────────┬────────────────────────────────────────┘
-                         ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ 7. GET WEATHER                                                  │
-│    Use first activity coordinates → Open-Meteo → Forecast       │
-└────────────────────────┬────────────────────────────────────────┘
-                         ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ 8. SAVE TO DATABASE                                             │
-│    Store complete trip with all enriched data                   │
-└────────────────────────┬────────────────────────────────────────┘
-                         ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ 9. DISPLAY IN UI                                                │
-│    Show activities with images, weather, maps links             │
-│    Maps button uses: venue, city, country for search            │
-└─────────────────────────────────────────────────────────────────┘
+SAFAR AI - TRIP GENERATION FLOW
+===============================
+
+┌──────────────────────────────┐
+│ 1. User completes trip form  │
+│ Destination, dates, budget,  │
+│ interests, transport, style  │
+└──────────────┬───────────────┘
+               ↓
+┌──────────────────────────────┐
+│ 2. Validate and sanitize     │
+│ Server checks input and      │
+│ enforces maximum 7 days      │
+└──────────────┬───────────────┘
+               ↓
+┌──────────────────────────────┐
+│ 3. Build AI prompt           │
+│ Trip details + budget/FX     │
+│ rules + JSON response shape  │
+└──────────────┬───────────────┘
+               ↓
+┌──────────────────────────────┐
+│ 4. Generate itinerary        │
+│ Groq GPT-OSS-120B            │
+│        ↓ if unavailable      │
+│ Groq GPT-OSS-20B             │
+│        ↓ if unavailable      │
+│ Groq Qwen                    │
+│        ↓ if unavailable      │
+│ OpenRouter Nemotron          │
+└──────────────┬───────────────┘
+               ↓
+┌──────────────────────────────┐
+│ 5. Parse and validate JSON   │
+│ Normalize days, dates, IDs   │
+│ Reject placeholders/errors   │
+└──────────────┬───────────────┘
+               ↓
+┌──────────────────────────────┐
+│ 6. Enrich itinerary          │
+│ Geocode locations            │
+│ Add images and weather       │
+└──────────────┬───────────────┘
+               ↓
+┌──────────────────────────────┐
+│ 7. Reconcile budget          │
+│ Match activities, flights,   │
+│ and categories to user budget│
+└──────────────┬───────────────┘
+               ↓
+┌──────────────────────────────┐
+│ 8. Save and display trip     │
+│ Save as completed and show   │
+│ itinerary in the UI          │
+└──────────────────────────────┘
+
+If validation or all AI providers fail:
+Trip status becomes "draft" and the user receives a retry message.
