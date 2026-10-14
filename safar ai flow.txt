@@ -1,58 +1,61 @@
-SAFAR AI - TRIP GENERATION FLOW
-===============================
+SAFAR AI — TRIP GENERATION WORKFLOW
+====================================
 
 ┌──────────────────────────────┐
-│ 1. User completes trip form  │
+│ 1. Collect trip requirements │
 │ Destination, dates, budget,  │
-│ interests, transport, style  │
+│ interests, transport, travel │
+│ style                        │
 └──────────────┬───────────────┘
                ↓
 ┌──────────────────────────────┐
 │ 2. Validate and sanitize     │
-│ Server checks input and      │
-│ enforces maximum 7 days      │
+│ Validate inputs and enforce  │
+│ the seven-day maximum        │
 └──────────────┬───────────────┘
                ↓
 ┌──────────────────────────────┐
-│ 3. Build AI prompt           │
-│ Trip details + budget/FX     │
-│ rules + JSON response shape  │
+│ 3. Construct AI request      │
+│ Trip details, budget, FX     │
+│ exchange-rate rules, and the │
+│ required JSON schema         │
 └──────────────┬───────────────┘
                ↓
 ┌──────────────────────────────┐
 │ 4. Generate itinerary        │
-│ Groq GPT-OSS-120B            │
-│        ↓ if unavailable      │
-│ Groq GPT-OSS-20B             │
-│        ↓ if unavailable      │
-│ Groq Qwen                    │
-│        ↓ if unavailable      │
-│ OpenRouter Nemotron          │
+│ Primary: Groq GPT-OSS-120B   │
+│ Fallback: Groq GPT-OSS-20B   │
+│ Fallback: Groq Qwen          │
+│ Final fallback: OpenRouter   │
+│ Nemotron                     │
 └──────────────┬───────────────┘
                ↓
 ┌──────────────────────────────┐
-│ 5. Parse and validate JSON   │
-│ Normalize days, dates, IDs   │
-│ Reject placeholders/errors   │
+│ 5. Validate AI response      │
+│ Parse JSON; normalize days,  │
+│ dates, and IDs; reject       │
+│ placeholders and errors      │
 └──────────────┬───────────────┘
                ↓
 ┌──────────────────────────────┐
 │ 6. Enrich itinerary          │
-│ Geocode locations            │
-│ Add images and weather       │
+│ Geocode locations; add       │
+│ images and weather data      │
 └──────────────┬───────────────┘
                ↓
 ┌──────────────────────────────┐
 │ 7. Reconcile budget          │
-│ Match activities, flights,   │
-│ and categories to user budget│
+│ Align activities, flights,   │
+│ and categories with the      │
+│ specified budget             │
 └──────────────┬───────────────┘
                ↓
 ┌──────────────────────────────┐
-│ 8. Save and display trip     │
-│ Save as completed and show   │
-│ itinerary in the UI          │
+│ 8. Persist and present trip  │
+│ Mark the trip as completed   │
+│ and display the itinerary    │
 └──────────────────────────────┘
 
-If validation or all AI providers fail:
-Trip status becomes "draft" and the user receives a retry message.
+Failure handling:
+If validation fails or all AI providers are unavailable, set the trip
+status to "draft" and display a retry notification.
